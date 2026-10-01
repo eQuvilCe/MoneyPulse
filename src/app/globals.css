@@ -19,7 +19,7 @@
   --mp-sidebar-w: 240px;
   --background: #05070d;
   --foreground: #f1f5f9;
-  --font-display: var(--font-space-grotesk), system-ui, sans-serif;
+  --font-display: var(--font-unbounded), system-ui, sans-serif;
   --font-body: var(--font-inter), system-ui, sans-serif;
 }
 
