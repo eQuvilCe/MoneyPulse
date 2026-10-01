@@ -20,8 +20,8 @@ function LedgerFloor() {
           uColorA: { value: new THREE.Color(PALETTE[1]) },
           uColorB: { value: new THREE.Color(PALETTE[2]) },
           uFogColor: { value: new THREE.Color("#05070d") },
-          uFogNear: { value: 6 },
-          uFogFar: { value: 16 },
+          uFogNear: { value: 12 },
+          uFogFar: { value: 26 },
         },
         vertexShader: `
           uniform float uTime;
@@ -143,7 +143,7 @@ export default function HeroScene() {
       gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }}
       style={{ position: "absolute", inset: 0 }}
     >
-      <fog attach="fog" args={["#05070d", 6, 15]} />
+      <fog attach="fog" args={["#05070d", 10, 24]} />
       <ambientLight intensity={0.6} />
       <directionalLight position={[3, 4, 5]} intensity={0.8} color={PALETTE[0]} />
       <SceneRig>
