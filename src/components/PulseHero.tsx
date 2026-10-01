@@ -4,7 +4,27 @@ import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence, useMotionValue, useSpring, useTransform } from "framer-motion";
 import Link from "next/link";
 import PulseRing from "@/components/fx/PulseRing";
+import Confetti from "@/components/fx/Confetti";
+import PulseOrbSceneLoader from "@/components/three/PulseOrbSceneLoader";
+import WebGLErrorBoundary from "@/components/three/WebGLErrorBoundary";
+import { useWebglAllowed } from "@/components/three/useWebglAllowed";
 import { useApp } from "@/components/AppProvider";
+
+/**
+ * Live "Pulse" widget — the classic SVG ring by default. A 3D orb variant exists
+ * (PulseOrbSceneLoader) but looked rough in practice, so it's reverted for now;
+ * flip USE_ORB back to true once the orb's look is reworked.
+ */
+const USE_ORB = false;
+function PulseWidget({ score, size, flash }: { score: number; size: number; flash: boolean }) {
+  const webglAllowed = useWebglAllowed();
+  if (!USE_ORB || !webglAllowed) return <PulseRing score={score} size={size} flash={flash} />;
+  return (
+    <WebGLErrorBoundary fallback={<PulseRing score={score} size={size} flash={flash} />}>
+      <PulseOrbSceneLoader health={score} size={size} />
+    </WebGLErrorBoundary>
+  );
+}
 
 function CountMoney({ value, currency }: { value: number; currency: string }) {
   const [n, setN] = useState(0);
@@ -61,6 +81,21 @@ export default function PulseHero({
   const isEmpty = income === 0 && expense === 0;
   const label = healthLabel(health, ru, isEmpty);
 
+  const [confettiFire, setConfettiFire] = useState(0);
+  useEffect(() => {
+    if (isEmpty || health < 75) return;
+    const key = `mp-celebrated-${new Date().toISOString().slice(0, 7)}`;
+    try {
+      if (localStorage.getItem(key)) return;
+      localStorage.setItem(key, "1");
+    } catch {
+      return;
+    }
+    // One-time celebration trigger synced to an external system (localStorage) — not derivable at render time.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setConfettiFire((f) => f + 1);
+  }, [health, isEmpty]);
+
   const ref = useRef<HTMLDivElement>(null);
   const mx = useMotionValue(0);
   const my = useMotionValue(0);
@@ -95,6 +130,7 @@ export default function PulseHero({
       animate={{ opacity: 1, y: 0, scale: 1 }}
       transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
     >
+      <Confetti fire={confettiFire} />
       <motion.div
         className="pointer-events-none absolute inset-0 opacity-[0.35]"
         style={{
@@ -184,7 +220,7 @@ export default function PulseHero({
         </div>
 
         <div className="order-1 flex flex-col items-center lg:order-2" style={{ transform: "translateZ(40px)" }}>
-          <PulseRing score={isEmpty ? 0 : health} size={160} flash={flashPulse} />
+          <PulseWidget score={isEmpty ? 0 : health} size={160} flash={flashPulse} />
           <motion.p
             className="mt-3 text-center text-sm font-medium text-slate-300"
             animate={{ opacity: [0.7, 1, 0.7] }}

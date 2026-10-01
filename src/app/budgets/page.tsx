@@ -11,10 +11,13 @@ import {
 } from "@/lib/types";
 import { PageShell, FadeItem } from "@/components/motion/PageShell";
 import TiltCard from "@/components/motion/TiltCard";
+import { LetterReveal } from "@/components/motion/Reveal";
 import AIInsightBar from "@/components/AIInsightBar";
 import { useToast } from "@/components/Toast";
+import { useApp } from "@/components/AppProvider";
 
 export default function BudgetsPage() {
+  const { tr } = useApp();
   const [data, setData] = useState<FinanceData | null>(null);
   const [cat, setCat] = useState("еда");
   const [limit, setLimit] = useState("");
@@ -26,7 +29,7 @@ export default function BudgetsPage() {
     refresh();
   }, []);
 
-  if (!data) return <div className="py-20 text-center text-slate-500">Загрузка...</div>;
+  if (!data) return <div className="py-20 text-center text-slate-500">{tr("loading")}</div>;
   const statuses = getBudgetStatus(data);
   const cur = data.settings.currency || "₽";
   const cats = allExpenseCategories(data.settings);
@@ -36,7 +39,7 @@ export default function BudgetsPage() {
     const num = parseFloat(limit);
     if (!num) return;
     await addBudget({ category: cat, limit: num, period: "month" });
-    toast(editId ? "Лимит обновлён" : "Лимит создан");
+    toast(editId ? tr("limitUpdated") : tr("limitCreated"));
     setLimit("");
     setShow(false);
     setEditId(null);
@@ -51,13 +54,17 @@ export default function BudgetsPage() {
   };
 
   return (
-    <PageShell>
+    <PageShell className="page-accent-amber">
       <FadeItem>
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-xs font-medium uppercase tracking-widest text-emerald-400/80">MoneyPulse</p>
-            <h1 className="mt-1 text-3xl font-bold">Бюджеты</h1>
-            <p className="mt-1 text-sm text-slate-400">Лимиты · редактирование · AI</p>
+            <p className="text-xs font-medium uppercase tracking-widest" style={{ color: "var(--page-accent)" }}>
+              MoneyPulse
+            </p>
+            <h1 className="mt-1 text-3xl font-bold">
+              <LetterReveal text={tr("budgetsHeroTitle")} />
+            </h1>
+            <p className="mt-1 text-sm text-slate-400">{tr("budgetsHeroSubtitle")}</p>
           </div>
           <button
             onClick={() => {
@@ -66,9 +73,13 @@ export default function BudgetsPage() {
               setCat("еда");
               setShow(!show);
             }}
-            className="rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-amber-500/20"
+            className="rounded-xl px-4 py-2.5 text-sm font-semibold text-white shadow-lg"
+            style={{
+              background: "linear-gradient(135deg, var(--page-accent), var(--page-accent-2))",
+              boxShadow: "0 8px 24px rgba(var(--page-accent-rgb), 0.25)",
+            }}
           >
-            + Лимит
+            {tr("addLimitButton")}
           </button>
         </div>
       </FadeItem>
@@ -77,8 +88,9 @@ export default function BudgetsPage() {
       </FadeItem>
       {show && (
         <FadeItem>
-          <form onSubmit={handleSave} className="mp-card rounded-2xl p-5">
-            <p className="mb-3 text-sm font-medium">{editId ? "Изменить лимит" : "Новый лимит"}</p>
+          <TiltCard className="mp-card rounded-2xl p-5">
+          <form onSubmit={handleSave}>
+            <p className="mb-3 text-sm font-medium">{editId ? tr("editLimit") : tr("newLimit")}</p>
             <div className="grid gap-3 sm:grid-cols-3">
               <select
                 value={cat}
@@ -96,24 +108,26 @@ export default function BudgetsPage() {
                 type="number"
                 value={limit}
                 onChange={(e) => setLimit(e.target.value)}
-                placeholder={`Лимит ${cur}`}
+                placeholder={tr("limitFor", { cur })}
                 required
                 min="1"
                 className="rounded-xl border border-white/10 bg-slate-900 px-3 py-2.5 text-sm"
               />
               <button
                 type="submit"
-                className="rounded-xl bg-amber-500 px-4 py-2.5 text-sm font-semibold hover:bg-amber-400"
+                className="rounded-xl px-4 py-2.5 text-sm font-semibold text-white"
+                style={{ background: "linear-gradient(135deg, var(--page-accent), var(--page-accent-2))" }}
               >
-                Сохранить
+                {tr("save")}
               </button>
             </div>
           </form>
+          </TiltCard>
         </FadeItem>
       )}
       {statuses.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-white/10 py-16 text-center text-slate-500">
-          Нет бюджетов
+          {tr("noBudgets")}
         </div>
       ) : (
         <div className="grid gap-3 sm:grid-cols-2">
@@ -130,7 +144,7 @@ export default function BudgetsPage() {
                   <span className="text-xl">{CATEGORY_ICONS[b.category] || "📦"}</span>
                   <div>
                     <h3 className="font-semibold capitalize">{b.category}</h3>
-                    <p className="text-[11px] text-slate-500">в месяц</p>
+                    <p className="text-[11px] text-slate-500">{tr("perMonthLabel")}</p>
                   </div>
                 </div>
                 <div className="flex gap-1">
@@ -170,8 +184,8 @@ export default function BudgetsPage() {
                 </div>
                 <p className="mt-1.5 text-xs text-slate-500">
                   {b.over
-                    ? `Превышен на ${formatMoney(b.spent - b.limit, cur)}`
-                    : `Осталось ${formatMoney(b.remaining, cur)}`}{" "}
+                    ? tr("overBudgetBy", { v: formatMoney(b.spent - b.limit, cur) })
+                    : tr("remainingAmount", { v: formatMoney(b.remaining, cur) })}{" "}
                   · {b.percent}%
                 </p>
               </div>

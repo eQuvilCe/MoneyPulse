@@ -3,6 +3,7 @@ import { parseBankSms, guessCategory } from "@/lib/smsParser";
 import { addTransactionForUser, readStore } from "@/lib/db";
 import { getPrisma } from "@/lib/prisma";
 import { formatMoney } from "@/lib/types";
+import { rateLimit } from "@/lib/server-auth";
 
 /**
  * Telegram Bot webhook
@@ -13,8 +14,20 @@ import { formatMoney } from "@/lib/types";
  */
 export async function POST(req: NextRequest) {
   const secret = process.env.TELEGRAM_WEBHOOK_SECRET;
-  if (secret && req.headers.get("x-telegram-bot-api-secret-token") !== secret) {
+  if (!secret) {
+    // Refuse to run unauthenticated — without a shared secret anyone could POST fabricated
+    // "Telegram updates" and inject transactions into a linked user's account.
+    console.error("[telegram webhook] TELEGRAM_WEBHOOK_SECRET is not set — rejecting webhook");
+    return NextResponse.json({ error: "Telegram webhook not configured" }, { status: 503 });
+  }
+  if (req.headers.get("x-telegram-bot-api-secret-token") !== secret) {
     return NextResponse.json({ error: "forbidden" }, { status: 403 });
+  }
+
+  const ip = req.headers.get("x-forwarded-for") || "local";
+  if (!rateLimit(`tg-webhook:${ip}`, 30, 60_000)) {
+    // Still 200 — Telegram retries aggressively on non-2xx — just silently drop.
+    return NextResponse.json({ ok: true });
   }
 
   const token = process.env.TELEGRAM_BOT_TOKEN;

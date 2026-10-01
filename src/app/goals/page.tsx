@@ -4,13 +4,18 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { loadDataAsync, addGoal, updateGoal, deleteGoal } from "@/lib/storage";
 import { FinanceData, Goal, formatMoney } from "@/lib/types";
-import { PageShell, FadeItem } from "@/components/motion/PageShell";
+import { PageShell, FadeItem, Skeleton } from "@/components/motion/PageShell";
 import TiltCard from "@/components/motion/TiltCard";
+import { LetterReveal, MagneticButton } from "@/components/motion/Reveal";
 import { useToast } from "@/components/Toast";
 import AIInsightBar from "@/components/AIInsightBar";
+import Confetti from "@/components/fx/Confetti";
+import { useApp } from "@/components/AppProvider";
 
 export default function GoalsPage() {
+  const { tr, lang } = useApp();
   const [data, setData] = useState<FinanceData | null>(null);
+  const [confettiFire, setConfettiFire] = useState(0);
   const [show, setShow] = useState(false);
   const [title, setTitle] = useState("");
   const [target, setTarget] = useState("");
@@ -46,7 +51,7 @@ export default function GoalsPage() {
         emoji,
         deadline: deadline || undefined,
       });
-      toast("Цель обновлена");
+      toast(tr("goalUpdated"));
     } else {
       await addGoal({
         title: title.trim(),
@@ -55,7 +60,7 @@ export default function GoalsPage() {
         emoji,
         deadline: deadline || undefined,
       });
-      toast("Цель создана");
+      toast(tr("goalCreated"));
     }
     setShow(false);
     setEditId(null);
@@ -71,25 +76,44 @@ export default function GoalsPage() {
     const next = Math.min(g.targetAmount, g.currentAmount + amount);
     await updateGoal(id, { currentAmount: next });
     if (next >= g.targetAmount && g.currentAmount < g.targetAmount) {
-      toast(`🎉 Цель «${g.title}» достигнута!`);
+      toast(tr("goalAchieved", { title: g.title }));
+      setConfettiFire((f) => f + 1);
     } else {
       toast(`+${formatMoney(amount, cur)} → ${g.title}`);
     }
     refresh();
   };
 
-  if (!data) return <div className="py-20 text-center text-slate-500">Загрузка...</div>;
+  if (!data) {
+    return (
+      <PageShell className="page-accent-violet">
+        <FadeItem>
+          <Skeleton className="h-16 w-full" />
+        </FadeItem>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <Skeleton className="h-40" />
+          <Skeleton className="h-40" />
+        </div>
+      </PageShell>
+    );
+  }
 
   return (
-    <PageShell>
+    <PageShell className="page-accent-violet">
+      <Confetti fire={confettiFire} />
       <FadeItem>
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-xs font-medium uppercase tracking-widest text-emerald-400/80">MoneyPulse</p>
-            <h1 className="mt-1 text-3xl font-bold">Цели</h1>
-            <p className="mt-1 text-sm text-slate-400">Редактируй · копи · достигай</p>
+            <p className="text-xs font-medium uppercase tracking-widest" style={{ color: "var(--page-accent)" }}>
+              MoneyPulse
+            </p>
+            <h1 className="mt-1 text-3xl font-bold">
+              <LetterReveal text={tr("goalsHeroTitle")} />
+            </h1>
+            <p className="mt-1 text-sm text-slate-400">{tr("goalsHeroSubtitle")}</p>
           </div>
-          <button
+          <MagneticButton
+            primary
             onClick={() => {
               setEditId(null);
               setTitle("");
@@ -98,10 +122,9 @@ export default function GoalsPage() {
               setEmoji("🎯");
               setShow(!show);
             }}
-            className="rounded-xl bg-gradient-to-r from-violet-500 to-fuchsia-500 px-4 py-2.5 text-sm font-semibold text-white"
           >
-            + Цель
-          </button>
+            {tr("addGoalButton")}
+          </MagneticButton>
         </div>
       </FadeItem>
       <FadeItem>
@@ -110,12 +133,12 @@ export default function GoalsPage() {
       {show && (
         <FadeItem>
           <form onSubmit={handleSave} className="mp-card space-y-3 rounded-2xl p-5">
-            <p className="text-sm font-medium">{editId ? "Редактировать цель" : "Новая цель"}</p>
+            <p className="text-sm font-medium">{editId ? tr("editGoal") : tr("newGoal")}</p>
             <div className="grid gap-3 sm:grid-cols-2">
               <input
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder="Название"
+                placeholder={tr("goalTitleLabel")}
                 required
                 className="rounded-xl border border-white/10 bg-slate-900 px-3 py-2.5 text-sm"
               />
@@ -123,7 +146,7 @@ export default function GoalsPage() {
                 type="number"
                 value={target}
                 onChange={(e) => setTarget(e.target.value)}
-                placeholder={`Сумма ${cur}`}
+                placeholder={tr("goalAmountLabel", { cur })}
                 required
                 min="1"
                 className="rounded-xl border border-white/10 bg-slate-900 px-3 py-2.5 text-sm"
@@ -131,7 +154,7 @@ export default function GoalsPage() {
               <input
                 value={emoji}
                 onChange={(e) => setEmoji(e.target.value)}
-                placeholder="Эмодзи"
+                placeholder={tr("emoji")}
                 className="rounded-xl border border-white/10 bg-slate-900 px-3 py-2.5 text-sm"
               />
               <input
@@ -143,7 +166,7 @@ export default function GoalsPage() {
             </div>
             <div className="flex gap-2">
               <button type="submit" className="rounded-xl bg-violet-500 px-4 py-2.5 text-sm font-semibold text-white">
-                Сохранить
+                {tr("save")}
               </button>
               <button
                 type="button"
@@ -153,7 +176,7 @@ export default function GoalsPage() {
                 }}
                 className="rounded-xl bg-white/5 px-4 py-2.5 text-sm text-slate-400"
               >
-                Отмена
+                {tr("cancel")}
               </button>
             </div>
           </form>
@@ -161,7 +184,7 @@ export default function GoalsPage() {
       )}
       {data.goals.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-white/10 py-16 text-center text-slate-500">
-          Нет целей
+          {tr("noGoals")}
         </div>
       ) : (
         <div className="grid gap-3 sm:grid-cols-2">
@@ -183,7 +206,7 @@ export default function GoalsPage() {
                       <h3 className="font-semibold">{g.title}</h3>
                       {g.deadline && (
                         <p className="text-[11px] text-slate-500">
-                          до {new Date(g.deadline).toLocaleDateString("ru-RU")}
+                          {tr("goalDeadlinePrefix")} {new Date(g.deadline).toLocaleDateString(lang === "en" ? "en-US" : "ru-RU")}
                         </p>
                       )}
                     </div>
@@ -208,7 +231,7 @@ export default function GoalsPage() {
                 </div>
                 <div className="mt-4">
                   <div className="mb-1 flex justify-between text-sm">
-                    <span className="text-violet-300">{formatMoney(g.currentAmount, cur)}</span>
+                    <span style={{ color: "var(--page-accent)" }}>{formatMoney(g.currentAmount, cur)}</span>
                     <span className="text-slate-500">{formatMoney(g.targetAmount, cur)}</span>
                   </div>
                   <div className="h-2.5 overflow-hidden rounded-full bg-slate-800">
@@ -216,10 +239,13 @@ export default function GoalsPage() {
                       initial={{ width: 0 }}
                       animate={{ width: `${progress}%` }}
                       transition={{ duration: 0.9 }}
-                      className="h-full rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-500"
+                      className="h-full rounded-full"
+                      style={{ background: "linear-gradient(90deg, var(--page-accent), var(--page-accent-2))" }}
                     />
                   </div>
-                  <p className="mt-1 text-right text-xs text-violet-400">{progress}%</p>
+                  <p className="mt-1 text-right text-xs" style={{ color: "var(--page-accent)" }}>
+                    {progress}%
+                  </p>
                 </div>
                 {left > 0 && (
                   <div className="mt-3 flex flex-wrap gap-1.5">
@@ -227,7 +253,12 @@ export default function GoalsPage() {
                       <button
                         key={amt}
                         onClick={() => addTo(g.id, amt)}
-                        className="rounded-lg bg-violet-500/10 px-2.5 py-1 text-[11px] text-violet-300 ring-1 ring-violet-500/20 hover:bg-violet-500/20"
+                        className="rounded-lg px-2.5 py-1 text-[11px] transition hover:brightness-110"
+                        style={{
+                          background: "rgba(var(--page-accent-rgb),0.1)",
+                          color: "var(--page-accent)",
+                          boxShadow: "inset 0 0 0 1px rgba(var(--page-accent-rgb),0.2)",
+                        }}
                       >
                         +{formatMoney(amt, cur)}
                       </button>
@@ -235,7 +266,7 @@ export default function GoalsPage() {
                   </div>
                 )}
                 {progress >= 100 && (
-                  <p className="mt-2 text-center text-sm text-emerald-400">Готово ✓</p>
+                  <p className="mt-2 text-center text-sm text-emerald-400">{tr("doneCheckmark")}</p>
                 )}
               </TiltCard>
               </motion.div>

@@ -3,13 +3,18 @@
 import { useMemo, useState } from "react";
 import { useRealtimeData } from "@/hooks/useRealtimeData";
 import { PageShell, FadeItem } from "@/components/motion/PageShell";
+import TiltCard from "@/components/motion/TiltCard";
+import { LetterReveal } from "@/components/motion/Reveal";
 import { formatMoney } from "@/lib/types";
 import TransactionList from "@/components/TransactionList";
 import { motion } from "framer-motion";
+import { useApp } from "@/components/AppProvider";
+import { TKey } from "@/lib/i18n";
 
-const WEEKDAYS = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"];
+const WEEKDAY_KEYS: TKey[] = ["dayMon", "dayTue", "dayWed", "dayThu", "dayFri", "daySat", "daySun"];
 
 export default function CalendarPage() {
+  const { tr, lang } = useApp();
   const { data, refresh } = useRealtimeData(0);
   const [cursor, setCursor] = useState(() => {
     const d = new Date();
@@ -57,20 +62,26 @@ export default function CalendarPage() {
 
   const dayInfo = byDay[selected] || { income: 0, expense: 0, count: 0 };
   const dayTx = data?.transactions.filter((t) => t.date === selected) || [];
-  const monthLabel = cursor.toLocaleDateString("ru-RU", { month: "long", year: "numeric" });
+  const locale = lang === "en" ? "en-US" : "ru-RU";
+  const monthLabel = cursor.toLocaleDateString(locale, { month: "long", year: "numeric" });
 
-  if (!data) return <div className="py-20 text-center text-slate-500">Загрузка...</div>;
+  if (!data) return <div className="py-20 text-center text-slate-500">{tr("loading")}</div>;
 
   return (
-    <PageShell>
+    <PageShell className="page-accent-teal">
       <FadeItem>
-        <p className="text-xs font-medium uppercase tracking-widest text-emerald-400/80">MoneyPulse</p>
-        <h1 className="mt-1 text-3xl font-bold">Финансовый календарь</h1>
-        <p className="mt-1 text-sm text-slate-400">Дни подсвечены по уровню расходов</p>
+        <p className="text-xs font-medium uppercase tracking-widest" style={{ color: "var(--page-accent)" }}>
+          MoneyPulse
+        </p>
+        <h1 className="mt-1 text-3xl font-bold">
+          <LetterReveal text={tr("calendarHeroTitle")} />
+        </h1>
+        <p className="mt-1 text-sm text-slate-400">{tr("calendarHeroSubtitle")}</p>
       </FadeItem>
 
-      <FadeItem className="mp-card rounded-2xl p-4 sm:p-5">
-        <div className="mb-4 flex items-center justify-between">
+      <FadeItem>
+        <TiltCard className="mp-card rounded-2xl p-4 sm:p-5">
+        <div className="mb-4 flex items-center justify-between rounded-xl mp-heat-drift px-3 py-2">
           <button
             onClick={() => setCursor(new Date(year, month - 1, 1))}
             className="rounded-lg px-3 py-1.5 text-sm ring-1 ring-white/10 hover:bg-white/5"
@@ -87,9 +98,9 @@ export default function CalendarPage() {
         </div>
 
         <div className="grid grid-cols-7 gap-1 text-center text-[10px] text-slate-500">
-          {WEEKDAYS.map((w) => (
+          {WEEKDAY_KEYS.map((w) => (
             <div key={w} className="py-1 font-medium">
-              {w}
+              {tr(w)}
             </div>
           ))}
         </div>
@@ -105,21 +116,20 @@ export default function CalendarPage() {
                 key={c.key}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => setSelected(c.key)}
-                className={`relative flex aspect-square flex-col items-center justify-center rounded-xl text-xs ${
-                  isSel
-                    ? "ring-2 ring-emerald-400/60"
-                    : "ring-1 ring-white/5 hover:ring-white/15"
+                className={`relative flex aspect-square flex-col items-center justify-center rounded-xl text-xs ring-1 ${
+                  isSel ? "" : "ring-white/5 hover:ring-white/15"
                 }`}
                 style={{
                   background:
                     intensity > 0
                       ? `rgba(251, 113, 133, ${0.08 + intensity * 0.35})`
                       : info?.income
-                      ? "rgba(52, 211, 153, 0.12)"
+                      ? "rgba(var(--page-accent-2-rgb), 0.14)"
                       : "transparent",
+                  boxShadow: isSel ? "0 0 0 2px var(--page-accent)" : undefined,
                 }}
               >
-                <span className={`font-semibold ${isToday ? "text-emerald-400" : "text-slate-200"}`}>
+                <span className={`font-semibold ${isToday ? "" : "text-slate-200"}`} style={isToday ? { color: "var(--page-accent)" } : undefined}>
                   {c.day}
                 </span>
                 {info && info.count > 0 && (
@@ -129,28 +139,30 @@ export default function CalendarPage() {
             );
           })}
         </div>
+        </TiltCard>
       </FadeItem>
 
-      <FadeItem className="mp-card rounded-2xl p-5">
+      <FadeItem>
+        <TiltCard className="mp-card rounded-2xl p-5">
         <h3 className="text-sm font-semibold">
-          {new Date(selected).toLocaleDateString("ru-RU", {
+          {new Date(selected).toLocaleDateString(locale, {
             day: "numeric",
             month: "long",
             year: "numeric",
           })}
         </h3>
         <div className="mt-3 grid grid-cols-3 gap-2 text-center text-sm">
-          <div className="rounded-xl bg-emerald-500/10 p-3">
-            <p className="text-[10px] text-slate-500">Доход</p>
+          <div className="rounded-xl p-3" style={{ background: "rgba(var(--page-accent-2-rgb), 0.12)" }}>
+            <p className="text-[10px] text-slate-500">{tr("incomeLabel")}</p>
             <p className="font-bold text-emerald-400">+{formatMoney(dayInfo.income, cur)}</p>
           </div>
           <div className="rounded-xl bg-rose-500/10 p-3">
-            <p className="text-[10px] text-slate-500">Расход</p>
+            <p className="text-[10px] text-slate-500">{tr("expense")}</p>
             <p className="font-bold text-rose-400">−{formatMoney(dayInfo.expense, cur)}</p>
           </div>
           <div className="rounded-xl bg-white/5 p-3">
-            <p className="text-[10px] text-slate-500">Баланс дня</p>
-            <p className="font-bold text-cyan-300">
+            <p className="text-[10px] text-slate-500">{tr("dayBalance")}</p>
+            <p className="font-bold" style={{ color: "var(--page-accent)" }}>
               {formatMoney(dayInfo.income - dayInfo.expense, cur)}
             </p>
           </div>
@@ -163,6 +175,7 @@ export default function CalendarPage() {
             pageSize={10}
           />
         </div>
+        </TiltCard>
       </FadeItem>
     </PageShell>
   );

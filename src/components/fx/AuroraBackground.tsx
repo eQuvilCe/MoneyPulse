@@ -3,8 +3,20 @@
 import { useEffect } from "react";
 import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
 
-export default function AuroraBackground({ intensity = 1 }: { intensity?: number }) {
+/** Three "R,G,B" triplets (no rgba()/spaces required) tinting the three drifting blobs. */
+export type AuroraPalette = [string, string, string];
+
+const DEFAULT_PALETTE: AuroraPalette = ["60,242,176", "56,189,248", "139,92,246"];
+
+export default function AuroraBackground({
+  intensity = 1,
+  palette = DEFAULT_PALETTE,
+}: {
+  intensity?: number;
+  palette?: AuroraPalette;
+}) {
   const o = 0.55 * intensity;
+  const [c1, c2, c3] = palette;
 
   const mx = useMotionValue(0);
   const my = useMotionValue(0);
@@ -36,7 +48,7 @@ export default function AuroraBackground({ intensity = 1 }: { intensity?: number
         style={{
           x: ax,
           y: ay,
-          background: `radial-gradient(circle, rgba(60,242,176,${0.22 * intensity}) 0%, transparent 65%)`,
+          background: `radial-gradient(circle, rgba(${c1},${0.22 * intensity}) 0%, transparent 65%)`,
           opacity: o,
           animationName: "mp-aurora-a",
           animationDuration: "28s",
@@ -49,7 +61,7 @@ export default function AuroraBackground({ intensity = 1 }: { intensity?: number
         style={{
           x: bx,
           y: by,
-          background: `radial-gradient(circle, rgba(56,189,248,${0.2 * intensity}) 0%, transparent 65%)`,
+          background: `radial-gradient(circle, rgba(${c2},${0.2 * intensity}) 0%, transparent 65%)`,
           opacity: o,
           animationName: "mp-aurora-b",
           animationDuration: "32s",
@@ -62,7 +74,7 @@ export default function AuroraBackground({ intensity = 1 }: { intensity?: number
         style={{
           x: cx,
           y: cy,
-          background: `radial-gradient(circle, rgba(139,92,246,${0.16 * intensity}) 0%, transparent 65%)`,
+          background: `radial-gradient(circle, rgba(${c3},${0.16 * intensity}) 0%, transparent 65%)`,
           opacity: o,
           animationName: "mp-aurora-c",
           animationDuration: "26s",

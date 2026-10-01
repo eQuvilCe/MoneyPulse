@@ -3,8 +3,14 @@
 import { useEffect } from "react";
 import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
 
+/** Three "R,G,B" triplets (no rgba()/spaces required) tinting the three drifting blobs + dots. */
+export type DepthPalette = [string, string, string];
+
+const DEFAULT_PALETTE: DepthPalette = ["60,242,176", "56,189,248", "139,92,246"];
+
 /** CSS 3D depth field — mouse parallax, no WebGL */
-export default function DepthScene() {
+export default function DepthScene({ palette = DEFAULT_PALETTE }: { palette?: DepthPalette }) {
+  const [c1, c2, c3] = palette;
   const mx = useMotionValue(0);
   const my = useMotionValue(0);
   const sx = useSpring(mx, { stiffness: 40, damping: 22 });
@@ -33,7 +39,7 @@ export default function DepthScene() {
         style={{
           x: x1,
           y: y1,
-          background: "radial-gradient(circle, rgba(60,242,176,0.2) 0%, transparent 68%)",
+          background: `radial-gradient(circle, rgba(${c1},0.2) 0%, transparent 68%)`,
           filter: "blur(48px)",
         }}
         animate={{ scale: [1, 1.1, 1], opacity: [0.65, 1, 0.65] }}
@@ -44,7 +50,7 @@ export default function DepthScene() {
         style={{
           x: x2,
           y: y2,
-          background: "radial-gradient(circle, rgba(56,189,248,0.18) 0%, transparent 65%)",
+          background: `radial-gradient(circle, rgba(${c2},0.18) 0%, transparent 65%)`,
           filter: "blur(56px)",
         }}
         animate={{ scale: [1.06, 0.94, 1.06] }}
@@ -55,7 +61,7 @@ export default function DepthScene() {
         style={{
           x: x3,
           y: y3,
-          background: "radial-gradient(circle, rgba(139,92,246,0.14) 0%, transparent 70%)",
+          background: `radial-gradient(circle, rgba(${c3},0.14) 0%, transparent 70%)`,
           filter: "blur(60px)",
         }}
         animate={{ opacity: [0.45, 0.9, 0.45] }}
@@ -68,8 +74,8 @@ export default function DepthScene() {
           style={{
             left: `${10 + i * 14}%`,
             top: `${18 + (i % 4) * 16}%`,
-            background: i % 2 === 0 ? "rgba(56,189,248,0.7)" : "rgba(60,242,176,0.65)",
-            boxShadow: "0 0 14px rgba(56,189,248,0.55)",
+            background: i % 2 === 0 ? `rgba(${c2},0.7)` : `rgba(${c1},0.65)`,
+            boxShadow: `0 0 14px rgba(${c2},0.55)`,
           }}
           animate={{ y: [0, -20 - i * 3, 0], opacity: [0.25, 1, 0.25], scale: [1, 1.4, 1] }}
           transition={{ duration: 3.8 + i * 0.55, repeat: Infinity, ease: "easeInOut", delay: i * 0.25 }}

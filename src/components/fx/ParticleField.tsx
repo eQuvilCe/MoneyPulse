@@ -6,8 +6,14 @@ type Particle = { x: number; y: number; vx: number; vy: number };
 
 export default function ParticleField({
   density = "normal",
+  colorRgb = "56,189,248",
+  lineRgb = "60,242,176",
 }: {
   density?: "normal" | "strong" | "app";
+  /** "R,G,B" triplet for the dot fill (no rgba()/spaces required). */
+  colorRgb?: string;
+  /** "R,G,B" triplet for the connecting-line stroke. */
+  lineRgb?: string;
 }) {
   const ref = useRef<HTMLCanvasElement>(null);
 
@@ -75,7 +81,7 @@ export default function ParticleField({
 
         ctx.beginPath();
         ctx.arc(p.x, p.y, 1.1, 0, Math.PI * 2);
-        ctx.fillStyle = density === "app" ? "rgba(56,189,248,0.32)" : "rgba(56,189,248,0.5)";
+        ctx.fillStyle = density === "app" ? `rgba(${colorRgb},0.32)` : `rgba(${colorRgb},0.5)`;
         ctx.fill();
 
         for (let j = i + 1; j < particles.length; j++) {
@@ -88,7 +94,7 @@ export default function ParticleField({
             ctx.moveTo(p.x, p.y);
             ctx.lineTo(q.x, q.y);
             const a = density === "app" ? 0.07 : 0.11;
-            ctx.strokeStyle = `rgba(60,242,176,${a * (1 - d / linkDist)})`;
+            ctx.strokeStyle = `rgba(${lineRgb},${a * (1 - d / linkDist)})`;
             ctx.lineWidth = 0.55;
             ctx.stroke();
           }
@@ -116,7 +122,7 @@ export default function ParticleField({
       window.removeEventListener("resize", onResize);
       document.removeEventListener("visibilitychange", onVis);
     };
-  }, [density]);
+  }, [density, colorRgb, lineRgb]);
 
   return (
     <canvas

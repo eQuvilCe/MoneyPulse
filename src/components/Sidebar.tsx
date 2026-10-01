@@ -102,7 +102,7 @@ export default function Sidebar() {
     { href: "/budgets", label: tr("budgets"), icon: "▦" },
     { href: "/goals", label: tr("goals"), icon: "◎" },
     { href: "/subscriptions", label: tr("subscriptions"), icon: "↻" },
-    { href: "/accounts", label: tr("accounts"), icon: "⬡" },
+    { href: "/family", label: tr("family"), icon: "👪" },
     { href: "/banks", label: tr("banks"), icon: "⇄" },
     { href: "/calendar", label: tr("calendar"), icon: "▦" },
     { href: "/analytics", label: tr("analytics"), icon: "◈" },

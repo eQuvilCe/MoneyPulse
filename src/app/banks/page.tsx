@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { PageShell, FadeItem } from "@/components/motion/PageShell";
+import TiltCard from "@/components/motion/TiltCard";
+import { LetterReveal } from "@/components/motion/Reveal";
 import Link from "next/link";
 import { parseBankSms, guessCategory } from "@/lib/smsParser";
 import { addTransaction } from "@/lib/storage";
@@ -78,10 +80,14 @@ export default function BanksPage() {
   };
 
   return (
-    <PageShell>
+    <PageShell className="page-accent-rose">
       <FadeItem>
-        <p className="text-xs font-medium uppercase tracking-widest text-emerald-400/80">MoneyPulse</p>
-        <h1 className="mt-1 text-3xl font-bold">{tr("banksTitle")}</h1>
+        <p className="text-xs font-medium uppercase tracking-widest" style={{ color: "var(--page-accent)" }}>
+          MoneyPulse
+        </p>
+        <h1 className="mt-1 text-3xl font-bold">
+          <LetterReveal text={tr("banksTitle")} />
+        </h1>
         <p className="mt-1 text-sm text-slate-400">{tr("banksHint")}</p>
       </FadeItem>
 
@@ -92,16 +98,23 @@ export default function BanksPage() {
           { name: "Humo", tip: lang === "ru" ? "SMS / push → сюда" : "SMS / push → here" },
           { name: "Visa / MC", tip: lang === "ru" ? "Международные карты" : "International cards" },
         ].map((c) => (
-          <div key={c.name} className="mp-card rounded-2xl px-4 py-3 text-center">
+          <TiltCard key={c.name} className="mp-card rounded-2xl px-4 py-3 text-center">
             <p className="text-sm font-bold text-white">{c.name}</p>
             <p className="mt-1 text-[11px] text-slate-500">{c.tip}</p>
-          </div>
+          </TiltCard>
         ))}
       </FadeItem>
 
       {/* MoneyPulse Card vision */}
-      <FadeItem className="rounded-2xl border border-cyan-500/25 bg-gradient-to-br from-cyan-500/10 to-emerald-500/5 px-4 py-4 text-xs leading-relaxed text-slate-300">
-        <p className="font-semibold text-cyan-200">
+      <FadeItem>
+        <div
+          className="rounded-2xl border px-4 py-4 text-xs leading-relaxed text-slate-300"
+          style={{
+            borderColor: "rgba(var(--page-accent-rgb), 0.25)",
+            background: "linear-gradient(135deg, rgba(var(--page-accent-rgb),0.12), rgba(var(--page-accent-2-rgb),0.05))",
+          }}
+        >
+        <p className="font-semibold" style={{ color: "var(--page-accent)" }}>
           {lang === "ru" ? "Идея: карта MoneyPulse" : "Idea: MoneyPulse card"}
         </p>
         <p className="mt-1">
@@ -109,6 +122,7 @@ export default function BanksPage() {
             ? "Своя карта без % на пополнение, все платежи и зарплата сразу в приложении: где, кому, когда. Пока — через SMS банков. Open Banking / партнёрский BIN — roadmap Pro."
             : "Your own card with no top-up fee; every payment and salary appears here: where, who, when. For now — bank SMS. Open Banking / partner BIN is Pro roadmap."}
         </p>
+        </div>
       </FadeItem>
 
       {/* How it works */}
@@ -126,7 +140,9 @@ export default function BanksPage() {
         )}
       </FadeItem>
 
-      <FadeItem className="mp-card space-y-3 rounded-2xl p-5">
+      <FadeItem>
+        <TiltCard className="mp-card rounded-2xl p-5">
+        <div className="space-y-3">
         <h2 className="text-sm font-bold text-white">{tr("pasteSms")}</h2>
         <p className="text-xs text-slate-500">
           {lang === "ru"
@@ -141,12 +157,18 @@ export default function BanksPage() {
           }}
           rows={4}
           placeholder={lang === "ru" ? "Вставь текст уведомления…" : "Paste notification text…"}
-          className="w-full rounded-xl border border-white/10 bg-slate-900 px-3 py-2.5 text-sm outline-none focus:border-emerald-500/40"
+          className="w-full rounded-xl border border-white/10 bg-slate-900 px-3 py-2.5 text-sm outline-none"
+          style={{ borderColor: "var(--mp-border)" }}
         />
         <button
           type="button"
           onClick={tryParse}
-          className="rounded-xl bg-cyan-500/20 px-4 py-2 text-sm font-semibold text-cyan-300 ring-1 ring-cyan-500/30"
+          className="rounded-xl px-4 py-2 text-sm font-semibold ring-1"
+          style={{
+            background: "rgba(var(--page-accent-rgb), 0.2)",
+            color: "var(--page-accent)",
+            boxShadow: "inset 0 0 0 1px rgba(var(--page-accent-rgb), 0.3)",
+          }}
         >
           {tr("parse")}
         </button>
@@ -182,9 +204,13 @@ export default function BanksPage() {
             </div>
           </div>
         )}
+        </div>
+        </TiltCard>
       </FadeItem>
 
-      <FadeItem className="mp-card space-y-3 rounded-2xl p-5">
+      <FadeItem>
+        <TiltCard className="mp-card rounded-2xl p-5">
+        <div className="space-y-3">
         <h2 className="text-sm font-bold">{tr("pdfStatement")}</h2>
         <p className="text-xs text-slate-500">
           {lang === "ru"
@@ -212,12 +238,15 @@ export default function BanksPage() {
           />
         </label>
         {pdfNote && <p className="text-xs leading-relaxed text-amber-200/90">{pdfNote}</p>}
-        <Link href="/settings" className="text-xs text-emerald-400 hover:underline">
+        <Link href="/settings" className="text-xs hover:underline" style={{ color: "var(--page-accent)" }}>
           {tr("import")} CSV →
         </Link>
+        </div>
+        </TiltCard>
       </FadeItem>
 
-      <FadeItem className="mp-card rounded-2xl p-5">
+      <FadeItem>
+        <TiltCard className="mp-card rounded-2xl p-5">
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-sm font-bold">{tr("accounts")}</h2>
@@ -225,12 +254,6 @@ export default function BanksPage() {
               {lang === "ru" ? "Балансы по картам и счетам" : "Balances per card & account"}
             </p>
           </div>
-          <Link
-            href="/accounts"
-            className="rounded-xl bg-white/5 px-3 py-2 text-xs font-semibold ring-1 ring-white/10"
-          >
-            →
-          </Link>
         </div>
         {accounts.length === 0 ? (
           <p className="mt-4 text-sm text-slate-500">{tr("noAccounts")}</p>
@@ -246,18 +269,21 @@ export default function BanksPage() {
             ))}
           </div>
         )}
+        </TiltCard>
       </FadeItem>
 
       <FadeItem className="space-y-2">
         <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">{tr("autoSync")}</p>
         {PROVIDERS.map((p) => (
-          <div key={p.name} className="mp-card flex items-center justify-between rounded-2xl px-4 py-3">
-            <div>
-              <p className="text-sm font-medium">{p.name}</p>
-              <p className="text-[11px] text-slate-500">{p.region}</p>
+          <TiltCard key={p.name} className="mp-card rounded-2xl px-4 py-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium">{p.name}</p>
+                <p className="text-[11px] text-slate-500">{p.region}</p>
+              </div>
+              <span className="text-[11px] text-slate-500">{tr(p.statusKey)}</span>
             </div>
-            <span className="text-[11px] text-slate-500">{tr(p.statusKey)}</span>
-          </div>
+          </TiltCard>
         ))}
       </FadeItem>
     </PageShell>

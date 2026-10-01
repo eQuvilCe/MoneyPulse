@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getPrisma } from "@/lib/prisma";
 import { rateLimit } from "@/lib/server-auth";
 import { apiError } from "@/lib/api-errors";
+import { waitlistSchema, parseOrThrow, validationErrorResponse } from "@/lib/validation";
 
 export async function POST(req: NextRequest) {
   const ip = req.headers.get("x-forwarded-for") || "local";
@@ -9,23 +10,21 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Too many requests" }, { status: 429 });
   }
   try {
-    const body = await req.json();
-    const email = String(body.email || "").trim().toLowerCase();
-    if (!email || !email.includes("@")) {
-      return NextResponse.json({ error: "Valid email required" }, { status: 400 });
-    }
+    const body = parseOrThrow(waitlistSchema, await req.json());
     const prisma = getPrisma();
     if (!prisma) {
       return NextResponse.json({ error: "DATABASE_URL is not set" }, { status: 503 });
     }
     // Idempotent upsert — never reveal whether the email already signed up.
     await prisma.waitlistEntry.upsert({
-      where: { email },
-      create: { email, source: String(body.source || "pricing") },
+      where: { email: body.email },
+      create: { email: body.email, source: body.source || "pricing" },
       update: {},
     });
     return NextResponse.json({ ok: true });
   } catch (e) {
+    const vErr = validationErrorResponse(e);
+    if (vErr) return vErr;
     return apiError(e);
   }
 }
