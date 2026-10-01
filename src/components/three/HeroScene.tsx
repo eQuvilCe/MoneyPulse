@@ -1,70 +1,73 @@
 "use client";
 
-import { useMemo, useRef } from "react";
+import { useRef, useState } from "react";
 import { Canvas, useFrame, type RootState } from "@react-three/fiber";
 import * as THREE from "three";
 
 const PALETTE = ["#3cf2b0", "#38bdf8", "#8b5cf6"];
 const PARTICLE_COUNT = 700;
 
+const LEDGER_VERTEX_SHADER = `
+  uniform float uTime;
+  varying float vHeight;
+  varying float vDist;
+  void main() {
+    vec3 pos = position;
+    float wave = sin(pos.x * 0.35 + uTime * 0.6) * 0.5 + cos(pos.y * 0.3 - uTime * 0.4) * 0.4;
+    pos.z += wave;
+    vHeight = wave;
+    vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
+    vDist = -mvPosition.z;
+    gl_Position = projectionMatrix * mvPosition;
+  }
+`;
+
+const LEDGER_FRAGMENT_SHADER = `
+  uniform vec3 uColorA;
+  uniform vec3 uColorB;
+  uniform vec3 uFogColor;
+  uniform float uFogNear;
+  uniform float uFogFar;
+  varying float vHeight;
+  varying float vDist;
+  void main() {
+    float t = clamp(vHeight * 0.5 + 0.5, 0.0, 1.0);
+    vec3 color = mix(uColorA, uColorB, t);
+    float fogFactor = clamp((vDist - uFogNear) / (uFogFar - uFogNear), 0.0, 1.0);
+    color = mix(color, uFogColor, fogFactor);
+    float alpha = mix(0.22, 0.0, fogFactor);
+    gl_FragColor = vec4(color, alpha);
+  }
+`;
+
+const LEDGER_UNIFORMS = {
+  uTime: { value: 0 },
+  uColorA: { value: new THREE.Color(PALETTE[1]) },
+  uColorB: { value: new THREE.Color(PALETTE[2]) },
+  uFogColor: { value: new THREE.Color("#05070d") },
+  uFogNear: { value: 12 },
+  uFogFar: { value: 26 },
+};
+
 /** Undulating wireframe floor — the "ledger" surface transactions flow across. */
 function LedgerFloor() {
-  const mesh = useRef<THREE.Mesh>(null);
-  const material = useMemo(
-    () =>
-      new THREE.ShaderMaterial({
-        transparent: true,
-        wireframe: true,
-        uniforms: {
-          uTime: { value: 0 },
-          uColorA: { value: new THREE.Color(PALETTE[1]) },
-          uColorB: { value: new THREE.Color(PALETTE[2]) },
-          uFogColor: { value: new THREE.Color("#05070d") },
-          uFogNear: { value: 12 },
-          uFogFar: { value: 26 },
-        },
-        vertexShader: `
-          uniform float uTime;
-          varying float vHeight;
-          varying float vDist;
-          void main() {
-            vec3 pos = position;
-            float wave = sin(pos.x * 0.35 + uTime * 0.6) * 0.5 + cos(pos.y * 0.3 - uTime * 0.4) * 0.4;
-            pos.z += wave;
-            vHeight = wave;
-            vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
-            vDist = -mvPosition.z;
-            gl_Position = projectionMatrix * mvPosition;
-          }
-        `,
-        fragmentShader: `
-          uniform vec3 uColorA;
-          uniform vec3 uColorB;
-          uniform vec3 uFogColor;
-          uniform float uFogNear;
-          uniform float uFogFar;
-          varying float vHeight;
-          varying float vDist;
-          void main() {
-            float t = clamp(vHeight * 0.5 + 0.5, 0.0, 1.0);
-            vec3 color = mix(uColorA, uColorB, t);
-            float fogFactor = clamp((vDist - uFogNear) / (uFogFar - uFogNear), 0.0, 1.0);
-            color = mix(color, uFogColor, fogFactor);
-            float alpha = mix(0.22, 0.0, fogFactor);
-            gl_FragColor = vec4(color, alpha);
-          }
-        `,
-      }),
-    []
-  );
+  const material = useRef<THREE.ShaderMaterial>(null);
 
   useFrame((state) => {
-    material.uniforms.uTime.value = state.clock.elapsedTime;
+    if (material.current) material.current.uniforms.uTime.value = state.clock.elapsedTime;
   });
 
   return (
-    <mesh ref={mesh} position={[0, -1.4, -4]} rotation={[-Math.PI / 2.6, 0, 0]} material={material}>
+    <mesh position={[0, -1.4, -4]} rotation={[-Math.PI / 2.6, 0, 0]}>
       <planeGeometry args={[64, 20, 96, 36]} />
+      <shaderMaterial
+        ref={material}
+        transparent
+        wireframe
+        uniforms={LEDGER_UNIFORMS}
+        vertexShader={LEDGER_VERTEX_SHADER}
+        fragmentShader={LEDGER_FRAGMENT_SHADER}
+      />
     </mesh>
   );
 }
@@ -72,7 +75,7 @@ function LedgerFloor() {
 /** Sparse glowing points drifting upward — transactions accumulating into balance. */
 function TransactionStream() {
   const points = useRef<THREE.Points>(null);
-  const { positions, speeds, colors } = useMemo(() => {
+  const [{ positions, speeds, colors }] = useState(() => {
     const positions = new Float32Array(PARTICLE_COUNT * 3);
     const speeds = new Float32Array(PARTICLE_COUNT);
     const colors = new Float32Array(PARTICLE_COUNT * 3);
@@ -88,7 +91,7 @@ function TransactionStream() {
       colors[i * 3 + 2] = color.b;
     }
     return { positions, speeds, colors };
-  }, []);
+  });
 
   useFrame((_, delta) => {
     const geo = points.current?.geometry;
