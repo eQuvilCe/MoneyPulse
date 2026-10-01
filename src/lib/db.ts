@@ -51,39 +51,44 @@ export function getEmptyData(): FinanceData {
 
 /** Demo / showcase only */
 export function getDemoData(): FinanceData {
+  // Every demo account gets fresh rows in a shared, globally-keyed table — reusing the
+  // same literal ids ("1", "g1", ...) across demo users would collide on the DB's unique
+  // constraint after the first one. Suffix each with a per-call random seed instead.
+  const seed = crypto.randomUUID().slice(0, 8);
+  const uid = (s: string) => `${s}-${seed}`;
   return {
     transactions: [
-      { id: "1", type: "income", amount: 120000, category: "зарплата", description: "Зарплата — сентябрь", date: daysAgo(2) },
-      { id: "2", type: "income", amount: 18000, category: "фриланс", description: "Проект для клиента", date: daysAgo(5) },
-      { id: "3", type: "income", amount: 4500, category: "инвестиции", description: "Дивиденды", date: daysAgo(10) },
-      { id: "4", type: "expense", amount: 28000, category: "жильё", description: "Аренда квартиры", date: daysAgo(1), recurring: true },
-      { id: "t0", type: "expense", amount: 890, category: "еда", description: "Кофе и обед", date: daysAgo(0) },
-      { id: "5", type: "expense", amount: 12500, category: "еда", description: "Продукты + рестораны", date: daysAgo(1) },
-      { id: "6", type: "expense", amount: 4200, category: "транспорт", description: "Метро, такси, бензин", date: daysAgo(2) },
-      { id: "7", type: "expense", amount: 6800, category: "развлечения", description: "Кино, бары, Netflix", date: daysAgo(3) },
-      { id: "8", type: "expense", amount: 3200, category: "подписки", description: "Spotify, iCloud, ChatGPT", date: daysAgo(4), recurring: true },
-      { id: "9", type: "expense", amount: 8900, category: "одежда", description: "Куртка и кроссовки", date: daysAgo(7) },
-      { id: "10", type: "expense", amount: 2500, category: "здоровье", description: "Аптека + витамины", date: daysAgo(8) },
-      { id: "11", type: "expense", amount: 5500, category: "еда", description: "Доставка еды", date: daysAgo(6) },
-      { id: "12", type: "expense", amount: 1500, category: "транспорт", description: "Такси вечером", date: daysAgo(9) },
-      { id: "13", type: "expense", amount: 4000, category: "образование", description: "Курс по инвестициям", date: daysAgo(12) },
-      { id: "14", type: "expense", amount: 2100, category: "развлечения", description: "Концерт", date: daysAgo(14) },
+      { id: uid("1"), type: "income", amount: 120000, category: "зарплата", description: "Зарплата — сентябрь", date: daysAgo(2) },
+      { id: uid("2"), type: "income", amount: 18000, category: "фриланс", description: "Проект для клиента", date: daysAgo(5) },
+      { id: uid("3"), type: "income", amount: 4500, category: "инвестиции", description: "Дивиденды", date: daysAgo(10) },
+      { id: uid("4"), type: "expense", amount: 28000, category: "жильё", description: "Аренда квартиры", date: daysAgo(1), recurring: true },
+      { id: uid("t0"), type: "expense", amount: 890, category: "еда", description: "Кофе и обед", date: daysAgo(0) },
+      { id: uid("5"), type: "expense", amount: 12500, category: "еда", description: "Продукты + рестораны", date: daysAgo(1) },
+      { id: uid("6"), type: "expense", amount: 4200, category: "транспорт", description: "Метро, такси, бензин", date: daysAgo(2) },
+      { id: uid("7"), type: "expense", amount: 6800, category: "развлечения", description: "Кино, бары, Netflix", date: daysAgo(3) },
+      { id: uid("8"), type: "expense", amount: 3200, category: "подписки", description: "Spotify, iCloud, ChatGPT", date: daysAgo(4), recurring: true },
+      { id: uid("9"), type: "expense", amount: 8900, category: "одежда", description: "Куртка и кроссовки", date: daysAgo(7) },
+      { id: uid("10"), type: "expense", amount: 2500, category: "здоровье", description: "Аптека + витамины", date: daysAgo(8) },
+      { id: uid("11"), type: "expense", amount: 5500, category: "еда", description: "Доставка еды", date: daysAgo(6) },
+      { id: uid("12"), type: "expense", amount: 1500, category: "транспорт", description: "Такси вечером", date: daysAgo(9) },
+      { id: uid("13"), type: "expense", amount: 4000, category: "образование", description: "Курс по инвестициям", date: daysAgo(12) },
+      { id: uid("14"), type: "expense", amount: 2100, category: "развлечения", description: "Концерт", date: daysAgo(14) },
     ],
     goals: [
-      { id: "g1", title: "Отпуск в Бали", targetAmount: 25000000, currentAmount: 8700000, deadline: monthsAhead(8), emoji: "🏖️", color: "#22d3ee" },
-      { id: "g2", title: "MacBook Pro", targetAmount: 18000000, currentAmount: 6500000, deadline: monthsAhead(4), emoji: "💻", color: "#a78bfa" },
-      { id: "g3", title: "Подушка безопасности", targetAmount: 30000000, currentAmount: 12000000, deadline: monthsAhead(12), emoji: "🛡️", color: "#34d399" },
+      { id: uid("g1"), title: "Отпуск в Бали", targetAmount: 25000000, currentAmount: 8700000, deadline: monthsAhead(8), emoji: "🏖️", color: "#22d3ee" },
+      { id: uid("g2"), title: "MacBook Pro", targetAmount: 18000000, currentAmount: 6500000, deadline: monthsAhead(4), emoji: "💻", color: "#a78bfa" },
+      { id: uid("g3"), title: "Подушка безопасности", targetAmount: 30000000, currentAmount: 12000000, deadline: monthsAhead(12), emoji: "🛡️", color: "#34d399" },
     ],
     budgets: [
-      { id: "b1", category: "еда", limit: 25000, period: "month" },
-      { id: "b2", category: "развлечения", limit: 8000, period: "month" },
-      { id: "b3", category: "транспорт", limit: 6000, period: "month" },
-      { id: "b4", category: "подписки", limit: 4000, period: "month" },
+      { id: uid("b1"), category: "еда", limit: 25000, period: "month" },
+      { id: uid("b2"), category: "развлечения", limit: 8000, period: "month" },
+      { id: uid("b3"), category: "транспорт", limit: 6000, period: "month" },
+      { id: uid("b4"), category: "подписки", limit: 4000, period: "month" },
     ],
     accounts: [
-      { id: "a1", name: "Наличные", type: "cash", balance: 450000, emoji: "💵" },
-      { id: "a2", name: "Uzcard · Humo", type: "card", balance: 3200000, emoji: "💳" },
-      { id: "a3", name: "Накопления", type: "savings", balance: 8500000, emoji: "📈" },
+      { id: uid("a1"), name: "Наличные", type: "cash", balance: 450000, emoji: "💵" },
+      { id: uid("a2"), name: "Uzcard · Humo", type: "card", balance: 3200000, emoji: "💳" },
+      { id: uid("a3"), name: "Накопления", type: "savings", balance: 8500000, emoji: "📈" },
     ],
     settings: {
       ...emptySettings(),

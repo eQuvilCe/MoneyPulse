@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { loadDataAsync, addGoal, updateGoal, deleteGoal } from "@/lib/storage";
 import { FinanceData, Goal, formatMoney } from "@/lib/types";
 import { PageShell, FadeItem } from "@/components/motion/PageShell";
+import TiltCard from "@/components/motion/TiltCard";
 import { useToast } from "@/components/Toast";
 import AIInsightBar from "@/components/AIInsightBar";
 
@@ -173,8 +174,8 @@ export default function GoalsPage() {
                 initial={{ opacity: 0, y: 14 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.05 }}
-                className="mp-card rounded-2xl p-5"
               >
+              <TiltCard className="mp-card rounded-2xl p-5">
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-2">
                     <span className="text-2xl">{g.emoji}</span>
@@ -236,6 +237,7 @@ export default function GoalsPage() {
                 {progress >= 100 && (
                   <p className="mt-2 text-center text-sm text-emerald-400">Готово ✓</p>
                 )}
+              </TiltCard>
               </motion.div>
             );
           })}
