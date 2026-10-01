@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { useApp } from "@/components/AppProvider";
 import Landing from "@/components/Landing";
-import { AmbientBg } from "@/components/motion/PageShell";
+import BackgroundStage from "@/components/motion/BackgroundStage";
 import { motion } from "framer-motion";
 import { usePathname } from "next/navigation";
 import { useToast } from "@/components/Toast";
@@ -44,10 +44,10 @@ export default function AuthShell({ children }: { children: React.ReactNode }) {
 
   if (!user) return <Landing />;
 
-  // Logged-in shell only — aurora once, never on Landing/Login
+  // Logged-in shell only — one background per route, never on Landing/Login
   return (
     <>
-      <AmbientBg />
+      <BackgroundStage pathname={path} />
       {children}
     </>
   );

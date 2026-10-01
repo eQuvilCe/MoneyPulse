@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { readStore } from "@/lib/db";
+import { readStore, consumeMonthlyAiQuota } from "@/lib/db";
 import {
   generateAIAnalysis,
   getDoctorGreeting,
@@ -125,23 +125,22 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // Freemium: monthly AI chat quota (in-memory + cookie-backed map)
-  const monthlyCap = parseInt(process.env.FREE_AI_MONTHLY_LIMIT || "10", 10);
-  if (user.plan === "free") {
-    const monthKey = new Date().toISOString().slice(0, 7);
-    const qKey = `ai-month:${user.id}:${monthKey}`;
-    if (!rateLimit(qKey, monthlyCap, 40 * 24 * 60 * 60 * 1000)) {
-      return NextResponse.json(
-        {
-          error: `Free plan: ${monthlyCap} AI-запросов в месяц. Upgrade to Pro для безлимита.`,
-          code: "AI_QUOTA",
-        },
-        { status: 402 }
-      );
-    }
-  }
-
   try {
+    // Freemium: monthly AI chat quota, persisted on User.aiUsedMonth/aiMonthKey (survives cold starts).
+    const monthlyCap = parseInt(process.env.FREE_AI_MONTHLY_LIMIT || "10", 10);
+    if (user.plan === "free") {
+      const quota = await consumeMonthlyAiQuota(user.id, monthlyCap);
+      if (!quota.allowed) {
+        return NextResponse.json(
+          {
+            error: `Free plan: ${monthlyCap} AI-запросов в месяц. Upgrade to Pro для безлимита.`,
+            code: "AI_QUOTA",
+          },
+          { status: 402 }
+        );
+      }
+    }
+
     const body = await req.json();
     const data = await readStore(user.id);
     const message = (body.message || body.question || "") as string;

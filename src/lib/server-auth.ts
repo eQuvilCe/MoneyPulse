@@ -2,7 +2,7 @@ import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
 import { randomBytes, scryptSync, timingSafeEqual } from "crypto";
 import { getPrisma, prismaEnabled } from "./prisma";
-import { getDemoData, writeStore } from "./db";
+import { getDemoData, writeStore, UserNotFoundError } from "./db";
 
 const COOKIE = "mp_session";
 
@@ -182,18 +182,15 @@ export async function loginUser(
   if (!em || !pw) {
     return { ok: false, error: "Введи email и пароль" };
   }
+  // Same generic message whether the account doesn't exist or the password is wrong —
+  // distinguishing them lets an attacker enumerate registered emails.
+  const GENERIC_LOGIN_ERROR = "Неверный email или пароль.";
   const found = await prisma.user.findUnique({ where: { email: em } });
   if (!found || !found.salt || !found.passwordHash) {
-    return {
-      ok: false,
-      error: "Аккаунт не найден по этому email. Зарегистрируйся тем же email или проверь опечатку.",
-    };
+    return { ok: false, error: GENERIC_LOGIN_ERROR };
   }
   if (!verifyPassword(pw, found.salt, found.passwordHash)) {
-    return {
-      ok: false,
-      error: "Неверный пароль MoneyPulse. Если забыл — зарегистрируй новый email или восстанови позже.",
-    };
+    return { ok: false, error: GENERIC_LOGIN_ERROR };
   }
   return { ok: true, user: publicUser(found) };
 }
@@ -221,6 +218,44 @@ export async function updateProfile(
   }
   const user = await prisma.user.update({ where: { id: userId }, data });
   return { ok: true, user: publicUser(user) };
+}
+
+/** Verify the current password and set a new one. */
+export async function changePassword(
+  userId: string,
+  currentPassword: string,
+  newPassword: string
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const prisma = requirePrisma();
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user) throw new UserNotFoundError();
+  if (!user.salt || !user.passwordHash) {
+    return { ok: false, error: "Для этого аккаунта пароль не задан (вход через Telegram/демо)." };
+  }
+  if (!verifyPassword(currentPassword.normalize("NFKC"), user.salt, user.passwordHash)) {
+    return { ok: false, error: "Неверный текущий пароль." };
+  }
+  const salt = randomBytes(16).toString("hex");
+  const hash = hashPassword(newPassword, salt);
+  await prisma.user.update({ where: { id: userId }, data: { salt, passwordHash: hash } });
+  return { ok: true };
+}
+
+/** Permanently delete the account (and, via schema cascade, all its accounts/transactions/goals/budgets/settings). */
+export async function deleteAccountForUser(
+  userId: string,
+  password?: string
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const prisma = requirePrisma();
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user) throw new UserNotFoundError();
+  if (user.salt && user.passwordHash) {
+    if (!password || !verifyPassword(password.normalize("NFKC"), user.salt, user.passwordHash)) {
+      return { ok: false, error: "Неверный пароль." };
+    }
+  }
+  await prisma.user.delete({ where: { id: userId } });
+  return { ok: true };
 }
 
 /** Fresh ephemeral demo identity per click — persisted as a real (plan: demo) user/account */

@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { PageShell, FadeItem } from "@/components/motion/PageShell";
+import { LetterReveal } from "@/components/motion/Reveal";
 import { addTransaction } from "@/lib/storage";
 import { useToast } from "@/components/Toast";
 import { useRouter } from "next/navigation";
@@ -80,11 +81,13 @@ export default function ScanPage() {
   };
 
   return (
-    <PageShell>
+    <PageShell className="page-accent-sky">
       <FadeItem>
-        <p className="text-xs font-medium uppercase tracking-widest text-emerald-400/80">MoneyPulse</p>
+        <p className="text-xs font-medium uppercase tracking-widest" style={{ color: "var(--page-accent)" }}>
+          MoneyPulse
+        </p>
         <h1 className="mt-1 text-3xl font-bold">
-          {lang === "ru" ? "Сканер чеков" : "Receipt scanner"}
+          <LetterReveal text={lang === "ru" ? "Сканер чеков" : "Receipt scanner"} />
         </h1>
         <p className="mt-1 text-sm text-slate-400">
           {lang === "ru" ? "Фото → AI Vision → транзакция за секунды" : "Photo → AI Vision → transaction in seconds"}
@@ -93,10 +96,15 @@ export default function ScanPage() {
 
       <FadeItem>
         <div className="mp-card relative overflow-hidden rounded-3xl p-1">
-          <label className="flex min-h-[220px] cursor-pointer flex-col items-center justify-center rounded-[1.35rem] border border-dashed border-emerald-500/30 bg-black/20 px-4 py-12 transition hover:border-emerald-400/50 hover:bg-emerald-500/5">
+          <label
+            className={`relative flex min-h-[220px] cursor-pointer flex-col items-center justify-center overflow-hidden rounded-[1.35rem] border border-dashed bg-black/20 px-4 py-12 transition ${
+              busy ? "mp-scanline" : ""
+            }`}
+            style={{ borderColor: "rgba(var(--page-accent-rgb),0.3)" }}
+          >
             {preview ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={preview} alt="receipt" className="max-h-48 rounded-xl object-contain shadow-lg" />
+              <img src={preview} alt="receipt" className="relative max-h-48 rounded-xl object-contain shadow-lg" />
             ) : (
               <>
                 <motion.span
@@ -144,26 +152,26 @@ export default function ScanPage() {
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
             placeholder={lang === "ru" ? "Сумма" : "Amount"}
-            className="w-full rounded-xl border border-white/10 bg-slate-900/70 px-3 py-2.5 text-sm outline-none focus:border-emerald-500/40"
+            className="w-full rounded-xl border border-white/10 bg-slate-900/70 px-3 py-2.5 text-sm outline-none focus:border-[var(--page-accent)]/50"
           />
           <input
             value={desc}
             onChange={(e) => setDesc(e.target.value)}
             placeholder={lang === "ru" ? "Описание / магазин" : "Description / store"}
-            className="w-full rounded-xl border border-white/10 bg-slate-900/70 px-3 py-2.5 text-sm outline-none focus:border-emerald-500/40"
+            className="w-full rounded-xl border border-white/10 bg-slate-900/70 px-3 py-2.5 text-sm outline-none focus:border-[var(--page-accent)]/50"
           />
           <div className="grid gap-2 sm:grid-cols-2">
             <input
               value={category}
               onChange={(e) => setCategory(e.target.value)}
               placeholder={lang === "ru" ? "Категория" : "Category"}
-              className="rounded-xl border border-white/10 bg-slate-900/70 px-3 py-2.5 text-sm outline-none focus:border-emerald-500/40"
+              className="rounded-xl border border-white/10 bg-slate-900/70 px-3 py-2.5 text-sm outline-none focus:border-[var(--page-accent)]/50"
             />
             <input
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              className="rounded-xl border border-white/10 bg-slate-900/70 px-3 py-2.5 text-sm outline-none focus:border-emerald-500/40"
+              className="rounded-xl border border-white/10 bg-slate-900/70 px-3 py-2.5 text-sm outline-none focus:border-[var(--page-accent)]/50"
             />
           </div>
           <button

@@ -110,7 +110,7 @@ export default function Dashboard() {
   };
 
   return (
-    <PageShell className="relative">
+    <PageShell className="relative page-accent-cyan">
       {/* Header */}
       <FadeItem>
         <div className="flex flex-wrap items-end justify-between gap-4">
@@ -326,7 +326,7 @@ export default function Dashboard() {
                       {CATEGORY_ICONS[b.category] || "•"} {b.category}
                     </span>
                     <span className={b.over ? "text-rose-400" : "text-slate-500"}>
-                      {b.spent.toLocaleString("ru-RU")} / {b.limit.toLocaleString("ru-RU")}
+                      {b.spent.toLocaleString(ru ? "ru-RU" : "en-US")} / {b.limit.toLocaleString(ru ? "ru-RU" : "en-US")}
                     </span>
                   </div>
                   <div className="h-1.5 overflow-hidden rounded-full bg-white/[0.06]">

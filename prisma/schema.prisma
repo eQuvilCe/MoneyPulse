@@ -30,6 +30,28 @@ model User {
   goals        Goal[]
   budgets      Budget[]
   settings     UserSettings?
+  familyMember FamilyMember?
+}
+
+model Family {
+  id         String         @id @default(cuid())
+  name       String
+  inviteCode String         @unique
+  ownerId    String
+  createdAt  DateTime       @default(now())
+  members    FamilyMember[]
+}
+
+model FamilyMember {
+  id       String   @id @default(cuid())
+  familyId String
+  family   Family   @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  userId   String   @unique
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role     String   @default("member") // "owner" | "member"
+  joinedAt DateTime @default(now())
+
+  @@index([familyId])
 }
 
 model WaitlistEntry {
@@ -63,20 +85,25 @@ model Account {
   type    String  // cash | bank | card | savings | other
   balance Float   @default(0)
   emoji   String?
+
+  transactions Transaction[]
+
+  @@index([userId])
 }
 
 model Transaction {
-  id          String  @id @default(cuid())
+  id          String   @id @default(cuid())
   userId      String
-  user        User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   type        String  // income | expense
   amount      Float
   category    String
   description String
   date        String
-  recurring   Boolean @default(false)
+  recurring   Boolean  @default(false)
   accountId   String?
-  tagsJson    String  @default("[]")
+  account     Account? @relation(fields: [accountId], references: [id], onDelete: SetNull)
+  tagsJson    String   @default("[]")
   createdAt   DateTime @default(now())
 
   @@index([userId, date])
@@ -92,6 +119,8 @@ model Goal {
   deadline      String?
   emoji         String  @default("🎯")
   color         String?
+
+  @@index([userId])
 }
 
 model Budget {
@@ -101,4 +130,6 @@ model Budget {
   category String
   limit    Float
   period   String @default("month")
+
+  @@unique([userId, category])
 }

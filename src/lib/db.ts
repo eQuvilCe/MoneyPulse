@@ -1,6 +1,7 @@
 import { FinanceData, Transaction, Goal, Budget, Account, Settings } from "./types";
 import { getPrisma } from "./prisma";
 import type { Prisma } from "@prisma/client";
+import { randomBytes } from "crypto";
 
 function requirePrisma() {
   const prisma = getPrisma();
@@ -441,18 +442,44 @@ export async function deleteGoalForUser(userId: string, id: string): Promise<voi
 
 export async function upsertBudgetForUser(userId: string, payload: Omit<Budget, "id">): Promise<Budget> {
   const prisma = requirePrisma();
-  const existing = await prisma.budget.findFirst({ where: { userId, category: payload.category } });
-  if (existing) {
-    const row = await prisma.budget.update({
-      where: { id: existing.id },
-      data: { limit: payload.limit, period: payload.period },
-    });
-    return fromRowBudget(row);
-  }
-  const row = await prisma.budget.create({
-    data: { userId, category: payload.category, limit: payload.limit, period: payload.period },
+  const row = await prisma.budget.upsert({
+    where: { userId_category: { userId, category: payload.category } },
+    create: { userId, category: payload.category, limit: payload.limit, period: payload.period },
+    update: { limit: payload.limit, period: payload.period },
   });
   return fromRowBudget(row);
+}
+
+/** Ownership check before letting a transaction reference an accountId — the FK only proves the row exists, not that it's this user's. */
+export async function accountBelongsToUser(userId: string, accountId: string): Promise<boolean> {
+  const prisma = requirePrisma();
+  const found = await prisma.account.findFirst({ where: { id: accountId, userId }, select: { id: true } });
+  return !!found;
+}
+
+/** DB-backed monthly AI chat quota for free plan — persists across cold starts, unlike an in-memory counter. */
+export async function consumeMonthlyAiQuota(
+  userId: string,
+  cap: number
+): Promise<{ allowed: boolean; used: number; cap: number }> {
+  const prisma = requirePrisma();
+  const monthKey = new Date().toISOString().slice(0, 7);
+  return prisma.$transaction(async (tx) => {
+    const user = await tx.user.findUnique({
+      where: { id: userId },
+      select: { aiUsedMonth: true, aiMonthKey: true },
+    });
+    if (!user) throw new UserNotFoundError();
+    const used = user.aiMonthKey === monthKey ? user.aiUsedMonth : 0;
+    if (used >= cap) {
+      if (user.aiMonthKey !== monthKey) {
+        await tx.user.update({ where: { id: userId }, data: { aiUsedMonth: 0, aiMonthKey: monthKey } });
+      }
+      return { allowed: false, used, cap };
+    }
+    await tx.user.update({ where: { id: userId }, data: { aiUsedMonth: used + 1, aiMonthKey: monthKey } });
+    return { allowed: true, used: used + 1, cap };
+  });
 }
 
 export async function deleteBudgetForUser(userId: string, id: string): Promise<void> {
@@ -526,4 +553,275 @@ export async function ensureRecurringForUser(userId: string): Promise<boolean> {
     }
   }
   return changed;
+}
+
+// ——— Family (up to 7 members, invite-code join, full cross-member transaction visibility) ———
+
+const INVITE_CODE_ALPHABET = "23456789ABCDEFGHJKMNPQRSTUVWXYZ"; // excludes 0/O/1/I/l look-alikes
+const FAMILY_MAX_MEMBERS = 7;
+
+export class FamilyError extends Error {
+  code: "ALREADY_IN_FAMILY" | "NOT_IN_FAMILY" | "INVALID_CODE" | "FAMILY_FULL" | "NOT_OWNER" | "NOT_SAME_FAMILY";
+  constructor(code: FamilyError["code"], message: string) {
+    super(message);
+    this.name = "FamilyError";
+    this.code = code;
+  }
+}
+
+const FAMILY_ERROR_STATUS: Record<FamilyError["code"], number> = {
+  ALREADY_IN_FAMILY: 409,
+  NOT_IN_FAMILY: 404,
+  INVALID_CODE: 404,
+  FAMILY_FULL: 409,
+  NOT_OWNER: 403,
+  NOT_SAME_FAMILY: 403,
+};
+
+/** Route catch-blocks call this first (alongside validationErrorResponse) to turn a FamilyError into a clean response. */
+export function familyErrorResponse(e: unknown) {
+  if (e instanceof FamilyError) {
+    return { error: e.message, status: FAMILY_ERROR_STATUS[e.code] };
+  }
+  return null;
+}
+
+export type FamilyMemberPublic = {
+  id: string;
+  userId: string;
+  name: string;
+  email: string;
+  role: "owner" | "member";
+  joinedAt: string;
+};
+
+export type FamilyPublic = {
+  id: string;
+  name: string;
+  inviteCode: string;
+  ownerId: string;
+  members: FamilyMemberPublic[];
+};
+
+function isUniqueConstraintError(e: unknown): boolean {
+  return !!e && typeof e === "object" && "code" in e && (e as { code?: string }).code === "P2002";
+}
+
+function generateInviteCode(): string {
+  let out = "";
+  const bytes = randomBytes(8);
+  for (let i = 0; i < 8; i++) {
+    out += INVITE_CODE_ALPHABET[bytes[i] % INVITE_CODE_ALPHABET.length];
+  }
+  return out;
+}
+
+function toFamilyPublic(
+  family: { id: string; name: string; inviteCode: string; ownerId: string },
+  members: { id: string; userId: string; role: string; joinedAt: Date; user: { name: string; email: string } }[]
+): FamilyPublic {
+  return {
+    id: family.id,
+    name: family.name,
+    inviteCode: family.inviteCode,
+    ownerId: family.ownerId,
+    members: members.map((m) => ({
+      id: m.id,
+      userId: m.userId,
+      name: m.user.name,
+      email: m.user.email,
+      role: m.role as "owner" | "member",
+      joinedAt: m.joinedAt.toISOString(),
+    })),
+  };
+}
+
+async function familyMembersPublic(prisma: ReturnType<typeof requirePrisma>, familyId: string) {
+  return prisma.familyMember.findMany({
+    where: { familyId },
+    include: { user: { select: { name: true, email: true } } },
+    orderBy: { joinedAt: "asc" },
+  });
+}
+
+export async function createFamily(userId: string, name: string): Promise<FamilyPublic> {
+  const prisma = requirePrisma();
+  const existing = await prisma.familyMember.findUnique({ where: { userId } });
+  if (existing) throw new FamilyError("ALREADY_IN_FAMILY", "Вы уже состоите в семье — сначала покиньте её.");
+
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const inviteCode = generateInviteCode();
+    try {
+      const family = await prisma.$transaction(async (tx) => {
+        const fam = await tx.family.create({
+          data: { name: name.trim() || "Моя семья", inviteCode, ownerId: userId },
+        });
+        await tx.familyMember.create({ data: { familyId: fam.id, userId, role: "owner" } });
+        return fam;
+      });
+      const members = await familyMembersPublic(prisma, family.id);
+      return toFamilyPublic(family, members);
+    } catch (e) {
+      if (isUniqueConstraintError(e) && attempt < 4) continue;
+      throw e;
+    }
+  }
+  throw new Error("Could not generate a unique invite code");
+}
+
+export async function joinFamilyByCode(userId: string, code: string): Promise<FamilyPublic> {
+  const prisma = requirePrisma();
+  const existing = await prisma.familyMember.findUnique({ where: { userId } });
+  if (existing) throw new FamilyError("ALREADY_IN_FAMILY", "Вы уже состоите в семье — сначала покиньте её.");
+
+  const family = await prisma.family.findUnique({ where: { inviteCode: code.trim().toUpperCase() } });
+  if (!family) throw new FamilyError("INVALID_CODE", "Код приглашения не найден.");
+
+  const count = await prisma.familyMember.count({ where: { familyId: family.id } });
+  if (count >= FAMILY_MAX_MEMBERS) throw new FamilyError("FAMILY_FULL", "В этой семье уже максимум 7 человек.");
+
+  await prisma.familyMember.create({ data: { familyId: family.id, userId, role: "member" } });
+  const members = await familyMembersPublic(prisma, family.id);
+  return toFamilyPublic(family, members);
+}
+
+export async function getMyFamily(userId: string): Promise<FamilyPublic | null> {
+  const prisma = requirePrisma();
+  const membership = await prisma.familyMember.findUnique({ where: { userId } });
+  if (!membership) return null;
+  const family = await prisma.family.findUnique({ where: { id: membership.familyId } });
+  if (!family) return null;
+  const members = await familyMembersPublic(prisma, family.id);
+  return toFamilyPublic(family, members);
+}
+
+export async function leaveFamily(userId: string): Promise<void> {
+  const prisma = requirePrisma();
+  const membership = await prisma.familyMember.findUnique({ where: { userId } });
+  if (!membership) throw new FamilyError("NOT_IN_FAMILY", "Вы не состоите в семье.");
+
+  const others = await prisma.familyMember.findMany({
+    where: { familyId: membership.familyId, userId: { not: userId } },
+    orderBy: { joinedAt: "asc" },
+  });
+
+  if (others.length === 0) {
+    // Last member leaving — cascades to delete their own FamilyMember row too.
+    await prisma.family.delete({ where: { id: membership.familyId } });
+    return;
+  }
+
+  if (membership.role === "owner") {
+    const next = others[0];
+    await prisma.$transaction([
+      prisma.family.update({ where: { id: membership.familyId }, data: { ownerId: next.userId } }),
+      prisma.familyMember.update({ where: { userId: next.userId }, data: { role: "owner" } }),
+      prisma.familyMember.delete({ where: { userId } }),
+    ]);
+    return;
+  }
+
+  await prisma.familyMember.delete({ where: { userId } });
+}
+
+export async function removeFamilyMember(ownerUserId: string, targetUserId: string): Promise<void> {
+  if (targetUserId === ownerUserId) {
+    throw new FamilyError("NOT_OWNER", "Чтобы покинуть семью самому, используйте выход из семьи.");
+  }
+  const prisma = requirePrisma();
+  const ownerMembership = await prisma.familyMember.findUnique({ where: { userId: ownerUserId } });
+  if (!ownerMembership || ownerMembership.role !== "owner") {
+    throw new FamilyError("NOT_OWNER", "Только владелец семьи может удалять участников.");
+  }
+  const targetMembership = await prisma.familyMember.findUnique({ where: { userId: targetUserId } });
+  if (!targetMembership || targetMembership.familyId !== ownerMembership.familyId) {
+    throw new FamilyError("NOT_SAME_FAMILY", "Этот человек не состоит в вашей семье.");
+  }
+  await prisma.familyMember.delete({ where: { userId: targetUserId } });
+}
+
+export async function rotateInviteCode(ownerUserId: string): Promise<string> {
+  const prisma = requirePrisma();
+  const membership = await prisma.familyMember.findUnique({ where: { userId: ownerUserId } });
+  if (!membership || membership.role !== "owner") {
+    throw new FamilyError("NOT_OWNER", "Только владелец семьи может обновить код приглашения.");
+  }
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const inviteCode = generateInviteCode();
+    try {
+      await prisma.family.update({ where: { id: membership.familyId }, data: { inviteCode } });
+      return inviteCode;
+    } catch (e) {
+      if (isUniqueConstraintError(e) && attempt < 4) continue;
+      throw e;
+    }
+  }
+  throw new Error("Could not generate a unique invite code");
+}
+
+export type FamilyMemberStat = { userId: string; name: string; income: number; expense: number };
+export type FamilyTransactionRow = {
+  id: string;
+  userId: string;
+  memberName: string;
+  type: string;
+  amount: number;
+  category: string;
+  description: string;
+  date: string;
+};
+
+export async function getFamilyOverview(
+  familyId: string,
+  requestingUserId: string
+): Promise<{ stats: FamilyMemberStat[]; transactions: FamilyTransactionRow[] }> {
+  const prisma = requirePrisma();
+  // Security-critical: never aggregate another user's data without first confirming the
+  // requester actually belongs to THIS family — a client-supplied familyId must never be trusted alone.
+  const membership = await prisma.familyMember.findUnique({ where: { userId: requestingUserId } });
+  if (!membership || membership.familyId !== familyId) {
+    throw new FamilyError("NOT_SAME_FAMILY", "У вас нет доступа к этой семье.");
+  }
+
+  const members = await prisma.familyMember.findMany({
+    where: { familyId },
+    include: { user: { select: { id: true, name: true } } },
+  });
+  const memberIds = members.map((m) => m.userId);
+  const nameByUserId = new Map(members.map((m) => [m.userId, m.user.name]));
+
+  const now = new Date();
+  const monthPrefix = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+
+  const monthRows = await prisma.transaction.findMany({
+    where: { userId: { in: memberIds }, date: { startsWith: monthPrefix } },
+    select: { userId: true, type: true, amount: true },
+  });
+  const stats: FamilyMemberStat[] = memberIds.map((id) => {
+    const rows = monthRows.filter((r) => r.userId === id);
+    return {
+      userId: id,
+      name: nameByUserId.get(id) || "—",
+      income: rows.filter((r) => r.type === "income").reduce((s, r) => s + r.amount, 0),
+      expense: rows.filter((r) => r.type === "expense").reduce((s, r) => s + r.amount, 0),
+    };
+  });
+
+  const recent = await prisma.transaction.findMany({
+    where: { userId: { in: memberIds } },
+    orderBy: { date: "desc" },
+    take: 200,
+  });
+  const transactions: FamilyTransactionRow[] = recent.map((t) => ({
+    id: t.id,
+    userId: t.userId,
+    memberName: nameByUserId.get(t.userId) || "—",
+    type: t.type,
+    amount: t.amount,
+    category: t.category,
+    description: t.description,
+    date: t.date,
+  }));
+
+  return { stats, transactions };
 }

@@ -17,6 +17,10 @@
   --mp-positive: #34d399;
   --mp-negative: #f87171;
   --mp-sidebar-w: 240px;
+  --page-accent: #38bdf8;
+  --page-accent-2: #3cf2b0;
+  --page-accent-rgb: 56, 189, 248;
+  --page-accent-2-rgb: 60, 242, 176;
   --background: #05070d;
   --foreground: #f1f5f9;
   --font-display: var(--font-unbounded), system-ui, sans-serif;
@@ -54,6 +58,15 @@ h1, h2, h3, h4, .font-display {
   font-family: var(--font-display);
   letter-spacing: -0.03em;
 }
+
+/* Bigger display type reads better with more negative tracking; dial it back for
+   smaller headings so tight-set text doesn't start colliding at body-ish sizes. */
+h1, .text-4xl.font-display, .text-5xl.font-display { letter-spacing: -0.045em; }
+h4, .text-sm.font-display, .text-base.font-display { letter-spacing: -0.015em; }
+
+/* Reusable for any standalone money figure outside StatCard/PulseHero (which already
+   set tabular-nums inline) — keeps digits from jittering horizontally on count-up. */
+.mp-figure { font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1; }
 
 ::-webkit-scrollbar { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
@@ -262,3 +275,102 @@ html.light input, html.light select, html.light textarea {
 }
 .mp-card:hover { transform: translateY(-2px); border-color: rgba(60,242,176,0.25); }
 .mp-h { font-size: 12px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: #94a3b8; }
+
+/* Per-page accent variants — set --page-accent/--page-accent-2 (+ rgb triplets for
+   rgba()-based tinting) so each authenticated page can carry its own identity while
+   still consuming the shared mp-* primitives above. Applied via a wrapper class
+   (e.g. <div className="page-accent-violet">) around a page's BackgroundStage/content. */
+.page-accent-cyan {
+  --page-accent: #38bdf8;
+  --page-accent-2: #3cf2b0;
+  --page-accent-rgb: 56, 189, 248;
+  --page-accent-2-rgb: 60, 242, 176;
+}
+.page-accent-violet {
+  --page-accent: #8b5cf6;
+  --page-accent-2: #d946ef;
+  --page-accent-rgb: 139, 92, 246;
+  --page-accent-2-rgb: 217, 70, 239;
+}
+.page-accent-amber {
+  --page-accent: #f59e0b;
+  --page-accent-2: #fb923c;
+  --page-accent-rgb: 245, 158, 11;
+  --page-accent-2-rgb: 251, 146, 60;
+}
+.page-accent-emerald {
+  --page-accent: #34d399;
+  --page-accent-2: #10b981;
+  --page-accent-rgb: 52, 211, 153;
+  --page-accent-2-rgb: 16, 185, 129;
+}
+.page-accent-rose {
+  --page-accent: #fb7185;
+  --page-accent-2: #f43f5e;
+  --page-accent-rgb: 251, 113, 133;
+  --page-accent-2-rgb: 244, 63, 94;
+}
+.page-accent-blue {
+  --page-accent: #60a5fa;
+  --page-accent-2: #3b82f6;
+  --page-accent-rgb: 96, 165, 250;
+  --page-accent-2-rgb: 59, 130, 246;
+}
+.page-accent-teal {
+  --page-accent: #2dd4bf;
+  --page-accent-2: #14b8a6;
+  --page-accent-rgb: 45, 212, 191;
+  --page-accent-2-rgb: 20, 184, 166;
+}
+.page-accent-sky {
+  --page-accent: #7dd3fc;
+  --page-accent-2: #38bdf8;
+  --page-accent-rgb: 125, 211, 252;
+  --page-accent-2-rgb: 56, 189, 248;
+}
+
+/* Sweeping light-bar overlay — wrap a relatively-positioned container with .mp-scanline
+   (used by /scan to echo the receipt-scanning motif). */
+.mp-scanline {
+  position: relative;
+  overflow: hidden;
+}
+.mp-scanline::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    rgba(var(--page-accent-rgb), 0.22) 48%,
+    rgba(var(--page-accent-rgb), 0.05) 58%,
+    transparent 100%
+  );
+  transform: translateY(-120%);
+  animation: mp-scanline-sweep 2.8s linear infinite;
+}
+@keyframes mp-scanline-sweep {
+  0% { transform: translateY(-120%); }
+  100% { transform: translateY(120%); }
+}
+
+/* Slow-drifting warm gradient wash — used behind /calendar's heatmap grid. */
+.mp-heat-drift {
+  background: linear-gradient(
+    120deg,
+    rgba(var(--page-accent-rgb), 0.12),
+    rgba(var(--page-accent-2-rgb), 0.12),
+    rgba(var(--page-accent-rgb), 0.12)
+  );
+  background-size: 200% 200%;
+  animation: mp-heat-drift-move 14s ease-in-out infinite;
+}
+@keyframes mp-heat-drift-move {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mp-scanline::after { animation: none; display: none; }
+  .mp-heat-drift { animation: none; }
+}

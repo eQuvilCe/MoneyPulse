@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { loginUser, createToken, setSessionCookie, rateLimit } from "@/lib/server-auth";
 import { apiError } from "@/lib/api-errors";
+import { loginSchema, parseOrThrow, validationErrorResponse } from "@/lib/validation";
 
 export async function POST(req: NextRequest) {
   const ip = req.headers.get("x-forwarded-for") || "local";
@@ -8,8 +9,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Too many requests" }, { status: 429 });
   }
   try {
-    const body = await req.json();
-    const res = await loginUser(body.email || "", body.password || "");
+    const body = parseOrThrow(loginSchema, await req.json());
+    const res = await loginUser(body.email, body.password);
     if (!res.ok) return NextResponse.json({ error: res.error }, { status: 401 });
     const remember = body.remember !== false; // default true
     const days = remember ? 365 : 7;
@@ -17,6 +18,8 @@ export async function POST(req: NextRequest) {
     await setSessionCookie(token, days);
     return NextResponse.json({ user: res.user });
   } catch (e) {
+    const vErr = validationErrorResponse(e);
+    if (vErr) return vErr;
     return apiError(e);
   }
 }

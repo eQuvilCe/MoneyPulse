@@ -8,9 +8,13 @@ import { formatMoney } from "@/lib/types";
 import { generateAIAnalysis, getHealthScore, answerAIChat } from "@/lib/ai";
 import AIInsightBar from "@/components/AIInsightBar";
 import StatCard from "@/components/StatCard";
+import TiltCard from "@/components/motion/TiltCard";
+import { LetterReveal } from "@/components/motion/Reveal";
 import { motion } from "framer-motion";
+import { useApp } from "@/components/AppProvider";
 
 export default function ForecastPage() {
+  const { tr } = useApp();
   const { data } = useRealtimeData(0);
 
   // All hooks MUST run before any conditional return
@@ -51,15 +55,19 @@ export default function ForecastPage() {
   }, [stats]);
 
   if (!data || !stats || !stats30) {
-    return <div className="py-20 text-center text-slate-500">Загрузка...</div>;
+    return <div className="py-20 text-center text-slate-500">{tr("loading")}</div>;
   }
 
   return (
-    <PageShell>
+    <PageShell className="page-accent-blue">
       <FadeItem>
-        <p className="text-xs font-medium uppercase tracking-widest text-emerald-400/80">MoneyPulse</p>
-        <h1 className="mt-1 text-3xl font-bold">AI-прогноз месяца</h1>
-        <p className="mt-1 text-sm text-slate-400">Темп трат → остаток к концу месяца → куда срезать</p>
+        <p className="text-xs font-medium uppercase tracking-widest" style={{ color: "var(--page-accent)" }}>
+          MoneyPulse
+        </p>
+        <h1 className="mt-1 text-3xl font-bold">
+          <LetterReveal text={tr("aiMonthForecast")} />
+        </h1>
+        <p className="mt-1 text-sm text-slate-400">{tr("forecastHeroSubtitle")}</p>
       </FadeItem>
 
       <FadeItem>
@@ -67,78 +75,88 @@ export default function ForecastPage() {
       </FadeItem>
 
       <div className="grid gap-3 sm:grid-cols-3">
-        <StatCard
-          title="Прогноз расходов"
-          value={`~${formatMoney(projectedExpense, data.settings.currency)}`}
-          icon="↓"
-          color="red"
-        />
-        <StatCard
-          title="Прогноз баланса"
-          value={formatMoney(projectedBalance, data.settings.currency)}
-          icon="◈"
-          color={projectedBalance >= 0 ? "green" : "red"}
-        />
-        <StatCard
-          title="Пульс"
-          value={`${health}/100`}
-          icon="◎"
-          color={health >= 60 ? "cyan" : "amber"}
-        />
+        <TiltCard>
+          <StatCard
+            title={tr("expenseForecast")}
+            value={`~${formatMoney(projectedExpense, data.settings.currency)}`}
+            icon="↓"
+            color="red"
+          />
+        </TiltCard>
+        <TiltCard>
+          <StatCard
+            title={tr("balanceForecast")}
+            value={formatMoney(projectedBalance, data.settings.currency)}
+            icon="◈"
+            color={projectedBalance >= 0 ? "green" : "red"}
+          />
+        </TiltCard>
+        <TiltCard>
+          <StatCard
+            title={tr("pulse")}
+            value={`${health}/100`}
+            icon="◎"
+            color={health >= 60 ? "cyan" : "amber"}
+          />
+        </TiltCard>
       </div>
 
-      <FadeItem className="mp-card rounded-2xl p-6">
-        <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-400">Как считается</h2>
+      <FadeItem>
+        <TiltCard className="mp-card mp-scanline rounded-2xl p-6">
+        <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-400">{tr("howCalculated")}</h2>
         <p className="mt-3 whitespace-pre-line text-sm leading-relaxed text-slate-300">{narrative}</p>
         <div className="mt-4 grid gap-2 text-sm sm:grid-cols-3">
           <div className="rounded-xl bg-white/[0.04] p-3">
-            <p className="text-[10px] text-slate-500">Дней прошло</p>
+            <p className="text-[10px] text-slate-500">{tr("daysPassed")}</p>
             <p className="font-bold">
               {dayOfMonth} / {daysInMonth}
             </p>
           </div>
           <div className="rounded-xl bg-white/[0.04] p-3">
-            <p className="text-[10px] text-slate-500">Темп ₽/день</p>
+            <p className="text-[10px] text-slate-500">{tr("dailyPaceLabel")}</p>
             <p className="font-bold">~{formatMoney(Math.round(dailyBurn), data.settings.currency)}</p>
           </div>
           <div className="rounded-xl bg-white/[0.04] p-3">
-            <p className="text-[10px] text-slate-500">Осталось дней</p>
+            <p className="text-[10px] text-slate-500">{tr("daysLeftLabel")}</p>
             <p className="font-bold">{left}</p>
           </div>
         </div>
+        </TiltCard>
       </FadeItem>
 
-      <FadeItem className="mp-card rounded-2xl p-6">
+      <FadeItem>
+        <TiltCard className="mp-card rounded-2xl p-6">
         <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-          Если срезать 15% с топа
+          {tr("cutTopByPct")}
         </h2>
         <div className="mt-4 space-y-3">
           {cuts.map((c) => (
             <div key={c.cat} className="flex items-center justify-between text-sm">
               <span className="text-slate-300">{c.cat}</span>
               <span className="text-slate-500">{formatMoney(c.amt, data.settings.currency)}</span>
-              <span className="font-semibold text-emerald-400">+{formatMoney(c.save, data.settings.currency)}</span>
+              <span className="font-semibold" style={{ color: "var(--page-accent)" }}>+{formatMoney(c.save, data.settings.currency)}</span>
             </div>
           ))}
         </div>
         <p className="mt-4 text-xs text-slate-500">
-          Суммарно можно вернуть ~
-          {formatMoney(cuts.reduce((s, c) => s + c.save, 0), data.settings.currency)} до конца месяца
+          {tr("totalReclaimHint", { v: `~${formatMoney(cuts.reduce((s, c) => s + c.save, 0), data.settings.currency)}` })}
         </p>
+        </TiltCard>
       </FadeItem>
 
       <FadeItem className="space-y-2">
         {tips.map((a) => (
           <motion.div
             key={a.id}
-            className="rounded-2xl border border-white/10 bg-white/[0.03] p-4"
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
           >
-            <p className="text-sm font-semibold">
-              {a.icon} {a.title}
-            </p>
-            <p className="mt-1 text-sm text-slate-400">{a.message}</p>
+            <TiltCard className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+              <p className="text-sm font-semibold">
+                {a.icon} {a.title}
+              </p>
+              <p className="mt-1 text-sm text-slate-400">{a.message}</p>
+            </TiltCard>
           </motion.div>
         ))}
       </FadeItem>

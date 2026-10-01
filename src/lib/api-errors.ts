@@ -10,18 +10,32 @@ export async function apiError(e: unknown): Promise<NextResponse> {
   const message = e instanceof Error ? e.message : String(e);
   console.error("[api]", message);
 
-  // Cryptographically-valid JWT for a user row that no longer exists (deleted account,
-  // or a foreign-key violation from the same situation slipping through a mutation).
+  const prismaCode =
+    typeof e === "object" && e !== null && "code" in e ? (e as { code?: string }).code : undefined;
+  const fkField =
+    typeof e === "object" && e !== null && "meta" in e
+      ? String((e as { meta?: { field_name?: string } }).meta?.field_name ?? "")
+      : "";
+
+  // Cryptographically-valid JWT for a user row that no longer exists (deleted account).
+  // Scoped to the userId FK specifically — other FK violations (e.g. an invalid accountId
+  // on a transaction) are a 400 bad-request, not a reason to log the user out.
   const isStaleUser =
     (e instanceof Error && e.name === "UserNotFoundError") ||
-    message.includes("Foreign key constraint violated") ||
     message.includes("UserSettings_userId_fkey") ||
-    (typeof e === "object" && e !== null && "code" in e && (e as { code?: string }).code === "P2003");
+    (prismaCode === "P2003" && /userid/i.test(fkField));
   if (isStaleUser) {
     await clearSessionCookie();
     return NextResponse.json(
       { error: "Сессия больше не действительна — войди снова." },
       { status: 401 }
+    );
+  }
+
+  if (prismaCode === "P2003") {
+    return NextResponse.json(
+      { error: "Связанная запись не найдена (например, выбранный счёт)." },
+      { status: 400 }
     );
   }
 

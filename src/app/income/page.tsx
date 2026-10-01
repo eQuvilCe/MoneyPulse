@@ -7,7 +7,9 @@ import TransactionForm from "@/components/TransactionForm";
 import TransactionList from "@/components/TransactionList";
 import StatCard from "@/components/StatCard";
 import AIInsightBar from "@/components/AIInsightBar";
-import { PageShell, FadeItem } from "@/components/motion/PageShell";
+import { PageShell, FadeItem, Skeleton } from "@/components/motion/PageShell";
+import TiltCard from "@/components/motion/TiltCard";
+import { LetterReveal } from "@/components/motion/Reveal";
 import { useApp } from "@/components/AppProvider";
 
 export default function IncomePage() {
@@ -17,16 +19,36 @@ export default function IncomePage() {
   useEffect(() => {
     refresh();
   }, []);
-  if (!data) return <div className="py-20 text-center text-slate-500">{tr("loading")}</div>;
+  if (!data) {
+    return (
+      <PageShell className="page-accent-emerald">
+        <FadeItem>
+          <Skeleton className="h-16 w-full" />
+        </FadeItem>
+        <div className="grid gap-3 sm:grid-cols-3">
+          <Skeleton className="h-24" />
+          <Skeleton className="h-24" />
+          <Skeleton className="h-24" />
+        </div>
+        <FadeItem>
+          <Skeleton className="h-56 w-full" />
+        </FadeItem>
+      </PageShell>
+    );
+  }
   const stats = getStats(data);
   const incomeTx = data.transactions.filter((t) => t.type === "income");
   const cur = data.settings.currency || "₽";
 
   return (
-    <PageShell>
+    <PageShell className="page-accent-emerald">
       <FadeItem>
-        <p className="text-xs font-medium uppercase tracking-widest text-emerald-400/80">MoneyPulse</p>
-        <h1 className="mt-1 text-3xl font-bold">{tr("income")}</h1>
+        <p className="text-xs font-medium uppercase tracking-widest" style={{ color: "var(--page-accent)" }}>
+          MoneyPulse
+        </p>
+        <h1 className="mt-1 text-3xl font-bold">
+          <LetterReveal text={tr("income")} />
+        </h1>
         <p className="mt-1 text-sm text-slate-400">
           {lang === "ru" ? "Поступления · AI отслеживает источники" : "Inflows · AI tracks sources"}
         </p>
@@ -35,23 +57,29 @@ export default function IncomePage() {
         <AIInsightBar data={data} />
       </FadeItem>
       <div className="grid gap-3 sm:grid-cols-3">
-        <StatCard title={tr("total")} value={`+${formatMoney(stats.income, cur)}`} icon="↑" color="green" />
-        <StatCard
-          title={lang === "ru" ? "Операций" : "Ops"}
-          value={`${incomeTx.length}`}
-          icon="◈"
-          color="blue"
-        />
-        <StatCard
-          title={tr("goal")}
-          value={
-            data.settings.monthlyIncomeGoal
-              ? formatMoney(data.settings.monthlyIncomeGoal, cur)
-              : "—"
-          }
-          icon="◎"
-          color="cyan"
-        />
+        <TiltCard>
+          <StatCard title={tr("total")} value={`+${formatMoney(stats.income, cur)}`} icon="↑" color="green" />
+        </TiltCard>
+        <TiltCard>
+          <StatCard
+            title={lang === "ru" ? "Операций" : "Ops"}
+            value={`${incomeTx.length}`}
+            icon="◈"
+            color="blue"
+          />
+        </TiltCard>
+        <TiltCard>
+          <StatCard
+            title={tr("goal")}
+            value={
+              data.settings.monthlyIncomeGoal
+                ? formatMoney(data.settings.monthlyIncomeGoal, cur)
+                : "—"
+            }
+            icon="◎"
+            color="cyan"
+          />
+        </TiltCard>
       </div>
       <FadeItem>
         <TransactionForm type="income" currency={cur} settings={data.settings} onAdded={refresh} />

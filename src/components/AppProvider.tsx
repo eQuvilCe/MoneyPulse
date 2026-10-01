@@ -19,7 +19,7 @@ type Theme = "dark" | "light";
 interface AppCtx {
   lang: Lang;
   setLang: (l: Lang) => void;
-  tr: (key: TKey) => string;
+  tr: (key: TKey, vars?: Record<string, string | number>) => string;
   user: User | null;
   login: (email: string, password: string, remember?: boolean) => Promise<{ ok: boolean; error?: string }>;
   register: (name: string, email: string, password: string, remember?: boolean) => Promise<{ ok: boolean; error?: string }>;
@@ -37,9 +37,23 @@ const Ctx = createContext<AppCtx | null>(null);
 const LANG_KEY = "mp-lang";
 const THEME_KEY = "mp-theme";
 
+function readInitialLang(): Lang {
+  if (typeof window === "undefined") return "ru";
+  const saved = localStorage.getItem(LANG_KEY);
+  if (saved === "ru" || saved === "en") return saved;
+  const cookieMatch = document.cookie.match(/(?:^|;\s*)mp-lang=(ru|en)/);
+  return cookieMatch ? (cookieMatch[1] as Lang) : "ru";
+}
+
+function readInitialTheme(): Theme {
+  if (typeof window === "undefined") return "dark";
+  const saved = localStorage.getItem(THEME_KEY);
+  return saved === "light" || saved === "dark" ? saved : "dark";
+}
+
 export function AppProvider({ children }: { children: ReactNode }) {
-  const [lang, setLangState] = useState<Lang>("ru");
-  const [theme, setThemeState] = useState<Theme>("dark");
+  const [lang, setLangState] = useState<Lang>(readInitialLang);
+  const [theme, setThemeState] = useState<Theme>(readInitialTheme);
   const [user, setUser] = useState<User | null>(null);
   const [ready, setReady] = useState(false);
   const [showAuth, setShowAuth] = useState(false);
@@ -67,13 +81,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    const saved = localStorage.getItem(LANG_KEY) as Lang | null;
-    if (saved === "ru" || saved === "en") setLangState(saved);
-    const th = localStorage.getItem(THEME_KEY) as Theme | null;
-    if (th === "light" || th === "dark") {
-      setThemeState(th);
-      document.documentElement.classList.toggle("light", th === "light");
-    }
+    // lang/theme are already correct from the lazy useState initializers above (no flash) —
+    // this just syncs the <html> class + lang cookie for the value we booted with.
+    document.documentElement.classList.toggle("light", theme === "light");
+    document.cookie = `${LANG_KEY}=${lang}; path=/; max-age=31536000; samesite=lax`;
     fetchMe().finally(() => setReady(true));
 
     const onFocus = () => fetchMe();
@@ -93,6 +104,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
       clearInterval(interval);
       offExpired();
     };
+    // Mount-once: syncs the <html> class/cookie for whatever lang/theme the lazy
+    // initializers booted with; setLang/setTheme handle all subsequent changes themselves.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fetchMe]);
 
   const setLang = useCallback((l: Lang) => {
@@ -107,7 +121,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     document.documentElement.classList.toggle("light", th === "light");
   }, []);
 
-  const tr = useCallback((key: TKey) => t(lang, key), [lang]);
+  const tr = useCallback((key: TKey, vars?: Record<string, string | number>) => t(lang, key, vars), [lang]);
 
   const login = useCallback(async (email: string, password: string, remember = true) => {
     const res = await fetch("/api/auth/login", {
