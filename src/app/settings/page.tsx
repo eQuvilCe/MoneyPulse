@@ -49,10 +49,13 @@ export default function SettingsPage() {
     }
   }, [user]);
 
-  const saveProfile = () => {
-    updateProfile({ name, email });
-    updateSettings({
-      name: name || "User",
+  const saveProfile = async () => {
+    const res = await updateProfile({ name, email });
+    if (!res.ok) {
+      toast(res.error || (lang === "ru" ? "Не удалось сохранить профиль" : "Could not save profile"), "err");
+      return;
+    }
+    await updateSettings({
       monthlyIncomeGoal: incomeGoal ? parseFloat(incomeGoal) : undefined,
       savingsTargetPercent: parseInt(savings) || 20,
       currency,
@@ -89,7 +92,9 @@ export default function SettingsPage() {
               <p className="font-semibold text-white">{user?.name}</p>
               <p className="text-xs text-slate-500">{user?.email}</p>
               <p className="mt-0.5 text-[10px] uppercase tracking-wider text-emerald-500/70">
-                {user?.plan || "free"} · JWT session
+                {lang === "ru"
+                  ? { free: "Бесплатный", pro: "Pro", demo: "Демо" }[user?.plan || "free"]
+                  : { free: "Free plan", pro: "Pro", demo: "Demo" }[user?.plan || "free"]}
               </p>
             </div>
           </div>

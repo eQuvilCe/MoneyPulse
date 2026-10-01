@@ -1,7 +1,8 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from "react";
+import { createContext, useContext, useEffect, useState, ReactNode, useCallback, useRef } from "react";
 import { Lang, t, TKey } from "@/lib/i18n";
+import { onSessionExpired, emitSessionExpired } from "@/lib/events";
 
 export type Plan = "free" | "pro" | "demo";
 
@@ -24,7 +25,7 @@ interface AppCtx {
   register: (name: string, email: string, password: string, remember?: boolean) => Promise<{ ok: boolean; error?: string }>;
   enterDemo: () => Promise<void>;
   logout: () => Promise<void>;
-  updateProfile: (u: Partial<Pick<User, "name" | "email">>) => void;
+  updateProfile: (u: Partial<Pick<User, "name" | "email">>) => Promise<{ ok: boolean; error?: string }>;
   ready: boolean;
   theme: Theme;
   setTheme: (t: Theme) => void;
@@ -42,6 +43,22 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [ready, setReady] = useState(false);
   const [showAuth, setShowAuth] = useState(false);
+  const hadUserRef = useRef(false);
+
+  const fetchMe = useCallback(async () => {
+    try {
+      const r = await fetch("/api/auth/me", { credentials: "include", cache: "no-store" });
+      const d = r.ok ? await r.json() : { user: null };
+      if (!d.user && hadUserRef.current) {
+        // session cookie expired/was revoked while the SPA stayed open
+        emitSessionExpired();
+      }
+      hadUserRef.current = !!d.user;
+      setUser(d.user);
+    } catch {
+      setUser(null);
+    }
+  }, []);
 
   useEffect(() => {
     const saved = localStorage.getItem(LANG_KEY) as Lang | null;
@@ -51,16 +68,31 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setThemeState(th);
       document.documentElement.classList.toggle("light", th === "light");
     }
-    fetch("/api/auth/me", { credentials: "include" })
-      .then((r) => (r.ok ? r.json() : { user: null }))
-      .then((d) => setUser(d.user))
-      .catch(() => setUser(null))
-      .finally(() => setReady(true));
-  }, []);
+    fetchMe().finally(() => setReady(true));
+
+    const onFocus = () => fetchMe();
+    const onVisible = () => {
+      if (document.visibilityState === "visible") fetchMe();
+    };
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onVisible);
+    const interval = setInterval(fetchMe, 15 * 60 * 1000);
+    const offExpired = onSessionExpired(() => {
+      hadUserRef.current = false;
+      setUser(null);
+    });
+    return () => {
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onVisible);
+      clearInterval(interval);
+      offExpired();
+    };
+  }, [fetchMe]);
 
   const setLang = useCallback((l: Lang) => {
     setLangState(l);
     localStorage.setItem(LANG_KEY, l);
+    document.cookie = `${LANG_KEY}=${l}; path=/; max-age=31536000; samesite=lax`;
   }, []);
 
   const setTheme = useCallback((th: Theme) => {
@@ -80,6 +112,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     });
     const data = await res.json();
     if (!res.ok) return { ok: false, error: data.error || "Login failed" };
+    hadUserRef.current = true;
     setUser(data.user);
     setShowAuth(false);
     return { ok: true };
@@ -94,6 +127,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     });
     const data = await res.json();
     if (!res.ok) return { ok: false, error: data.error || "Register failed" };
+    hadUserRef.current = true;
     setUser(data.user);
     setShowAuth(false);
     return { ok: true };
@@ -103,6 +137,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const res = await fetch("/api/auth/demo", { method: "POST", credentials: "include" });
     const data = await res.json();
     if (res.ok) {
+      hadUserRef.current = true;
       setUser(data.user);
       setShowAuth(false);
     }
@@ -110,11 +145,21 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const logout = useCallback(async () => {
     await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
+    hadUserRef.current = false;
     setUser(null);
   }, []);
 
-  const updateProfile = useCallback((u: Partial<Pick<User, "name" | "email">>) => {
-    setUser((prev) => (prev ? { ...prev, ...u } : prev));
+  const updateProfile = useCallback(async (u: Partial<Pick<User, "name" | "email">>) => {
+    const res = await fetch("/api/auth/profile", {
+      method: "PATCH",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(u),
+    });
+    const data = await res.json();
+    if (!res.ok) return { ok: false, error: data.error || "Update failed" };
+    setUser(data.user);
+    return { ok: true };
   }, []);
 
   return (
