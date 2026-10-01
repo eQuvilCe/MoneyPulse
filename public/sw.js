@@ -1,6 +1,6 @@
 /* MoneyPulse SW — production only; never cache Next.js chunks */
-const CACHE = "moneypulse-shell-v2";
-const PRECACHE = ["/manifest.json", "/icons/icon-192.png", "/icons/icon-512.png"];
+const CACHE = "moneypulse-shell-v3";
+const PRECACHE = ["/manifest.json", "/icons/icon-192.png", "/icons/icon-512.png", "/offline"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -41,6 +41,12 @@ self.addEventListener("fetch", (event) => {
         }
         return res;
       })
-      .catch(() => caches.match(req))
+      .catch(() =>
+        caches.match(req).then((cached) => {
+          if (cached) return cached;
+          if (req.mode === "navigate") return caches.match("/offline");
+          return Response.error();
+        })
+      )
   );
 });
