@@ -9,7 +9,7 @@ import { useApp } from "@/components/AppProvider";
 import { useToast } from "@/components/Toast";
 import CsvImport from "@/components/CsvImport";
 import StreakBadge from "@/components/StreakBadge";
-import { User, Target, Palette, Tags, Bell, Database, ShieldCheck, type LucideIcon } from "lucide-react";
+import { User, Target, Palette, Tags, Bell, Database, ShieldCheck, MessageCircle, type LucideIcon } from "lucide-react";
 
 function SectionHeading({ icon: Icon, children }: { icon: LucideIcon; children: React.ReactNode }) {
   return (
@@ -407,6 +407,33 @@ export default function SettingsPage() {
         >
           {tr("logout")}
         </button>
+      </FadeItem>
+
+      {/* Support */}
+      <FadeItem>
+        <TiltCard className="mp-card flex items-center justify-between gap-4 rounded-2xl p-6">
+          <div className="flex items-center gap-3">
+            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-cyan-500/15 text-cyan-300 ring-1 ring-cyan-500/25">
+              <MessageCircle className="h-5 w-5" strokeWidth={2.2} />
+            </span>
+            <div>
+              <p className="text-sm font-semibold text-white">
+                {lang === "ru" ? "Остались вопросы?" : "Have questions?"}
+              </p>
+              <p className="text-xs text-slate-500">
+                {lang === "ru" ? "Напиши напрямую в Telegram" : "Message us directly on Telegram"}
+              </p>
+            </div>
+          </div>
+          <a
+            href="https://t.me/eQuvilCe"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="shrink-0 rounded-xl bg-cyan-500/15 px-4 py-2.5 text-sm font-semibold text-cyan-300 ring-1 ring-cyan-500/25 hover:bg-cyan-500/25"
+          >
+            {lang === "ru" ? "Написать" : "Message"}
+          </a>
+        </TiltCard>
       </FadeItem>
     </PageShell>
   );

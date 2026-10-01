@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
-import { Space_Grotesk, Inter, Geist_Mono } from "next/font/google";
+import { Unbounded, Inter, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Sidebar from "@/components/Sidebar";
 import AIBuddy from "@/components/AIBuddy";
@@ -12,10 +12,10 @@ import AuthShell from "@/components/AuthShell";
 import MobileNav from "@/components/MobileNav";
 import PWARegister from "@/components/PWARegister";
 
-const spaceGrotesk = Space_Grotesk({
-  variable: "--font-space-grotesk",
-  subsets: ["latin", "latin-ext"],
-  weight: ["400", "500", "600", "700"],
+const unbounded = Unbounded({
+  variable: "--font-unbounded",
+  subsets: ["latin", "latin-ext", "cyrillic", "cyrillic-ext"],
+  weight: ["400", "500", "600", "700", "800"],
   display: "swap",
 });
 
@@ -59,7 +59,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
   return (
     <html
       lang={lang}
-      className={`${spaceGrotesk.variable} ${inter.variable} ${geistMono.variable}`}
+      className={`${unbounded.variable} ${inter.variable} ${geistMono.variable}`}
     >
       <body className="min-h-screen bg-[#05070d] text-white antialiased">
         <AppProvider>

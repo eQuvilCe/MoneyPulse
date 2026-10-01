@@ -4,6 +4,7 @@ import { motion, type Variants } from "framer-motion";
 import { ReactNode } from "react";
 import AuroraBackground from "@/components/fx/AuroraBackground";
 import ParticleField from "@/components/fx/ParticleField";
+import DashboardSceneGate from "@/components/three/DashboardSceneGate";
 
 const container: Variants = {
   hidden: { opacity: 0 },
@@ -43,13 +44,15 @@ export function FadeItem({ children, className = "" }: { children: ReactNode; cl
   );
 }
 
-/** Soft aurora + particles for logged-in app shell (once) */
+/** Ambient background for the whole logged-in app shell (mounted once) — aurora + particles
+ *  everywhere, plus a real WebGL "pulse" scene layered on top where the device can handle it. */
 export function AmbientBg() {
   return (
     <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden>
       <AuroraBackground intensity={1.5} />
       <ParticleField density="app" />
       <div className="mp-grain opacity-[0.03]" />
+      <DashboardSceneGate />
     </div>
   );
 }
