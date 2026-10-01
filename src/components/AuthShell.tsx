@@ -9,7 +9,7 @@ import { usePathname } from "next/navigation";
 import { useToast } from "@/components/Toast";
 import { onSessionExpired } from "@/lib/events";
 
-const PUBLIC = ["/privacy", "/terms"];
+const PUBLIC = ["/privacy", "/terms", "/offline"];
 
 export default function AuthShell({ children }: { children: React.ReactNode }) {
   const { user, ready, lang } = useApp();
@@ -17,7 +17,11 @@ export default function AuthShell({ children }: { children: React.ReactNode }) {
   const toast = useToast();
 
   useEffect(() => {
+    let lastShown = 0;
     return onSessionExpired(() => {
+      const now = Date.now();
+      if (now - lastShown < 5000) return; // collapse duplicate fires (e.g. dev StrictMode double-effects)
+      lastShown = now;
       toast(lang === "ru" ? "Сессия истекла — войди снова" : "Session expired — please sign in again", "err");
     });
   }, [toast, lang]);

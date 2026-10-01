@@ -44,16 +44,22 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [ready, setReady] = useState(false);
   const [showAuth, setShowAuth] = useState(false);
   const hadUserRef = useRef(false);
+  const lastFetchRef = useRef(0);
 
   const fetchMe = useCallback(async () => {
+    const now = Date.now();
+    if (now - lastFetchRef.current < 1500) return; // collapse near-simultaneous triggers (mount/focus/visibility)
+    lastFetchRef.current = now;
     try {
       const r = await fetch("/api/auth/me", { credentials: "include", cache: "no-store" });
       const d = r.ok ? await r.json() : { user: null };
-      if (!d.user && hadUserRef.current) {
+      // Flip the ref first so concurrent calls (mount + focus + interval firing close together) only emit once.
+      const wasLoggedIn = hadUserRef.current;
+      hadUserRef.current = !!d.user;
+      if (!d.user && wasLoggedIn) {
         // session cookie expired/was revoked while the SPA stayed open
         emitSessionExpired();
       }
-      hadUserRef.current = !!d.user;
       setUser(d.user);
     } catch {
       setUser(null);
