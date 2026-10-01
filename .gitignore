@@ -1,0 +1,23 @@
+# deps
+/node_modules
+
+# next.js
+/.next/
+/out/
+
+# env
+.env
+.env*.local
+
+# local file-based data store (being replaced by Postgres — may contain real PII)
+/data/users/*.json
+/data/auth-users.json
+
+# misc
+.DS_Store
+*.pem
+npm-debug.log*
+tsconfig.tsbuildinfo
+
+# prisma
+/prisma/*.db
