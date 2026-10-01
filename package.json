@@ -13,19 +13,22 @@
   },
   "dependencies": {
     "@prisma/client": "^6.5.0",
+    "@react-three/fiber": "9.8.1",
     "framer-motion": "^12.4.7",
     "jose": "^5.9.6",
     "lucide-react": "^0.475.0",
     "next": "16.3.6",
     "react": "19.2.8",
     "react-dom": "19.2.8",
-    "recharts": "^2.15.1"
+    "recharts": "^2.15.1",
+    "three": "0.186.1"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/three": "^0.186.0",
     "eslint": "^9",
     "eslint-config-next": "16.3.6",
     "prisma": "^6.5.0",
