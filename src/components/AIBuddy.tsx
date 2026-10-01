@@ -65,6 +65,7 @@ export default function AIBuddy() {
 
   const send = async (text: string) => {
     if (!text.trim() || !data) return;
+    const history = messages;
     setMessages((m) => [...m, { role: "user", text }]);
     setInput("");
     setTyping(true);
@@ -73,7 +74,7 @@ export default function AIBuddy() {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: text }),
+        body: JSON.stringify({ message: text, history }),
       });
       if (res.ok) {
         const json = await res.json();

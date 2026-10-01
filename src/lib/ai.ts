@@ -1,4 +1,4 @@
-import { formatMoney } from "./types";
+import { formatMoney, allExpenseCategories, allIncomeCategories } from "./types";
 import { FinanceData } from "./types";
 
 export interface AIAdvice {
@@ -357,6 +357,20 @@ export function answerAIChat(question: string, data: FinanceData): string {
     return `Прогноз до конца месяца:\n• Сейчас расходов: ${m(stats30.expense)}\n• Средний темп: ~${m(Math.round(dailyBurn))}/день\n• Прогноз расходов: ~${m(projected)}\n• Прогноз баланса: ~${m(projBal)}\n${projBal < 0 ? "⚠ При текущем темпе уйдёшь в минус." : "Темп терпимый, но следи за топ-категориями."}`;
   }
 
+  if (/самая больш|крупн|дорог.*(операц|покупк)|максимальн/.test(q)) {
+    const list = data.transactions.filter((t) => t.type === "expense");
+    if (!list.length) return "Расходов пока нет.";
+    const biggest = [...list].sort((a, b) => b.amount - a.amount)[0];
+    return `Самый крупный расход: ${m(biggest.amount)} · ${biggest.category} · «${biggest.description}» (${biggest.date})`;
+  }
+
+  if (/средн.*чек|средн.*сумм|средн.*операц|средн.*расход/.test(q)) {
+    const list = data.transactions.filter((t) => t.type === "expense");
+    if (!list.length) return "Расходов пока нет.";
+    const avg = list.reduce((s, t) => s + t.amount, 0) / list.length;
+    return `Средний чек: ${m(Math.round(avg))} (по ${list.length} операциям).`;
+  }
+
   if (/последн|недавн|истори|список|транзак|операц/.test(q)) {
     const list = data.transactions.slice(0, 8);
     if (!list.length) return "Операций пока нет.";
@@ -453,13 +467,38 @@ export function answerAIChat(question: string, data: FinanceData): string {
     return `За 7 дней:\n• Доход +${m(stats7.income)}\n• Расход −${m(stats7.expense)}\n• Баланс ${m(stats7.balance)}\n• Операций: ${stats7.txCount}`;
   }
 
-  if (/здоров|пульс|оценка|score|health/.test(q)) {
+  if (/финансов.*здоров|пульс|оценка|score|health/.test(q)) {
     const score = getHealthScore(data);
     return `Финансовый пульс: ${score}/100\nБаланс ${stats.balance >= 0 ? "положительный" : "отрицательный"}, сбережения ${stats.savingsRate}%, бюджеты OK: ${budgets.filter((b) => !b.over).length}/${budgets.length || 0}.`;
   }
 
+
+  // Dynamic per-category lookup — any known category (default or custom), not just the common ones above.
+  {
+    const allCats = Array.from(
+      new Set([...allExpenseCategories(data.settings), ...allIncomeCategories(data.settings)])
+    );
+    const hit = allCats.find((c) => q.includes(c.toLowerCase()));
+    if (hit) {
+      const spentExp = stats.byCategory[hit] || 0;
+      const spentInc = stats.txs
+        .filter((t) => t.type === "income" && t.category === hit)
+        .reduce((s, t) => s + t.amount, 0);
+      if (spentExp > 0) {
+        const pct = stats.expense > 0 ? Math.round((spentExp / stats.expense) * 100) : 0;
+        const b = budgets.find((x) => x.category === hit);
+        return (
+          `«${hit}»: ${m(spentExp)} (${pct}% всех расходов).` +
+          (b ? `\nБюджет: ${m(b.spent)}/${m(b.limit)} (${b.percent}%)${b.over ? " 🔴 превышен" : ""}` : "")
+        );
+      }
+      if (spentInc > 0) return `«${hit}»: доход ${m(spentInc)}.`;
+      return `По «${hit}» пока нет операций.`;
+    }
+  }
+
   if (/что ты умеешь|команды|help|помощь|доступ/.test(q)) {
-    return `Я вижу ВСЕ твои данные MoneyPulse:\n• баланс, доходы, расходы\n• сегодня / неделя / месяц\n• бюджеты и лимиты\n• цели и прогресс\n• топ-категории\n• прогноз до конца месяца\n• последние операции\n\nСпроси: отчёт · сегодня · прогноз · бюджеты · топ · цели · совет · неделя`;
+    return `Я вижу ВСЕ твои данные MoneyPulse:\n• баланс, доходы, расходы\n• сегодня / неделя / месяц\n• бюджеты и лимиты\n• цели и прогресс\n• топ-категории, любая категория по имени\n• самая крупная операция, средний чек\n• прогноз до конца месяца\n• последние операции\n\nСпроси: отчёт · сегодня · прогноз · бюджеты · топ · цели · совет · неделя · любая категория (напр. «еда» или «такси»)`;
   }
 
   if (/привет|здравств|hello|hi/.test(q)) {
