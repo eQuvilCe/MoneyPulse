@@ -11,23 +11,32 @@ datasource db {
 }
 
 model User {
-  id           String   @id @default(cuid())
-  email        String   @unique
-  name         String
-  passwordHash String?
-  salt         String?
-  plan         String   @default("free") // free | pro | demo
-  aiUsedMonth  Int      @default(0)
-  aiMonthKey   String   @default("") // YYYY-MM
-  image        String?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id               String    @id @default(cuid())
+  email            String    @unique
+  name             String
+  passwordHash     String?
+  salt             String?
+  plan             String    @default("free") // free | pro | demo
+  aiUsedMonth      Int       @default(0)
+  aiMonthKey       String    @default("") // YYYY-MM
+  image            String?
+  telegramId       String?   @unique
+  telegramLinkedAt DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
 
   accounts     Account[]
   transactions Transaction[]
   goals        Goal[]
   budgets      Budget[]
   settings     UserSettings?
+}
+
+model WaitlistEntry {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  source    String   @default("pricing")
+  createdAt DateTime @default(now())
 }
 
 model UserSettings {

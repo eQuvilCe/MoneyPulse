@@ -71,20 +71,6 @@ input[type="number"]::-webkit-outer-spin-button {
   border-radius: 16px;
 }
 
-.mp-card {
-  background: rgba(14, 20, 32, 0.72);
-  border: 1px solid var(--mp-border);
-  border-radius: 20px;
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  transition: border-color 0.25s ease, transform 0.25s ease, box-shadow 0.25s ease;
-}
-
-.mp-card:hover {
-  border-color: rgba(56, 189, 248, 0.22);
-  box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.06), 0 12px 40px rgba(0, 0, 0, 0.35);
-}
-
 .mp-gradient-text {
   background: linear-gradient(105deg, #3cf2b0 0%, #38bdf8 40%, #8b5cf6 70%, #3cf2b0 100%);
   background-size: 200% auto;

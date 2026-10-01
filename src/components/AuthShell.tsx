@@ -1,16 +1,26 @@
 "use client";
 
+import { useEffect } from "react";
 import { useApp } from "@/components/AppProvider";
 import Landing from "@/components/Landing";
 import { AmbientBg } from "@/components/motion/PageShell";
 import { motion } from "framer-motion";
 import { usePathname } from "next/navigation";
+import { useToast } from "@/components/Toast";
+import { onSessionExpired } from "@/lib/events";
 
 const PUBLIC = ["/privacy", "/terms"];
 
 export default function AuthShell({ children }: { children: React.ReactNode }) {
-  const { user, ready } = useApp();
+  const { user, ready, lang } = useApp();
   const path = usePathname();
+  const toast = useToast();
+
+  useEffect(() => {
+    return onSessionExpired(() => {
+      toast(lang === "ru" ? "Сессия истекла — войди снова" : "Session expired — please sign in again", "err");
+    });
+  }, [toast, lang]);
 
   if (!ready) {
     return (

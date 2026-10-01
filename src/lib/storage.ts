@@ -7,9 +7,9 @@ import {
   Budget,
   Settings,
 } from "./types";
-import { emitDataChange } from "./events";
+import { emitDataChange, emitSessionExpired } from "./events";
 
-const BASE_KEY = "money-pulse-v4-cache";
+const BASE_KEY = "money-pulse-v5-cache";
 
 function storageKey(): string {
   // Local mirror only — source of truth is server + JWT cookie
@@ -26,6 +26,7 @@ const defaultData: FinanceData = {
   transactions: [],
   goals: [],
   budgets: [],
+  accounts: [],
   settings: {
     currency: "₽",
     savingsTargetPercent: 20,
@@ -48,6 +49,7 @@ async function apiGet(): Promise<FinanceData | null> {
       credentials: "include",
       signal: AbortSignal.timeout(8000),
     });
+    if (res.status === 401) emitSessionExpired();
     if (!res.ok) return null;
     return (await res.json()) as FinanceData;
   } catch {
@@ -63,6 +65,7 @@ async function apiPost(body: object): Promise<FinanceData | null> {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
     });
+    if (res.status === 401) emitSessionExpired();
     if (!res.ok) return null;
     return (await res.json()) as FinanceData;
   } catch {

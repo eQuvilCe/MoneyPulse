@@ -2,9 +2,17 @@
 
 ## Must-do (data safety)
 
-1. **Postgres** — set `DATABASE_URL` to Neon/Supabase. Prisma schema is `postgresql`.
-   JSON files in `data/` are wiped on Vercel/Render deploys.
-   Next step: wire `readStore`/`writeStore` and auth to Prisma (schema already models User, Transaction, etc.).
+1. **Postgres — done.** Auth (`src/lib/server-auth.ts`) and all finance data (`src/lib/db.ts`)
+   are backed by Prisma/Postgres (Neon recommended), not JSON files. Set `DATABASE_URL`
+   (pooled connection string) locally and in Vercel's env vars — the app throws a clear
+   error if it's missing. One-time migration of any old `data/*.json` test data:
+   `node scripts/migrate-json-to-prisma.mjs` (idempotent, preserves original user IDs so
+   existing JWTs/sessions keep working).
+   - Schema changes so far used `prisma db push` (fine for a fresh DB). Once there's real
+     production data, switch to `prisma migrate dev`/`migrate deploy` so schema changes
+     don't risk dropping data.
+   - Demo accounts (`plan: "demo"`) now persist as real rows instead of vanishing —
+     consider a periodic cleanup job if Neon free-tier storage becomes a concern.
 
 2. **JWT_SECRET** — required in production (min 16 chars). App throws if missing on Vercel.
 

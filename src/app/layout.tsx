@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import { Space_Grotesk, Inter, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Sidebar from "@/components/Sidebar";
@@ -52,10 +53,12 @@ export const viewport = {
   viewportFit: "cover",
 };
 
-export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+  const jar = await cookies();
+  const lang = jar.get("mp-lang")?.value === "en" ? "en" : "ru";
   return (
     <html
-      lang="ru"
+      lang={lang}
       className={`${spaceGrotesk.variable} ${inter.variable} ${geistMono.variable}`}
     >
       <body className="min-h-screen bg-[#05070d] text-white antialiased">
