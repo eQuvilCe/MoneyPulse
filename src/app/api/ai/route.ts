@@ -9,6 +9,7 @@ import {
   generateDailyBriefing,
 } from "@/lib/ai";
 import { getAuthUser, rateLimit } from "@/lib/server-auth";
+import { apiError } from "@/lib/api-errors";
 
 async function callLLM(message: string, context: string): Promise<string | null> {
   const key = process.env.AI_API_KEY || process.env.OPENAI_API_KEY || process.env.XAI_API_KEY;
@@ -54,16 +55,20 @@ function buildContext(data: Awaited<ReturnType<typeof readStore>>): string {
 export async function GET() {
   const user = await getAuthUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const data = await readStore(user.id);
-  return NextResponse.json({
-    advice: generateAIAnalysis(data),
-    greeting: getDoctorGreeting(data),
-    insights: getQuickInsights(data),
-    health: getHealthScore(data),
-    briefing: generateDailyBriefing(data),
-    llm: Boolean(process.env.AI_API_KEY || process.env.OPENAI_API_KEY || process.env.XAI_API_KEY),
-    plan: user.plan,
-  });
+  try {
+    const data = await readStore(user.id);
+    return NextResponse.json({
+      advice: generateAIAnalysis(data),
+      greeting: getDoctorGreeting(data),
+      insights: getQuickInsights(data),
+      health: getHealthScore(data),
+      briefing: generateDailyBriefing(data),
+      llm: Boolean(process.env.AI_API_KEY || process.env.OPENAI_API_KEY || process.env.XAI_API_KEY),
+      plan: user.plan,
+    });
+  } catch (e) {
+    return apiError(e);
+  }
 }
 
 export async function POST(req: NextRequest) {
@@ -95,25 +100,29 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  const body = await req.json();
-  const data = await readStore(user.id);
-  const message = (body.message || body.question || "") as string;
-  if (!message.trim()) {
-    return NextResponse.json({ error: "empty message" }, { status: 400 });
-  }
+  try {
+    const body = await req.json();
+    const data = await readStore(user.id);
+    const message = (body.message || body.question || "") as string;
+    if (!message.trim()) {
+      return NextResponse.json({ error: "empty message" }, { status: 400 });
+    }
 
-  // Free: rules only unless demo; Pro gets LLM
-  let llmReply: string | null = null;
-  if (user.plan === "pro" || user.plan === "demo") {
-    llmReply = await callLLM(message, buildContext(data));
-  }
-  const reply = llmReply || answerAIChat(message, data);
+    // Free: rules only unless demo; Pro gets LLM
+    let llmReply: string | null = null;
+    if (user.plan === "pro" || user.plan === "demo") {
+      llmReply = await callLLM(message, buildContext(data));
+    }
+    const reply = llmReply || answerAIChat(message, data);
 
-  return NextResponse.json({
-    reply,
-    source: llmReply ? "llm" : "rules",
-    health: getHealthScore(data),
-    insights: getQuickInsights(data),
-    plan: user.plan,
-  });
+    return NextResponse.json({
+      reply,
+      source: llmReply ? "llm" : "rules",
+      health: getHealthScore(data),
+      insights: getQuickInsights(data),
+      plan: user.plan,
+    });
+  } catch (e) {
+    return apiError(e);
+  }
 }
