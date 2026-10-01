@@ -10,6 +10,7 @@ import {
   allExpenseCategories,
 } from "@/lib/types";
 import { PageShell, FadeItem } from "@/components/motion/PageShell";
+import TiltCard from "@/components/motion/TiltCard";
 import AIInsightBar from "@/components/AIInsightBar";
 import { useToast } from "@/components/Toast";
 
@@ -122,8 +123,8 @@ export default function BudgetsPage() {
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.05 }}
-              className={`mp-card rounded-2xl p-5 ${b.over ? "ring-1 ring-rose-500/30" : ""}`}
             >
+              <TiltCard className={`mp-card rounded-2xl p-5 ${b.over ? "ring-1 ring-rose-500/30" : ""}`}>
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-2">
                   <span className="text-xl">{CATEGORY_ICONS[b.category] || "📦"}</span>
@@ -174,6 +175,7 @@ export default function BudgetsPage() {
                   · {b.percent}%
                 </p>
               </div>
+              </TiltCard>
             </motion.div>
           ))}
         </div>

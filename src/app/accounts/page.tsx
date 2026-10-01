@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRealtimeData } from "@/hooks/useRealtimeData";
 import { PageShell, FadeItem } from "@/components/motion/PageShell";
+import TiltCard from "@/components/motion/TiltCard";
 import { Account, formatMoney } from "@/lib/types";
 import { useToast } from "@/components/Toast";
 import { useApp } from "@/components/AppProvider";
@@ -88,12 +89,14 @@ export default function AccountsPage() {
         <p className="mt-1 text-sm text-slate-400">{tr("accountsHint")}</p>
       </FadeItem>
 
-      <FadeItem className="mp-card rounded-2xl p-5">
-        <p className="text-[11px] uppercase text-slate-500">{tr("total")}</p>
-        <p className="mt-1 text-3xl font-bold tabular-nums">{formatMoney(total, cur)}</p>
-        <p className="mt-1 text-xs text-slate-500">
-          {accounts.length} · {tr("cash")} / {tr("card")} / {tr("bank")} / {tr("savingsAcc")}
-        </p>
+      <FadeItem>
+        <TiltCard className="mp-card rounded-2xl p-5">
+          <p className="text-[11px] uppercase text-slate-500">{tr("total")}</p>
+          <p className="mt-1 text-3xl font-bold tabular-nums">{formatMoney(total, cur)}</p>
+          <p className="mt-1 text-xs text-slate-500">
+            {accounts.length} · {tr("cash")} / {tr("card")} / {tr("bank")} / {tr("savingsAcc")}
+          </p>
+        </TiltCard>
       </FadeItem>
 
       <FadeItem className="space-y-2">

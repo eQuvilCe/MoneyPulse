@@ -2,6 +2,7 @@
 
 import { useRealtimeData } from "@/hooks/useRealtimeData";
 import { PageShell, FadeItem } from "@/components/motion/PageShell";
+import TiltCard from "@/components/motion/TiltCard";
 import { formatMoney } from "@/lib/types";
 import { getSubscriptions } from "@/lib/insights";
 import Link from "next/link";
@@ -29,20 +30,20 @@ export default function SubscriptionsPage() {
       </FadeItem>
 
       <FadeItem className="grid gap-3 sm:grid-cols-3">
-        <div className="mp-card rounded-2xl p-5">
+        <TiltCard className="mp-card rounded-2xl p-5">
           <p className="text-[11px] uppercase text-slate-500">{tr("monthly")}</p>
           <p className="mt-1 text-2xl font-bold text-rose-300">{formatMoney(monthly, cur)}</p>
-        </div>
-        <div className="mp-card rounded-2xl p-5">
+        </TiltCard>
+        <TiltCard className="mp-card rounded-2xl p-5">
           <p className="text-[11px] uppercase text-slate-500">{tr("yearly")}</p>
           <p className="mt-1 text-2xl font-bold text-amber-300">{formatMoney(yearly, cur)}</p>
-        </div>
-        <div className="mp-card rounded-2xl p-5">
+        </TiltCard>
+        <TiltCard className="mp-card rounded-2xl p-5">
           <p className="text-[11px] uppercase text-slate-500">
             {lang === "ru" ? "% от дохода" : "% of income"}
           </p>
           <p className="mt-1 text-2xl font-bold text-cyan-300">{pctOfIncome}%</p>
-        </div>
+        </TiltCard>
       </FadeItem>
 
       {list.length === 0 ? (
