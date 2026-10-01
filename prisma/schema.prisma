@@ -1,0 +1,95 @@
+// MoneyPulse — Postgres (Neon/Supabase) or local SQLite
+// DATABASE_URL="postgresql://..."  or  "file:./dev.db"
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String
+  passwordHash String?
+  salt         String?
+  plan         String   @default("free") // free | pro | demo
+  aiUsedMonth  Int      @default(0)
+  aiMonthKey   String   @default("") // YYYY-MM
+  image        String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  accounts     Account[]
+  transactions Transaction[]
+  goals        Goal[]
+  budgets      Budget[]
+  settings     UserSettings?
+}
+
+model UserSettings {
+  id                    String  @id @default(cuid())
+  userId                String  @unique
+  user                  User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  currency              String  @default("сум")
+  monthlyIncomeGoal     Float?
+  savingsTargetPercent  Int     @default(20)
+  notifications         Boolean @default(false)
+  theme                 String  @default("dark")
+  streak                Int     @default(0)
+  bestStreak            Int     @default(0)
+  lastLogDate           String  @default("")
+  badgesJson            String  @default("[]")
+  customCategoriesJson  String  @default("[]")
+}
+
+model Account {
+  id      String  @id @default(cuid())
+  userId  String
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name    String
+  type    String  // cash | bank | card | savings | other
+  balance Float   @default(0)
+  emoji   String?
+}
+
+model Transaction {
+  id          String  @id @default(cuid())
+  userId      String
+  user        User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type        String  // income | expense
+  amount      Float
+  category    String
+  description String
+  date        String
+  recurring   Boolean @default(false)
+  accountId   String?
+  tagsJson    String  @default("[]")
+  createdAt   DateTime @default(now())
+
+  @@index([userId, date])
+}
+
+model Goal {
+  id            String  @id @default(cuid())
+  userId        String
+  user          User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title         String
+  targetAmount  Float
+  currentAmount Float   @default(0)
+  deadline      String?
+  emoji         String  @default("🎯")
+  color         String?
+}
+
+model Budget {
+  id       String @id @default(cuid())
+  userId   String
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category String
+  limit    Float
+  period   String @default("month")
+}
