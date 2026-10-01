@@ -237,6 +237,14 @@ function settingsToRow(s: Partial<Settings>) {
   return row;
 }
 
+/** Thrown when a request carries a cryptographically-valid JWT for a user that no longer exists in the DB. */
+export class UserNotFoundError extends Error {
+  constructor() {
+    super("User not found");
+    this.name = "UserNotFoundError";
+  }
+}
+
 async function ensureSettingsRow(userId: string) {
   const prisma = requirePrisma();
   return prisma.userSettings.upsert({
@@ -248,8 +256,12 @@ async function ensureSettingsRow(userId: string) {
 
 export async function readStore(userId: string): Promise<FinanceData> {
   const prisma = requirePrisma();
-  const [user, transactions, goals, budgets, accounts, settingsRow] = await Promise.all([
-    prisma.user.findUnique({ where: { id: userId }, select: { name: true } }),
+  // Check existence first, sequentially — a deleted-but-still-JWT-valid user would otherwise
+  // make ensureSettingsRow's upsert fail on a foreign key violation instead of a clear signal.
+  const user = await prisma.user.findUnique({ where: { id: userId }, select: { name: true } });
+  if (!user) throw new UserNotFoundError();
+
+  const [transactions, goals, budgets, accounts, settingsRow] = await Promise.all([
     prisma.transaction.findMany({ where: { userId }, orderBy: { date: "desc" } }),
     prisma.goal.findMany({ where: { userId } }),
     prisma.budget.findMany({ where: { userId } }),
@@ -262,7 +274,7 @@ export async function readStore(userId: string): Promise<FinanceData> {
     goals: goals.map(fromRowGoal),
     budgets: budgets.map(fromRowBudget),
     accounts: accounts.map(fromRowAccount),
-    settings: settingsFromRow(settingsRow, user?.name || "Пользователь"),
+    settings: settingsFromRow(settingsRow, user.name || "Пользователь"),
   };
 }
 

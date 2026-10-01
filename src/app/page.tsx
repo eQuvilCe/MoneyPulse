@@ -30,8 +30,7 @@ import ShareCard from "@/components/ShareCard";
 import { getHealthScore, getHealthBreakdown } from "@/lib/ai";
 import SmartAlerts from "@/components/SmartAlerts";
 import { useApp } from "@/components/AppProvider";
-import DepthScene from "@/components/fx/DepthScene";
-import TiltCard from "@/components/motion/TiltCard";
+import DashboardSceneGate from "@/components/three/DashboardSceneGate";
 
 export default function Dashboard() {
   const { data, refresh, live } = useRealtimeData(0);
@@ -113,7 +112,7 @@ export default function Dashboard() {
 
   return (
     <PageShell className="relative">
-      <DepthScene />
+      <DashboardSceneGate />
       {/* Header */}
       <FadeItem>
         <div className="flex flex-wrap items-end justify-between gap-4">
