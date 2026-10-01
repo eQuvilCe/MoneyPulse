@@ -4,11 +4,12 @@ import { useEffect, useState } from "react";
 import { loadDataAsync, updateSettings, exportJSON, exportCSV } from "@/lib/storage";
 import { FinanceData } from "@/lib/types";
 import { PageShell, FadeItem } from "@/components/motion/PageShell";
+import TiltCard from "@/components/motion/TiltCard";
 import { useApp } from "@/components/AppProvider";
 import { useToast } from "@/components/Toast";
 import CsvImport from "@/components/CsvImport";
 import StreakBadge from "@/components/StreakBadge";
-import { Palette, Tags, Bell, Database, ShieldCheck, type LucideIcon } from "lucide-react";
+import { User, Target, Palette, Tags, Bell, Database, ShieldCheck, type LucideIcon } from "lucide-react";
 
 function SectionHeading({ icon: Icon, children }: { icon: LucideIcon; children: React.ReactNode }) {
   return (
@@ -41,6 +42,7 @@ export default function SettingsPage() {
   const [data, setData] = useState<FinanceData | null>(null);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [savingProfile, setSavingProfile] = useState(false);
   const [incomeGoal, setIncomeGoal] = useState("");
   const [savings, setSavings] = useState("20");
   const [currency, setCurrency] = useState("₽");
@@ -61,17 +63,21 @@ export default function SettingsPage() {
     }
   }, [user]);
 
-  const saveProfile = async () => {
+  const saveAccount = async () => {
+    setSavingProfile(true);
     const res = await updateProfile({ name, email });
+    setSavingProfile(false);
     if (!res.ok) {
       toast(res.error || (lang === "ru" ? "Не удалось сохранить профиль" : "Could not save profile"), "err");
       return;
     }
+    toast(tr("saved"));
+  };
+
+  const saveFinance = async () => {
     await updateSettings({
       monthlyIncomeGoal: incomeGoal ? parseFloat(incomeGoal) : undefined,
       savingsTargetPercent: parseInt(savings) || 20,
-      currency,
-      theme,
     });
     toast(tr("saved"));
     refresh();
@@ -79,13 +85,20 @@ export default function SettingsPage() {
 
   if (!data) return <div className="py-20 text-center text-slate-500">{tr("loading")}</div>;
 
+  const planLabel =
+    lang === "ru"
+      ? { free: "Бесплатный", pro: "Pro", demo: "Демо" }[user?.plan || "free"]
+      : { free: "Free plan", pro: "Pro", demo: "Demo" }[user?.plan || "free"];
+
   return (
     <PageShell>
       <FadeItem>
         <p className="text-xs font-medium uppercase tracking-widest text-emerald-400/80">MoneyPulse</p>
         <h1 className="mt-1 text-3xl font-bold">{tr("settings")}</h1>
         <p className="mt-1 text-sm text-slate-400">
-          {tr("profile")} · {tr("appearance")} · {tr("dataSection")}
+          {lang === "ru"
+            ? "Аккаунт, финансы, оформление и данные — всё в одном месте"
+            : "Account, finances, appearance and data — all in one place"}
         </p>
       </FadeItem>
 
@@ -93,80 +106,125 @@ export default function SettingsPage() {
         <StreakBadge data={data} />
       </FadeItem>
 
-      {/* Profile card */}
-      <FadeItem className="mp-card overflow-hidden rounded-2xl">
-        <div className="border-b border-white/5 bg-gradient-to-r from-emerald-500/10 to-transparent px-6 py-4">
-          <div className="flex items-center gap-4">
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-400 to-cyan-500 text-xl font-bold text-slate-950 shadow-lg shadow-emerald-500/20">
-              {(user?.name || "U")[0].toUpperCase()}
-            </div>
-            <div>
-              <p className="font-semibold text-white">{user?.name}</p>
-              <p className="text-xs text-slate-500">{user?.email}</p>
-              <p className="mt-0.5 text-[10px] uppercase tracking-wider text-emerald-500/70">
-                {lang === "ru"
-                  ? { free: "Бесплатный", pro: "Pro", demo: "Демо" }[user?.plan || "free"]
-                  : { free: "Free plan", pro: "Pro", demo: "Demo" }[user?.plan || "free"]}
-              </p>
-            </div>
-          </div>
-        </div>
-        <div className="space-y-4 p-6">
-          <div className="grid gap-3 sm:grid-cols-2">
-            <div>
-              <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-slate-500">
-                {tr("name")}
-              </label>
-              <input
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="w-full rounded-xl border border-white/10 bg-slate-900/80 px-4 py-2.5 text-sm outline-none focus:border-emerald-500/40"
-              />
-            </div>
-            <div>
-              <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-slate-500">
-                {tr("email")}
-              </label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full rounded-xl border border-white/10 bg-slate-900/80 px-4 py-2.5 text-sm outline-none focus:border-emerald-500/40"
-              />
-            </div>
-            <div>
-              <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-slate-500">
-                {tr("incomeGoal")}
-              </label>
-              <input
-                type="number"
-                value={incomeGoal}
-                onChange={(e) => setIncomeGoal(e.target.value)}
-                className="w-full rounded-xl border border-white/10 bg-slate-900/80 px-4 py-2.5 text-sm outline-none focus:border-emerald-500/40"
-              />
-            </div>
-            <div>
-              <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-slate-500">
-                {tr("savingsTarget")}
-              </label>
-              <input
-                type="number"
-                value={savings}
-                onChange={(e) => setSavings(e.target.value)}
-                min="0"
-                max="100"
-                className="w-full rounded-xl border border-white/10 bg-slate-900/80 px-4 py-2.5 text-sm outline-none focus:border-emerald-500/40"
-              />
+      {/* Account */}
+      <FadeItem>
+        <TiltCard className="mp-card overflow-hidden rounded-2xl">
+          <div className="border-b border-white/5 bg-gradient-to-r from-emerald-500/10 to-transparent px-6 py-4">
+            <div className="flex items-center gap-4">
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-400 to-cyan-500 text-xl font-bold text-slate-950 shadow-lg shadow-emerald-500/20">
+                {(user?.name || "U")[0].toUpperCase()}
+              </div>
+              <div>
+                <p className="font-semibold text-white">{user?.name}</p>
+                <p className="text-xs text-slate-500">{user?.email}</p>
+                <span className="mt-1 inline-flex items-center rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-emerald-300 ring-1 ring-emerald-500/25">
+                  {planLabel}
+                </span>
+              </div>
             </div>
           </div>
-          <button
-            type="button"
-            onClick={saveProfile}
-            className="rounded-xl bg-emerald-500 px-6 py-2.5 text-sm font-semibold text-white shadow-lg shadow-emerald-500/20 hover:bg-emerald-400"
-          >
-            {tr("save")}
-          </button>
+          <div className="space-y-4 p-6">
+            <SectionHeading icon={User}>{tr("profile")}</SectionHeading>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div>
+                <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-slate-500">
+                  {tr("name")}
+                </label>
+                <input
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="w-full rounded-xl border border-white/10 bg-slate-900/80 px-4 py-2.5 text-sm outline-none focus:border-emerald-500/40"
+                />
+              </div>
+              <div>
+                <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-slate-500">
+                  {tr("email")}
+                </label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full rounded-xl border border-white/10 bg-slate-900/80 px-4 py-2.5 text-sm outline-none focus:border-emerald-500/40"
+                />
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => void saveAccount()}
+              disabled={savingProfile}
+              className="rounded-xl bg-emerald-500 px-6 py-2.5 text-sm font-semibold text-white shadow-lg shadow-emerald-500/20 hover:bg-emerald-400 disabled:opacity-60"
+            >
+              {savingProfile ? (lang === "ru" ? "Сохраняю…" : "Saving…") : tr("save")}
+            </button>
+          </div>
+        </TiltCard>
+      </FadeItem>
+
+      {/* Finance */}
+      <FadeItem className="mp-card space-y-4 rounded-2xl p-6">
+        <SectionHeading icon={Target}>
+          {lang === "ru" ? "Финансовые цели" : "Financial goals"}
+        </SectionHeading>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div>
+            <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-slate-500">
+              {tr("incomeGoal")}
+            </label>
+            <input
+              type="number"
+              value={incomeGoal}
+              onChange={(e) => setIncomeGoal(e.target.value)}
+              className="w-full rounded-xl border border-white/10 bg-slate-900/80 px-4 py-2.5 text-sm outline-none focus:border-emerald-500/40"
+            />
+          </div>
+          <div>
+            <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-slate-500">
+              {tr("savingsTarget")}
+            </label>
+            <input
+              type="number"
+              value={savings}
+              onChange={(e) => setSavings(e.target.value)}
+              min="0"
+              max="100"
+              className="w-full rounded-xl border border-white/10 bg-slate-900/80 px-4 py-2.5 text-sm outline-none focus:border-emerald-500/40"
+            />
+          </div>
         </div>
+        <div>
+          <p className="mb-2 text-[11px] font-medium uppercase tracking-wider text-slate-500">
+            {tr("currency")}
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {CURRENCIES.map((c) => (
+              <button
+                key={c.code}
+                type="button"
+                onClick={() => {
+                  setCurrency(c.code);
+                  void updateSettings({ currency: c.code }).then(() => {
+                    toast(`${tr("currency")}: ${c.label}`);
+                    refresh();
+                  });
+                }}
+                className={`rounded-xl px-3 py-2 text-sm font-semibold transition ${
+                  currency === c.code
+                    ? "bg-emerald-500/20 text-emerald-300 ring-1 ring-emerald-500/30"
+                    : "bg-white/5 text-slate-400 ring-1 ring-white/10 hover:text-white"
+                }`}
+              >
+                {c.label}
+              </button>
+            ))}
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={() => void saveFinance()}
+          className="rounded-xl bg-emerald-500 px-6 py-2.5 text-sm font-semibold text-white shadow-lg shadow-emerald-500/20 hover:bg-emerald-400"
+        >
+          {tr("save")}
+        </button>
       </FadeItem>
 
       {/* Appearance */}
@@ -220,34 +278,6 @@ export default function SettingsPage() {
                 }`}
               >
                 {th === "dark" ? tr("dark") : tr("light")}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div>
-          <p className="mb-2 text-[11px] font-medium uppercase tracking-wider text-slate-500">
-            {tr("currency")}
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {CURRENCIES.map((c) => (
-              <button
-                key={c.code}
-                type="button"
-                onClick={() => {
-                  setCurrency(c.code);
-                  void updateSettings({ currency: c.code }).then(() => {
-                    toast(`${tr("currency")}: ${c.label}`);
-                    refresh();
-                  });
-                }}
-                className={`rounded-xl px-3 py-2 text-sm font-semibold transition ${
-                  currency === c.code
-                    ? "bg-emerald-500/20 text-emerald-300 ring-1 ring-emerald-500/30"
-                    : "bg-white/5 text-slate-400 ring-1 ring-white/10 hover:text-white"
-                }`}
-              >
-                {c.label}
               </button>
             ))}
           </div>
@@ -327,7 +357,7 @@ export default function SettingsPage() {
                 }
               }
               await updateSettings({ notifications: on });
-              toast(on ? tr("saved") : tr("saved"));
+              toast(tr("saved"));
               refresh();
             }}
             className="h-4 w-4 rounded border-white/20"
