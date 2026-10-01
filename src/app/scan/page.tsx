@@ -92,7 +92,7 @@ export default function ScanPage() {
       </FadeItem>
 
       <FadeItem>
-        <div className="mp-card-glow relative overflow-hidden rounded-3xl p-1">
+        <div className="mp-card relative overflow-hidden rounded-3xl p-1">
           <label className="flex min-h-[220px] cursor-pointer flex-col items-center justify-center rounded-[1.35rem] border border-dashed border-emerald-500/30 bg-black/20 px-4 py-12 transition hover:border-emerald-400/50 hover:bg-emerald-500/5">
             {preview ? (
               // eslint-disable-next-line @next/next/no-img-element
@@ -169,7 +169,7 @@ export default function ScanPage() {
           <button
             type="button"
             onClick={() => void save()}
-            className="mp-gradient-btn w-full rounded-xl py-3 text-sm font-bold text-slate-950"
+            className="mp-btn-primary w-full rounded-xl py-3 text-sm font-bold"
           >
             {lang === "ru" ? "Сохранить расход" : "Save expense"}
           </button>
