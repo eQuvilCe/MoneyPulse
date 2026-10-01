@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { WordReveal, MagneticButton } from "./shared";
 import ProductPreview from "./ProductPreview";
 import StatsStrip from "./StatsStrip";
+import SceneGate from "@/components/three/SceneGate";
 
 export default function Hero({
   ru,
@@ -19,8 +20,11 @@ export default function Hero({
   const h1c = ru ? "AI подскажет, что исправить." : "AI tells you what to fix.";
 
   return (
-    <section className="mx-auto max-w-6xl px-6 pb-8 pt-28 sm:pt-32">
-      <div className="mx-auto max-w-3xl text-center">
+    <section className="relative mx-auto max-w-6xl px-6 pb-8 pt-28 sm:pt-32">
+      <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
+        <SceneGate />
+      </div>
+      <div className="relative z-10 mx-auto max-w-3xl text-center">
         <motion.p
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
@@ -66,8 +70,10 @@ export default function Hero({
           <MagneticButton onClick={onDemo}>{ru ? "Смотреть демо" : "View demo"}</MagneticButton>
         </motion.div>
       </div>
-      <ProductPreview ru={ru} />
-      <StatsStrip ru={ru} />
+      <div className="relative z-10">
+        <ProductPreview ru={ru} />
+        <StatsStrip ru={ru} />
+      </div>
     </section>
   );
 }
