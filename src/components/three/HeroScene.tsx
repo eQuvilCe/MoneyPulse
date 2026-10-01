@@ -5,7 +5,7 @@ import { Canvas, useFrame, type RootState } from "@react-three/fiber";
 import * as THREE from "three";
 
 const PALETTE = ["#3cf2b0", "#38bdf8", "#8b5cf6"];
-const PARTICLE_COUNT = 420;
+const PARTICLE_COUNT = 700;
 
 /** Undulating wireframe floor — the "ledger" surface transactions flow across. */
 function LedgerFloor() {
@@ -15,26 +15,43 @@ function LedgerFloor() {
       new THREE.ShaderMaterial({
         transparent: true,
         wireframe: true,
-        uniforms: { uTime: { value: 0 }, uColorA: { value: new THREE.Color(PALETTE[1]) }, uColorB: { value: new THREE.Color(PALETTE[2]) } },
+        uniforms: {
+          uTime: { value: 0 },
+          uColorA: { value: new THREE.Color(PALETTE[1]) },
+          uColorB: { value: new THREE.Color(PALETTE[2]) },
+          uFogColor: { value: new THREE.Color("#05070d") },
+          uFogNear: { value: 6 },
+          uFogFar: { value: 16 },
+        },
         vertexShader: `
           uniform float uTime;
           varying float vHeight;
+          varying float vDist;
           void main() {
             vec3 pos = position;
             float wave = sin(pos.x * 0.35 + uTime * 0.6) * 0.5 + cos(pos.y * 0.3 - uTime * 0.4) * 0.4;
             pos.z += wave;
             vHeight = wave;
-            gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
+            vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
+            vDist = -mvPosition.z;
+            gl_Position = projectionMatrix * mvPosition;
           }
         `,
         fragmentShader: `
           uniform vec3 uColorA;
           uniform vec3 uColorB;
+          uniform vec3 uFogColor;
+          uniform float uFogNear;
+          uniform float uFogFar;
           varying float vHeight;
+          varying float vDist;
           void main() {
             float t = clamp(vHeight * 0.5 + 0.5, 0.0, 1.0);
             vec3 color = mix(uColorA, uColorB, t);
-            gl_FragColor = vec4(color, 0.22);
+            float fogFactor = clamp((vDist - uFogNear) / (uFogFar - uFogNear), 0.0, 1.0);
+            color = mix(color, uFogColor, fogFactor);
+            float alpha = mix(0.22, 0.0, fogFactor);
+            gl_FragColor = vec4(color, alpha);
           }
         `,
       }),
@@ -47,7 +64,7 @@ function LedgerFloor() {
 
   return (
     <mesh ref={mesh} position={[0, -1.4, -4]} rotation={[-Math.PI / 2.6, 0, 0]} material={material}>
-      <planeGeometry args={[26, 20, 48, 36]} />
+      <planeGeometry args={[64, 20, 96, 36]} />
     </mesh>
   );
 }
@@ -61,7 +78,7 @@ function TransactionStream() {
     const colors = new Float32Array(PARTICLE_COUNT * 3);
     const color = new THREE.Color();
     for (let i = 0; i < PARTICLE_COUNT; i++) {
-      positions[i * 3] = (Math.random() - 0.5) * 16;
+      positions[i * 3] = (Math.random() - 0.5) * 42;
       positions[i * 3 + 1] = (Math.random() - 0.5) * 10;
       positions[i * 3 + 2] = (Math.random() - 0.5) * 8 - 2;
       speeds[i] = 0.25 + Math.random() * 0.5;
@@ -126,6 +143,7 @@ export default function HeroScene() {
       gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }}
       style={{ position: "absolute", inset: 0 }}
     >
+      <fog attach="fog" args={["#05070d", 6, 15]} />
       <ambientLight intensity={0.6} />
       <directionalLight position={[3, 4, 5]} intensity={0.8} color={PALETTE[0]} />
       <SceneRig>

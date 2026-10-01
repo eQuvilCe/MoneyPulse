@@ -21,7 +21,7 @@ export default function Hero({
 
   return (
     <section className="relative mx-auto max-w-6xl px-6 pb-8 pt-28 sm:pt-32">
-      <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
+      <div className="pointer-events-none absolute inset-y-0 left-1/2 z-0 w-screen -translate-x-1/2 overflow-hidden">
         <SceneGate />
       </div>
       <div className="relative z-10 mx-auto max-w-3xl text-center">
