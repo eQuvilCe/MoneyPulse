@@ -8,6 +8,18 @@ import { useApp } from "@/components/AppProvider";
 import { useToast } from "@/components/Toast";
 import CsvImport from "@/components/CsvImport";
 import StreakBadge from "@/components/StreakBadge";
+import { Palette, Tags, Bell, Database, ShieldCheck, type LucideIcon } from "lucide-react";
+
+function SectionHeading({ icon: Icon, children }: { icon: LucideIcon; children: React.ReactNode }) {
+  return (
+    <h2 className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
+      <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-white/5 ring-1 ring-white/10">
+        <Icon className="h-3.5 w-3.5 text-emerald-400/80" strokeWidth={2.2} />
+      </span>
+      {children}
+    </h2>
+  );
+}
 
 const CURRENCIES = [
   { code: "сум", label: "сум (UZS)" },
@@ -159,9 +171,7 @@ export default function SettingsPage() {
 
       {/* Appearance */}
       <FadeItem className="mp-card space-y-5 rounded-2xl p-6">
-        <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-          {tr("appearance")}
-        </h2>
+        <SectionHeading icon={Palette}>{tr("appearance")}</SectionHeading>
 
         <div>
           <p className="mb-2 text-[11px] font-medium uppercase tracking-wider text-slate-500">
@@ -246,9 +256,7 @@ export default function SettingsPage() {
 
       {/* Categories */}
       <FadeItem className="mp-card space-y-3 rounded-2xl p-6">
-        <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-          {tr("customCategories")}
-        </h2>
+        <SectionHeading icon={Tags}>{tr("customCategories")}</SectionHeading>
         <p className="text-xs text-slate-500">
           {lang === "ru"
             ? "Например «Питомцы», «Спорт» — появятся в формах расходов"
@@ -302,9 +310,7 @@ export default function SettingsPage() {
 
       {/* Notifications */}
       <FadeItem className="mp-card space-y-3 rounded-2xl p-6">
-        <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-          {tr("notifications")}
-        </h2>
+        <SectionHeading icon={Bell}>{tr("notifications")}</SectionHeading>
         <label className="flex cursor-pointer items-center justify-between gap-3 text-sm">
           <span className="text-slate-300">{tr("rememberDay")}</span>
           <input
@@ -331,9 +337,7 @@ export default function SettingsPage() {
 
       {/* Data */}
       <FadeItem className="mp-card space-y-4 rounded-2xl p-6">
-        <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-          {tr("dataSection")}
-        </h2>
+        <SectionHeading icon={Database}>{tr("dataSection")}</SectionHeading>
         <CsvImport onDone={refresh} />
         <div>
           <p className="mb-2 text-[11px] font-medium uppercase tracking-wider text-slate-500">
@@ -360,9 +364,7 @@ export default function SettingsPage() {
 
       {/* Security + logout */}
       <FadeItem className="mp-card space-y-4 rounded-2xl p-6">
-        <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-          {tr("security")}
-        </h2>
+        <SectionHeading icon={ShieldCheck}>{tr("security")}</SectionHeading>
         <ul className="space-y-1.5 text-xs leading-relaxed text-slate-500">
           <li>• {lang === "ru" ? "Пароли: scrypt, в cookie только JWT" : "Passwords: scrypt, JWT cookie only"}</li>
           <li>• {lang === "ru" ? "Данные изолированы по user_id" : "Data isolated by user_id"}</li>
