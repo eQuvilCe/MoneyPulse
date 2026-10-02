@@ -3,14 +3,15 @@
 import { useRef, useState } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import * as THREE from "three";
+import { useFrameloop } from "./useWebglAllowed";
 
-const PALETTE = ["#8b5cf6", "#d946ef"];
+const DEFAULT_PALETTE: [string, string] = ["#8b5cf6", "#d946ef"];
 const ORB_COUNT = 7;
 
 type OrbDef = { position: [number, number, number]; scale: number; phase: number; color: string };
 
-/** Soft glowing orbs drifting with a gentle bob — matches the goals page's violet/fuchsia accent. */
-function Orbs() {
+/** Soft glowing orbs drifting with a gentle bob — tinted via `palette` to match whichever page mounts it. */
+function Orbs({ palette }: { palette: [string, string] }) {
   const group = useRef<THREE.Group>(null);
   const [orbs] = useState<OrbDef[]>(() =>
     Array.from({ length: ORB_COUNT }, (_, i) => ({
@@ -21,7 +22,7 @@ function Orbs() {
       ],
       scale: 0.6 + Math.random() * 1.1,
       phase: Math.random() * Math.PI * 2,
-      color: PALETTE[i % PALETTE.length],
+      color: palette[i % palette.length],
     }))
   );
 
@@ -55,17 +56,19 @@ function Orbs() {
   );
 }
 
-/** Fixed, full-viewport ambient WebGL backdrop for /goals. */
-export default function FloatingOrbsScene() {
+/** Fixed, full-viewport ambient WebGL backdrop — floating orbs tinted to the mounting page's accent. */
+export default function FloatingOrbsScene({ palette = DEFAULT_PALETTE }: { palette?: [string, string] }) {
+  const frameloop = useFrameloop();
   return (
     <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden lg:left-[240px]" aria-hidden>
       <Canvas
+        frameloop={frameloop}
         dpr={[1, 1.5]}
         camera={{ position: [0, 0, 8], fov: 50 }}
         gl={{ antialias: true, alpha: true, powerPreference: "low-power" }}
       >
         <fog attach="fog" args={["#05070d", 10, 26]} />
-        <Orbs />
+        <Orbs palette={palette} />
       </Canvas>
     </div>
   );

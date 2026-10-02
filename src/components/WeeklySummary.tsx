@@ -3,8 +3,11 @@
 import { motion } from "framer-motion";
 import { FinanceData } from "@/lib/types";
 import { getStats } from "@/lib/storage";
+import { useApp } from "@/components/AppProvider";
 
 export default function WeeklySummary({ data }: { data: FinanceData }) {
+  const { tr, lang } = useApp();
+  const locale = lang === "en" ? "en-US" : "ru-RU";
   const w = getStats(data, 7);
   const bars = w.dailySeries.slice(-7);
 
@@ -14,18 +17,18 @@ export default function WeeklySummary({ data }: { data: FinanceData }) {
     <div className="mp-card rounded-2xl p-5">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-400">Неделя</h2>
+          <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-400">{tr("weekLabel")}</h2>
           <p className="mt-1 text-sm text-slate-300">
-            <span className="text-emerald-400">+{w.income.toLocaleString("ru-RU")}</span>
+            <span className="text-emerald-400">+{w.income.toLocaleString(locale)}</span>
             {" · "}
-            <span className="text-rose-400">−{w.expense.toLocaleString("ru-RU")}</span>
+            <span className="text-rose-400">−{w.expense.toLocaleString(locale)}</span>
           </p>
         </div>
         <div className="text-right">
-          <p className="text-[10px] text-slate-500">баланс 7д</p>
+          <p className="text-[10px] text-slate-500">{tr("weekBalance7d")}</p>
           <p className={`text-sm font-bold tabular-nums ${w.balance >= 0 ? "text-cyan-400" : "text-rose-400"}`}>
             {w.balance >= 0 ? "+" : ""}
-            {w.balance.toLocaleString("ru-RU")} ₽
+            {w.balance.toLocaleString(locale)} ₽
           </p>
         </div>
       </div>

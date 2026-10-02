@@ -29,6 +29,7 @@ import StreakBadge from "@/components/StreakBadge";
 import ShareCard from "@/components/ShareCard";
 import { getHealthScore, getHealthBreakdown } from "@/lib/ai";
 import SmartAlerts from "@/components/SmartAlerts";
+import MoneyFlow from "@/components/MoneyFlow";
 import { useApp } from "@/components/AppProvider";
 
 export default function Dashboard() {
@@ -241,6 +242,17 @@ export default function Dashboard() {
           )}
         </FadeItem>
       </div>
+
+      {/* Money flow — live map of income → spending → savings */}
+      <FadeItem>
+        <div className="rounded-3xl border border-white/[0.08] bg-[#0a0e17]/75 p-5 shadow-[0_20px_60px_-24px_rgba(0,0,0,0.65)] backdrop-blur-xl">
+          <div className="mb-1 flex items-center justify-between">
+            <h2 className="font-display text-sm font-semibold text-white">{tr("moneyFlowTitle")}</h2>
+          </div>
+          <p className="mb-4 text-xs text-slate-500">{tr("moneyFlowSubtitle")}</p>
+          <MoneyFlow data={data} />
+        </div>
+      </FadeItem>
 
       {/* Day strip + transactions */}
       <FadeItem>

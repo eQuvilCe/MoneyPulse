@@ -169,3 +169,33 @@ export const joinFamilySchema = z.object({
 export const removeFamilyMemberSchema = z.object({
   userId: idSchema,
 });
+
+export const familyBudgetSchema = z.object({
+  category: z.string().trim().min(1).max(60),
+  limit: z.number().finite().positive(),
+  period: z.enum(["month", "week"]).default("month"),
+});
+
+export const familyBudgetDeleteSchema = z.object({
+  id: idSchema,
+});
+
+export const familyGoalSchema = z.object({
+  title: z.string().trim().min(1).max(100),
+  targetAmount: z.number().finite().positive(),
+  emoji: z.string().trim().min(1).max(8).default("🎯"),
+  deadline: z.string().trim().max(32).nullish().transform((v) => v ?? undefined),
+});
+
+export const familyGoalUpdateSchema = z.object({
+  id: idSchema,
+  currentAmount: z.number().finite().min(0).optional(),
+  title: z.string().trim().min(1).max(100).optional(),
+  targetAmount: z.number().finite().positive().optional(),
+  deadline: z.string().trim().max(32).nullish().transform((v) => v ?? undefined),
+  emoji: z.string().trim().min(1).max(8).optional(),
+});
+
+export const familyGoalDeleteSchema = z.object({
+  id: idSchema,
+});

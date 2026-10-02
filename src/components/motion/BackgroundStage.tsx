@@ -9,6 +9,7 @@ import DashboardSceneGate from "@/components/three/DashboardSceneGate";
 import DataTerrainSceneGate from "@/components/three/DataTerrainSceneGate";
 import LaserScanSceneGate from "@/components/three/LaserScanSceneGate";
 import FloatingOrbsSceneGate from "@/components/three/FloatingOrbsSceneGate";
+import NeuralThreadsSceneGate from "@/components/three/NeuralThreadsSceneGate";
 
 type AccentKey = "cyan" | "violet" | "amber" | "emerald" | "rose" | "blue" | "teal" | "sky";
 
@@ -34,6 +35,29 @@ const ACCENTS: Record<AccentKey, Accent> = {
   sky: { className: "page-accent-sky", palette: ["125,211,252", "56,189,248", "139,92,246"], particle: "125,211,252", line: "56,189,248" },
 };
 
+// Hex equivalents of each accent's RGB triplet above (ACCENTS stores "R,G,B" strings for
+// CSS rgba() use — these WebGL scenes take hex colors instead, so the pairs are restated here).
+const HEX = {
+  emerald: ["#34d399", "#10b981"] as [string, string],
+  amber: ["#f59e0b", "#fb923c"] as [string, string],
+  rose: ["#fb7185", "#f43f5e"] as [string, string],
+};
+
+/** FloatingOrbsSceneGate defaults to violet/fuchsia (for /goals) — /family and /income reuse it tinted emerald instead. */
+function EmeraldOrbsSceneGate() {
+  return <FloatingOrbsSceneGate palette={HEX.emerald} />;
+}
+
+/** FloatingOrbsSceneGate tinted amber, for /budgets. */
+function BudgetsOrbsSceneGate() {
+  return <FloatingOrbsSceneGate palette={HEX.amber} />;
+}
+
+/** LaserScanSceneGate defaults to sky-blue (for /scan) — /banks reuses it tinted rose instead. */
+function BanksLaserSceneGate() {
+  return <LaserScanSceneGate palette={HEX.rose} />;
+}
+
 type CssLayer = "aurora" | "depth" | "particles-only";
 
 type RouteConfig = {
@@ -52,12 +76,12 @@ const ROUTES: Record<string, RouteConfig> = {
   "/scan": { accent: "sky", cssLayer: "aurora", Scene: LaserScanSceneGate },
   "/goals": { accent: "violet", cssLayer: "depth", Scene: FloatingOrbsSceneGate },
   "/calendar": { accent: "teal", cssLayer: "aurora", heatDrift: true },
-  "/family": { accent: "emerald", cssLayer: "aurora", Scene: FloatingOrbsSceneGate },
-  "/ai": { accent: "sky", cssLayer: "depth" },
-  "/banks": { accent: "rose", cssLayer: "aurora" },
-  "/budgets": { accent: "amber", cssLayer: "depth" },
+  "/family": { accent: "emerald", cssLayer: "aurora", Scene: EmeraldOrbsSceneGate },
+  "/ai": { accent: "sky", cssLayer: "depth", Scene: NeuralThreadsSceneGate },
+  "/banks": { accent: "rose", cssLayer: "aurora", Scene: BanksLaserSceneGate },
+  "/budgets": { accent: "amber", cssLayer: "depth", Scene: BudgetsOrbsSceneGate },
   "/expenses": { accent: "amber", cssLayer: "aurora" },
-  "/income": { accent: "emerald", cssLayer: "depth" },
+  "/income": { accent: "emerald", cssLayer: "depth", Scene: EmeraldOrbsSceneGate },
   "/settings": { accent: "cyan", cssLayer: "aurora" },
   "/subscriptions": { accent: "rose", cssLayer: "depth" },
 };

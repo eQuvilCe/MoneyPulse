@@ -9,6 +9,7 @@ import PulseOrbSceneLoader from "@/components/three/PulseOrbSceneLoader";
 import WebGLErrorBoundary from "@/components/three/WebGLErrorBoundary";
 import { useWebglAllowed } from "@/components/three/useWebglAllowed";
 import { useApp } from "@/components/AppProvider";
+import { emitCelebrate } from "@/lib/events";
 
 /**
  * Live "Pulse" widget — the classic SVG ring by default. A 3D orb variant exists
@@ -94,6 +95,7 @@ export default function PulseHero({
     // One-time celebration trigger synced to an external system (localStorage) — not derivable at render time.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setConfettiFire((f) => f + 1);
+    emitCelebrate();
   }, [health, isEmpty]);
 
   const ref = useRef<HTMLDivElement>(null);

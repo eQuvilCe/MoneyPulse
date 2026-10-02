@@ -4,8 +4,9 @@ import { useState } from "react";
 import { importTransactions } from "@/lib/storage";
 import { useToast } from "@/components/Toast";
 import { EXPENSE_CATEGORIES, ExpenseCategory } from "@/lib/types";
+import { useApp } from "@/components/AppProvider";
 
-function parseCSV(text: string) {
+function parseCSV(text: string, fallbackDesc: string) {
   const lines = text.trim().split(/\r?\n/);
   if (lines.length < 2) return [];
   const sep = lines[0].includes(";") ? ";" : ",";
@@ -33,7 +34,7 @@ function parseCSV(text: string) {
       date = `${parts[2]}-${parts[1].padStart(2, "0")}-${parts[0].padStart(2, "0")}`;
     }
     if (!/^\d{4}-\d{2}-\d{2}/.test(date)) date = new Date().toISOString().slice(0, 10);
-    const desc = get("description", "описан", "memo", "detail", "назначен") || "Импорт";
+    const desc = get("description", "описан", "memo", "detail", "назначен") || fallbackDesc;
     const typeHint = get("type", "тип");
     const signed = parseFloat(amountRaw.replace(/\s/g, "").replace(",", "."));
     const type: "income" | "expense" =
@@ -65,6 +66,7 @@ function parseCSV(text: string) {
 
 export default function CsvImport({ onDone }: { onDone: () => void }) {
   const toast = useToast();
+  const { tr } = useApp();
   const [busy, setBusy] = useState(false);
   const [preview, setPreview] = useState(0);
 
@@ -72,9 +74,9 @@ export default function CsvImport({ onDone }: { onDone: () => void }) {
     setBusy(true);
     try {
       const text = await file.text();
-      const rows = parseCSV(text);
+      const rows = parseCSV(text, tr("csvDefaultDescription"));
       if (!rows.length) {
-        toast("Не удалось разобрать CSV", "err");
+        toast(tr("csvParseError"), "err");
         setBusy(false);
         return;
       }
@@ -88,23 +90,21 @@ export default function CsvImport({ onDone }: { onDone: () => void }) {
           date: r.date,
         }))
       );
-      toast(`Импортировано ${rows.length} операций`);
+      toast(tr("csvImportSuccess", { n: rows.length }));
       onDone();
     } catch {
-      toast("Ошибка импорта", "err");
+      toast(tr("csvImportError"), "err");
     }
     setBusy(false);
   };
 
   return (
     <div className="mp-card rounded-2xl p-5">
-      <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-400">Импорт CSV</h2>
-      <p className="mt-1 text-xs text-slate-500">
-        Выписка банка: колонки date / amount / description (или дата, сумма, описание)
-      </p>
+      <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-400">{tr("csvImportTitle")}</h2>
+      <p className="mt-1 text-xs text-slate-500">{tr("csvImportHint")}</p>
       <label className="mt-4 flex cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed border-white/15 bg-white/[0.02] px-4 py-8 transition hover:border-emerald-500/40 hover:bg-emerald-500/5">
         <span className="text-2xl">📄</span>
-        <span className="mt-2 text-sm text-slate-300">{busy ? "Импорт..." : "Выбрать CSV"}</span>
+        <span className="mt-2 text-sm text-slate-300">{busy ? tr("csvImporting") : tr("csvChooseFile")}</span>
         <input
           type="file"
           accept=".csv,text/csv"
@@ -116,7 +116,7 @@ export default function CsvImport({ onDone }: { onDone: () => void }) {
           }}
         />
       </label>
-      {preview > 0 && <p className="mt-2 text-center text-xs text-emerald-400">Последний импорт: {preview} строк</p>}
+      {preview > 0 && <p className="mt-2 text-center text-xs text-emerald-400">{tr("csvLastImport", { n: preview })}</p>}
     </div>
   );
 }
