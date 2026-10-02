@@ -3,12 +3,13 @@
 import { useRef, useState } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import * as THREE from "three";
+import { useFrameloop } from "./useWebglAllowed";
 
-const PALETTE = ["#7dd3fc", "#38bdf8"];
+const DEFAULT_PALETTE: [string, string] = ["#7dd3fc", "#38bdf8"];
 const DUST_COUNT = 100;
 
 /** A thin glowing plane sweeping up and down — echoes a receipt/document scan line. */
-function ScanPlane() {
+function ScanPlane({ color }: { color: string }) {
   const mesh = useRef<THREE.Mesh>(null);
   useFrame((state) => {
     const m = mesh.current;
@@ -19,13 +20,13 @@ function ScanPlane() {
   return (
     <mesh ref={mesh} position={[0, 0, -8]}>
       <planeGeometry args={[18, 0.12]} />
-      <meshBasicMaterial color={PALETTE[1]} transparent opacity={0.55} blending={THREE.AdditiveBlending} />
+      <meshBasicMaterial color={color} transparent opacity={0.55} blending={THREE.AdditiveBlending} />
     </mesh>
   );
 }
 
 /** Faint dust catching the scan light, same drifting-points pattern used elsewhere. */
-function ScanDust() {
+function ScanDust({ color }: { color: string }) {
   const points = useRef<THREE.Points>(null);
   const [{ positions, phases }] = useState(() => {
     const positions = new Float32Array(DUST_COUNT * 3);
@@ -55,23 +56,25 @@ function ScanDust() {
       <bufferGeometry>
         <bufferAttribute attach="attributes-position" args={[positions, 3]} />
       </bufferGeometry>
-      <pointsMaterial size={0.045} color={PALETTE[0]} transparent opacity={0.4} sizeAttenuation depthWrite={false} />
+      <pointsMaterial size={0.045} color={color} transparent opacity={0.4} sizeAttenuation depthWrite={false} />
     </points>
   );
 }
 
-/** Fixed, full-viewport ambient WebGL backdrop for /scan. */
-export default function LaserScanScene() {
+/** Fixed, full-viewport ambient WebGL backdrop — sweeping scan line tinted via `palette`. */
+export default function LaserScanScene({ palette = DEFAULT_PALETTE }: { palette?: [string, string] }) {
+  const frameloop = useFrameloop();
   return (
     <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden lg:left-[240px]" aria-hidden>
       <Canvas
+        frameloop={frameloop}
         dpr={[1, 1.5]}
         camera={{ position: [0, 0, 8], fov: 50 }}
         gl={{ antialias: true, alpha: true, powerPreference: "low-power" }}
       >
         <fog attach="fog" args={["#05070d", 10, 26]} />
-        <ScanPlane />
-        <ScanDust />
+        <ScanPlane color={palette[1]} />
+        <ScanDust color={palette[0]} />
       </Canvas>
     </div>
   );

@@ -14,6 +14,7 @@ import {
 } from "@/lib/types";
 import { addTransaction } from "@/lib/storage";
 import { useToast } from "@/components/Toast";
+import { useApp } from "@/components/AppProvider";
 
 function suggestCategory(text: string, type: string): string | null {
   const s = text.toLowerCase();
@@ -50,6 +51,7 @@ export default function TransactionForm({ type, onAdded, currency = "₽", setti
   const [recurring, setRecurring] = useState(false);
   const [open, setOpen] = useState(false);
   const toast = useToast();
+  const { tr } = useApp();
 
   const categories =
     type === "income"
@@ -64,7 +66,7 @@ export default function TransactionForm({ type, onAdded, currency = "₽", setti
       type,
       amount: num,
       category,
-      description: description || (type === "income" ? "Доход" : "Расход"),
+      description: description || tr(type === "income" ? "addIncome" : "addExpense"),
       date,
       recurring,
     }).then(() => {
@@ -74,8 +76,8 @@ export default function TransactionForm({ type, onAdded, currency = "₽", setti
       setOpen(false);
       toast(
         type === "income"
-          ? `+${formatMoney(num, currency)} доход${recurring ? " ↻" : ""}`
-          : `−${formatMoney(num, currency)} расход${recurring ? " ↻" : ""}`
+          ? `+${formatMoney(num, currency)} ${tr("addIncome").toLowerCase()}${recurring ? " ↻" : ""}`
+          : `−${formatMoney(num, currency)} ${tr("addExpense").toLowerCase()}${recurring ? " ↻" : ""}`
       );
       onAdded();
     });
@@ -89,7 +91,7 @@ export default function TransactionForm({ type, onAdded, currency = "₽", setti
         onClick={() => setOpen(true)}
         className="flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-white/15 bg-white/[0.02] py-4 text-sm font-medium text-slate-400 transition hover:border-emerald-500/30 hover:text-emerald-300"
       >
-        + {type === "income" ? "Добавить доход" : "Добавить расход"}
+        + {type === "income" ? tr("addIncome") : tr("addExpense")}
       </motion.button>
 
       <AnimatePresence>
@@ -110,13 +112,13 @@ export default function TransactionForm({ type, onAdded, currency = "₽", setti
               className="w-full max-w-md space-y-3 rounded-3xl border border-white/10 bg-[#0a0f1a] p-5 shadow-2xl"
             >
               <h3 className="text-lg font-bold">
-                {type === "income" ? "Новый доход" : "Новый расход"}
+                {type === "income" ? tr("newIncomeTitle") : tr("newExpenseTitle")}
               </h3>
               <input
                 type="number"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
-                placeholder={`Сумма ${currency}`}
+                placeholder={`${tr("amount")} ${currency}`}
                 required
                 min="1"
                 step="any"
@@ -141,7 +143,7 @@ export default function TransactionForm({ type, onAdded, currency = "₽", setti
                   const sug = suggestCategory(v, type);
                   if (sug) setCategory(sug);
                 }}
-                placeholder="Описание"
+                placeholder={tr("txDescriptionPlaceholder")}
                 className="w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-sm outline-none focus:border-emerald-500/40"
               />
               <input
@@ -157,7 +159,7 @@ export default function TransactionForm({ type, onAdded, currency = "₽", setti
                   onChange={(e) => setRecurring(e.target.checked)}
                   className="rounded border-white/20"
                 />
-                Повторять каждый месяц (аренда, подписки…)
+                {tr("recurringMonthlyLabel")}
               </label>
               <div className="flex gap-2 pt-1">
                 <button
@@ -165,13 +167,13 @@ export default function TransactionForm({ type, onAdded, currency = "₽", setti
                   onClick={() => setOpen(false)}
                   className="flex-1 rounded-xl bg-white/5 py-3 text-sm text-slate-400"
                 >
-                  Отмена
+                  {tr("cancel")}
                 </button>
                 <button
                   type="submit"
                   className="flex-1 rounded-xl bg-emerald-500 py-3 text-sm font-semibold text-white hover:bg-emerald-400"
                 >
-                  Добавить
+                  {tr("add")}
                 </button>
               </div>
             </motion.form>

@@ -7,8 +7,18 @@ import { LetterReveal, MagneticButton } from "@/components/motion/Reveal";
 import { useApp } from "@/components/AppProvider";
 import { useToast } from "@/components/Toast";
 import { useRealtimeData } from "@/hooks/useRealtimeData";
-import { CATEGORY_ICONS, formatMoney } from "@/lib/types";
-import type { FamilyMemberPublic, FamilyMemberStat, FamilyPublic, FamilyTransactionRow } from "@/lib/db";
+import { CATEGORY_ICONS, formatMoney, allExpenseCategories } from "@/lib/types";
+import type {
+  FamilyMemberPublic,
+  FamilyMemberStat,
+  FamilyPublic,
+  FamilyTransactionRow,
+  FamilyBudgetPublic,
+  FamilyGoalPublic,
+  FamilyAlert,
+} from "@/lib/db";
+import Confetti from "@/components/fx/Confetti";
+import { emitCelebrate } from "@/lib/events";
 
 const FAMILY_MAX_MEMBERS = 7;
 
@@ -36,21 +46,44 @@ export default function FamilyPage() {
   const [family, setFamily] = useState<FamilyPublic | null>(null);
   const [stats, setStats] = useState<FamilyMemberStat[]>([]);
   const [transactions, setTransactions] = useState<FamilyTransactionRow[]>([]);
+  const [familyBudgets, setFamilyBudgets] = useState<FamilyBudgetPublic[]>([]);
+  const [familyGoals, setFamilyGoals] = useState<FamilyGoalPublic[]>([]);
+  const [familyAlerts, setFamilyAlerts] = useState<FamilyAlert[]>([]);
   const [busy, setBusy] = useState(false);
   const [confirmLeave, setConfirmLeave] = useState(false);
   const [confirmRemove, setConfirmRemove] = useState<string | null>(null);
+  const [confettiFire, setConfettiFire] = useState(0);
 
   const [name, setName] = useState("");
   const [code, setCode] = useState("");
 
+  const [showBudgetForm, setShowBudgetForm] = useState(false);
+  const [budgetCat, setBudgetCat] = useState("еда");
+  const [budgetLimit, setBudgetLimit] = useState("");
+
+  const [showGoalForm, setShowGoalForm] = useState(false);
+  const [goalTitle, setGoalTitle] = useState("");
+  const [goalTarget, setGoalTarget] = useState("");
+  const [goalEmoji, setGoalEmoji] = useState("🎯");
+
   const load = useCallback(async () => {
-    const res = await api<{ family: FamilyPublic | null; overview?: { stats: FamilyMemberStat[]; transactions: FamilyTransactionRow[] } }>(
-      "/api/family"
-    );
+    const res = await api<{
+      family: FamilyPublic | null;
+      overview?: {
+        stats: FamilyMemberStat[];
+        transactions: FamilyTransactionRow[];
+        familyBudgets: FamilyBudgetPublic[];
+        familyGoals: FamilyGoalPublic[];
+        familyAlerts: FamilyAlert[];
+      };
+    }>("/api/family");
     if (res.ok && res.data) {
       setFamily(res.data.family);
       setStats(res.data.overview?.stats || []);
       setTransactions(res.data.overview?.transactions || []);
+      setFamilyBudgets(res.data.overview?.familyBudgets || []);
+      setFamilyGoals(res.data.overview?.familyGoals || []);
+      setFamilyAlerts(res.data.overview?.familyAlerts || []);
     }
     setLoading(false);
   }, []);
@@ -124,6 +157,78 @@ export default function FamilyPage() {
     void load();
   };
 
+  const saveBudget = async () => {
+    const num = parseFloat(budgetLimit);
+    if (!num || busy) return;
+    setBusy(true);
+    const res = await api("/api/family/budget", {
+      method: "POST",
+      body: JSON.stringify({ category: budgetCat, limit: num, period: "month" }),
+    });
+    setBusy(false);
+    if (!res.ok) return toast(res.error || "Error", "err");
+    toast(tr("saved"));
+    setBudgetLimit("");
+    setShowBudgetForm(false);
+    void load();
+  };
+
+  const removeBudget = async (id: string) => {
+    if (busy) return;
+    setBusy(true);
+    const res = await api("/api/family/budget", { method: "DELETE", body: JSON.stringify({ id }) });
+    setBusy(false);
+    if (!res.ok) return toast(res.error || "Error", "err");
+    void load();
+  };
+
+  const saveGoal = async () => {
+    const num = parseFloat(goalTarget);
+    if (!goalTitle.trim() || !num || busy) return;
+    setBusy(true);
+    const res = await api("/api/family/goal", {
+      method: "POST",
+      body: JSON.stringify({ title: goalTitle.trim(), targetAmount: num, emoji: goalEmoji }),
+    });
+    setBusy(false);
+    if (!res.ok) return toast(res.error || "Error", "err");
+    toast(tr("saved"));
+    setGoalTitle("");
+    setGoalTarget("");
+    setGoalEmoji("🎯");
+    setShowGoalForm(false);
+    void load();
+  };
+
+  const contributeToGoal = async (g: FamilyGoalPublic, amount: number) => {
+    if (busy) return;
+    const next = Math.min(g.targetAmount, g.currentAmount + amount);
+    setBusy(true);
+    const res = await api("/api/family/goal", {
+      method: "PATCH",
+      body: JSON.stringify({ id: g.id, currentAmount: next }),
+    });
+    setBusy(false);
+    if (!res.ok) return toast(res.error || "Error", "err");
+    if (next >= g.targetAmount && g.currentAmount < g.targetAmount) {
+      toast(tr("goalAchieved", { title: g.title }));
+      setConfettiFire((f) => f + 1);
+      emitCelebrate();
+    } else {
+      toast(`+${formatMoney(amount, cur)} → ${g.title}`);
+    }
+    void load();
+  };
+
+  const removeGoal = async (id: string) => {
+    if (busy) return;
+    setBusy(true);
+    const res = await api("/api/family/goal", { method: "DELETE", body: JSON.stringify({ id }) });
+    setBusy(false);
+    if (!res.ok) return toast(res.error || "Error", "err");
+    void load();
+  };
+
   const copyCode = async () => {
     if (!family) return;
     try {
@@ -135,9 +240,11 @@ export default function FamilyPage() {
   };
 
   const isOwner = !!(family && user && family.ownerId === user.id);
+  const expenseCats = allExpenseCategories(data?.settings);
 
   return (
     <PageShell className="page-accent-emerald">
+      <Confetti fire={confettiFire} />
       <FadeItem>
         <p className="text-xs font-medium uppercase tracking-widest" style={{ color: "var(--page-accent)" }}>
           MoneyPulse
@@ -241,6 +348,28 @@ export default function FamilyPage() {
             </TiltCard>
           </FadeItem>
 
+          {familyAlerts.length > 0 && (
+            <FadeItem>
+              <div className="rounded-2xl border border-rose-500/30 bg-rose-500/10 p-4">
+                <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-rose-300">
+                  {tr("familyAlertsTitle")}
+                </p>
+                <ul className="space-y-1">
+                  {familyAlerts.map((a) => (
+                    <li key={a.category} className="text-sm text-rose-100">
+                      {tr("familyAlertOverBy", {
+                        category: a.category,
+                        spent: formatMoney(a.spent, cur),
+                        limit: formatMoney(a.limit, cur),
+                        overBy: formatMoney(a.overBy, cur),
+                      })}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </FadeItem>
+          )}
+
           <FadeItem className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {family.members.map((m: FamilyMemberPublic) => {
               const stat = stats.find((s) => s.userId === m.userId);
@@ -298,6 +427,208 @@ export default function FamilyPage() {
                 </TiltCard>
               );
             })}
+          </FadeItem>
+
+          <FadeItem>
+            <TiltCard className="mp-card rounded-2xl p-5">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-sm font-bold">{tr("familyBudgetsTitle")}</h2>
+                  <p className="mt-0.5 text-xs text-slate-500">{tr("familyBudgetsHint")}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowBudgetForm((v) => !v)}
+                  className="rounded-xl px-3 py-2 text-xs font-semibold ring-1 ring-white/10 hover:bg-white/5"
+                >
+                  {tr("familyAddBudgetBtn")}
+                </button>
+              </div>
+              {showBudgetForm && (
+                <div className="mt-3 grid gap-2 sm:grid-cols-3">
+                  <select
+                    value={budgetCat}
+                    onChange={(e) => setBudgetCat(e.target.value)}
+                    className="rounded-xl border border-white/10 bg-slate-900 px-3 py-2.5 text-sm"
+                  >
+                    {expenseCats.map((c) => (
+                      <option key={c} value={c}>
+                        {CATEGORY_ICONS[c] || "📦"} {c}
+                      </option>
+                    ))}
+                  </select>
+                  <input
+                    type="number"
+                    value={budgetLimit}
+                    onChange={(e) => setBudgetLimit(e.target.value)}
+                    placeholder={tr("familyNewBudget")}
+                    min="1"
+                    className="rounded-xl border border-white/10 bg-slate-900 px-3 py-2.5 text-sm"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => void saveBudget()}
+                    className="rounded-xl px-4 py-2.5 text-sm font-semibold text-white"
+                    style={{ background: "linear-gradient(135deg, var(--page-accent), var(--page-accent-2))" }}
+                  >
+                    {tr("save")}
+                  </button>
+                </div>
+              )}
+              {familyBudgets.length === 0 ? (
+                <p className="py-6 text-center text-sm text-slate-500">{tr("familyNoBudgets")}</p>
+              ) : (
+                <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                  {familyBudgets.map((b) => {
+                    const alert = familyAlerts.find((a) => a.category === b.category);
+                    return (
+                      <div
+                        key={b.id}
+                        className={`flex items-center justify-between rounded-xl px-3 py-2.5 ring-1 ${
+                          alert ? "ring-rose-500/30 bg-rose-500/5" : "ring-white/10"
+                        }`}
+                      >
+                        <div className="flex items-center gap-2">
+                          <span>{CATEGORY_ICONS[b.category] || "📦"}</span>
+                          <div>
+                            <p className="text-sm font-medium capitalize">{b.category}</p>
+                            <p className="text-[11px] text-slate-500">
+                              {formatMoney(alert?.spent ?? 0, cur)} / {formatMoney(b.limit, cur)}
+                            </p>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => void removeBudget(b.id)}
+                          className="rounded-lg p-1 text-slate-600 hover:text-rose-400"
+                          aria-label={tr("remove")}
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </TiltCard>
+          </FadeItem>
+
+          <FadeItem>
+            <TiltCard className="mp-card rounded-2xl p-5">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-sm font-bold">{tr("familyGoalsTitle")}</h2>
+                  <p className="mt-0.5 text-xs text-slate-500">{tr("familyGoalsHint")}</p>
+                </div>
+                <MagneticButton onClick={() => setShowGoalForm((v) => !v)} primary>
+                  {tr("familyAddGoalBtn")}
+                </MagneticButton>
+              </div>
+              {showGoalForm && (
+                <div className="mt-3 grid gap-2 sm:grid-cols-4">
+                  <input
+                    value={goalTitle}
+                    onChange={(e) => setGoalTitle(e.target.value)}
+                    placeholder={tr("goalTitleLabel")}
+                    className="rounded-xl border border-white/10 bg-slate-900 px-3 py-2.5 text-sm sm:col-span-2"
+                  />
+                  <input
+                    type="number"
+                    value={goalTarget}
+                    onChange={(e) => setGoalTarget(e.target.value)}
+                    placeholder={tr("goalAmountLabel", { cur })}
+                    min="1"
+                    className="rounded-xl border border-white/10 bg-slate-900 px-3 py-2.5 text-sm"
+                  />
+                  <input
+                    value={goalEmoji}
+                    onChange={(e) => setGoalEmoji(e.target.value)}
+                    placeholder={tr("emoji")}
+                    className="rounded-xl border border-white/10 bg-slate-900 px-3 py-2.5 text-sm"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => void saveGoal()}
+                    className="rounded-xl px-4 py-2.5 text-sm font-semibold text-white sm:col-span-4"
+                    style={{ background: "linear-gradient(135deg, var(--page-accent), var(--page-accent-2))" }}
+                  >
+                    {tr("save")}
+                  </button>
+                </div>
+              )}
+              {familyGoals.length === 0 ? (
+                <p className="py-6 text-center text-sm text-slate-500">{tr("familyNoGoals")}</p>
+              ) : (
+                <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                  {familyGoals.map((g) => {
+                    const progress = Math.min(100, Math.round((g.currentAmount / g.targetAmount) * 100));
+                    const left = g.targetAmount - g.currentAmount;
+                    const creator = family.members.find((m) => m.userId === g.createdBy)?.name;
+                    return (
+                      <div key={g.id} className="rounded-xl p-3 ring-1 ring-white/10">
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xl">{g.emoji}</span>
+                            <div>
+                              <p className="text-sm font-semibold">{g.title}</p>
+                              {creator && (
+                                <p className="text-[10px] text-slate-500">
+                                  {tr("familyCreatedBy")} {creator}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => void removeGoal(g.id)}
+                            className="rounded-lg p-1 text-slate-600 hover:text-rose-400"
+                            aria-label={tr("remove")}
+                          >
+                            ✕
+                          </button>
+                        </div>
+                        <div className="mt-2.5">
+                          <div className="mb-1 flex justify-between text-xs">
+                            <span style={{ color: "var(--page-accent)" }}>{formatMoney(g.currentAmount, cur)}</span>
+                            <span className="text-slate-500">{formatMoney(g.targetAmount, cur)}</span>
+                          </div>
+                          <div className="h-2 overflow-hidden rounded-full bg-slate-800">
+                            <div
+                              className="h-full rounded-full transition-[width] duration-500"
+                              style={{
+                                width: `${progress}%`,
+                                background: "linear-gradient(90deg, var(--page-accent), var(--page-accent-2))",
+                              }}
+                            />
+                          </div>
+                        </div>
+                        {left > 0 ? (
+                          <div className="mt-2 flex flex-wrap gap-1.5">
+                            {[1000, 5000, 10000].map((amt) => (
+                              <button
+                                key={amt}
+                                type="button"
+                                onClick={() => void contributeToGoal(g, amt)}
+                                className="rounded-lg px-2 py-1 text-[11px] transition hover:brightness-110"
+                                style={{
+                                  background: "rgba(var(--page-accent-rgb),0.1)",
+                                  color: "var(--page-accent)",
+                                  boxShadow: "inset 0 0 0 1px rgba(var(--page-accent-rgb),0.2)",
+                                }}
+                              >
+                                +{formatMoney(amt, cur)}
+                              </button>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="mt-2 text-center text-xs text-emerald-400">{tr("doneCheckmark")}</p>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </TiltCard>
           </FadeItem>
 
           <FadeItem>

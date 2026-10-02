@@ -21,3 +21,5 @@ tsconfig.tsbuildinfo
 
 # prisma
 /prisma/*.db
+.vercel
+.env*

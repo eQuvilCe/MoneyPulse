@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { Canvas, useFrame, type RootState } from "@react-three/fiber";
 import * as THREE from "three";
+import { useFrameloop } from "./useWebglAllowed";
 
 const PALETTE = ["#3cf2b0", "#38bdf8", "#8b5cf6"];
 const PARTICLE_COUNT = 700;
@@ -139,8 +140,10 @@ function SceneRig({ children }: { children: React.ReactNode }) {
 }
 
 export default function HeroScene() {
+  const frameloop = useFrameloop();
   return (
     <Canvas
+      frameloop={frameloop}
       dpr={[1, 1.75]}
       camera={{ position: [0, 0.4, 6], fov: 52 }}
       gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }}

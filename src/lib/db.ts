@@ -770,11 +770,129 @@ export type FamilyTransactionRow = {
   description: string;
   date: string;
 };
+export type FamilyBudgetPublic = { id: string; category: string; limit: number; period: string; createdBy: string };
+export type FamilyGoalPublic = {
+  id: string;
+  title: string;
+  targetAmount: number;
+  currentAmount: number;
+  deadline: string | null;
+  emoji: string;
+  createdBy: string;
+};
+export type FamilyAlert = { category: string; limit: number; spent: number; overBy: number };
+
+/** Looks up a FamilyBudget and verifies `userId` belongs to its family — throws otherwise. Never trust a client-supplied familyId alone. */
+async function requireFamilyBudgetAccess(prisma: ReturnType<typeof requirePrisma>, userId: string, budgetId: string) {
+  const budget = await prisma.familyBudget.findUnique({ where: { id: budgetId } });
+  if (!budget) throw new FamilyError("NOT_IN_FAMILY", "Бюджет не найден.");
+  const membership = await prisma.familyMember.findUnique({ where: { userId } });
+  if (!membership || membership.familyId !== budget.familyId) {
+    throw new FamilyError("NOT_SAME_FAMILY", "У вас нет доступа к этому бюджету семьи.");
+  }
+  return budget;
+}
+
+/** Looks up a FamilyGoal and verifies `userId` belongs to its family — throws otherwise. */
+async function requireFamilyGoalAccess(prisma: ReturnType<typeof requirePrisma>, userId: string, goalId: string) {
+  const goal = await prisma.familyGoal.findUnique({ where: { id: goalId } });
+  if (!goal) throw new FamilyError("NOT_IN_FAMILY", "Цель не найдена.");
+  const membership = await prisma.familyMember.findUnique({ where: { userId } });
+  if (!membership || membership.familyId !== goal.familyId) {
+    throw new FamilyError("NOT_SAME_FAMILY", "У вас нет доступа к этой цели семьи.");
+  }
+  return goal;
+}
+
+async function requireFamilyMembership(prisma: ReturnType<typeof requirePrisma>, userId: string, familyId: string) {
+  const membership = await prisma.familyMember.findUnique({ where: { userId } });
+  if (!membership || membership.familyId !== familyId) {
+    throw new FamilyError("NOT_SAME_FAMILY", "У вас нет доступа к этой семье.");
+  }
+}
+
+export async function upsertFamilyBudget(
+  userId: string,
+  familyId: string,
+  category: string,
+  limit: number,
+  period: string
+): Promise<FamilyBudgetPublic> {
+  const prisma = requirePrisma();
+  await requireFamilyMembership(prisma, userId, familyId);
+  const b = await prisma.familyBudget.upsert({
+    where: { familyId_category: { familyId, category } },
+    create: { familyId, category, limit, period, createdBy: userId },
+    update: { limit, period },
+  });
+  return { id: b.id, category: b.category, limit: b.limit, period: b.period, createdBy: b.createdBy };
+}
+
+export async function deleteFamilyBudget(userId: string, budgetId: string): Promise<void> {
+  const prisma = requirePrisma();
+  await requireFamilyBudgetAccess(prisma, userId, budgetId);
+  await prisma.familyBudget.delete({ where: { id: budgetId } });
+}
+
+export async function addFamilyGoal(
+  userId: string,
+  familyId: string,
+  title: string,
+  targetAmount: number,
+  emoji: string,
+  deadline?: string
+): Promise<FamilyGoalPublic> {
+  const prisma = requirePrisma();
+  await requireFamilyMembership(prisma, userId, familyId);
+  const g = await prisma.familyGoal.create({
+    data: { familyId, title, targetAmount, emoji, deadline, createdBy: userId },
+  });
+  return {
+    id: g.id,
+    title: g.title,
+    targetAmount: g.targetAmount,
+    currentAmount: g.currentAmount,
+    deadline: g.deadline,
+    emoji: g.emoji,
+    createdBy: g.createdBy,
+  };
+}
+
+export async function updateFamilyGoal(
+  userId: string,
+  goalId: string,
+  updates: { currentAmount?: number; title?: string; targetAmount?: number; deadline?: string | null; emoji?: string }
+): Promise<FamilyGoalPublic> {
+  const prisma = requirePrisma();
+  await requireFamilyGoalAccess(prisma, userId, goalId);
+  const g = await prisma.familyGoal.update({ where: { id: goalId }, data: updates });
+  return {
+    id: g.id,
+    title: g.title,
+    targetAmount: g.targetAmount,
+    currentAmount: g.currentAmount,
+    deadline: g.deadline,
+    emoji: g.emoji,
+    createdBy: g.createdBy,
+  };
+}
+
+export async function deleteFamilyGoal(userId: string, goalId: string): Promise<void> {
+  const prisma = requirePrisma();
+  await requireFamilyGoalAccess(prisma, userId, goalId);
+  await prisma.familyGoal.delete({ where: { id: goalId } });
+}
 
 export async function getFamilyOverview(
   familyId: string,
   requestingUserId: string
-): Promise<{ stats: FamilyMemberStat[]; transactions: FamilyTransactionRow[] }> {
+): Promise<{
+  stats: FamilyMemberStat[];
+  transactions: FamilyTransactionRow[];
+  familyBudgets: FamilyBudgetPublic[];
+  familyGoals: FamilyGoalPublic[];
+  familyAlerts: FamilyAlert[];
+}> {
   const prisma = requirePrisma();
   // Security-critical: never aggregate another user's data without first confirming the
   // requester actually belongs to THIS family — a client-supplied familyId must never be trusted alone.
@@ -795,7 +913,7 @@ export async function getFamilyOverview(
 
   const monthRows = await prisma.transaction.findMany({
     where: { userId: { in: memberIds }, date: { startsWith: monthPrefix } },
-    select: { userId: true, type: true, amount: true },
+    select: { userId: true, type: true, amount: true, category: true },
   });
   const stats: FamilyMemberStat[] = memberIds.map((id) => {
     const rows = monthRows.filter((r) => r.userId === id);
@@ -823,5 +941,36 @@ export async function getFamilyOverview(
     date: t.date,
   }));
 
-  return { stats, transactions };
+  const [familyBudgetRows, familyGoalRows] = await Promise.all([
+    prisma.familyBudget.findMany({ where: { familyId } }),
+    prisma.familyGoal.findMany({ where: { familyId } }),
+  ]);
+  const familyBudgets: FamilyBudgetPublic[] = familyBudgetRows.map((b) => ({
+    id: b.id,
+    category: b.category,
+    limit: b.limit,
+    period: b.period,
+    createdBy: b.createdBy,
+  }));
+  const familyGoals: FamilyGoalPublic[] = familyGoalRows.map((g) => ({
+    id: g.id,
+    title: g.title,
+    targetAmount: g.targetAmount,
+    currentAmount: g.currentAmount,
+    deadline: g.deadline,
+    emoji: g.emoji,
+    createdBy: g.createdBy,
+  }));
+
+  const familyAlerts: FamilyAlert[] = [];
+  for (const b of familyBudgetRows) {
+    const spent = monthRows
+      .filter((r) => r.type === "expense" && r.category === b.category)
+      .reduce((s, r) => s + r.amount, 0);
+    if (spent > b.limit) {
+      familyAlerts.push({ category: b.category, limit: b.limit, spent, overBy: spent - b.limit });
+    }
+  }
+
+  return { stats, transactions, familyBudgets, familyGoals, familyAlerts };
 }

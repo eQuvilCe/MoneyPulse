@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Transaction, CATEGORY_ICONS, CATEGORY_COLORS, formatMoney } from "@/lib/types";
 import { deleteTransaction, updateTransaction } from "@/lib/storage";
+import { useApp } from "@/components/AppProvider";
 
 interface Props {
   transactions: Transaction[];
@@ -28,6 +29,7 @@ export default function TransactionList({
   const [editDesc, setEditDesc] = useState("");
   const [editCat, setEditCat] = useState("");
   const [editDate, setEditDate] = useState("");
+  const { tr } = useApp();
 
   const filtered = useMemo(() => {
     let list = type ? transactions.filter((t) => t.type === type) : transactions;
@@ -69,7 +71,7 @@ export default function TransactionList({
   if (!filtered.length) {
     return (
       <div className="rounded-2xl border border-dashed border-white/10 py-12 text-center text-sm text-slate-500">
-        Нет операций
+        {tr("noTransactions")}
       </div>
     );
   }
@@ -94,7 +96,7 @@ export default function TransactionList({
                     value={editAmount}
                     onChange={(e) => setEditAmount(e.target.value)}
                     className="rounded-lg border border-white/10 bg-slate-900 px-3 py-2 text-sm"
-                    placeholder="Сумма"
+                    placeholder={tr("amount")}
                   />
                   <input
                     type="date"
@@ -106,13 +108,13 @@ export default function TransactionList({
                     value={editCat}
                     onChange={(e) => setEditCat(e.target.value)}
                     className="rounded-lg border border-white/10 bg-slate-900 px-3 py-2 text-sm"
-                    placeholder="Категория"
+                    placeholder={tr("category")}
                   />
                   <input
                     value={editDesc}
                     onChange={(e) => setEditDesc(e.target.value)}
                     className="rounded-lg border border-white/10 bg-slate-900 px-3 py-2 text-sm"
-                    placeholder="Описание"
+                    placeholder={tr("txDescriptionPlaceholder")}
                   />
                 </div>
                 <div className="flex gap-2">
@@ -120,13 +122,13 @@ export default function TransactionList({
                     onClick={() => void saveEdit()}
                     className="rounded-lg bg-emerald-500 px-3 py-1.5 text-xs font-semibold text-white"
                   >
-                    Сохранить
+                    {tr("save")}
                   </button>
                   <button
                     onClick={() => setEditId(null)}
                     className="rounded-lg bg-white/5 px-3 py-1.5 text-xs text-slate-400"
                   >
-                    Отмена
+                    {tr("cancel")}
                   </button>
                 </div>
               </div>
@@ -160,14 +162,14 @@ export default function TransactionList({
                 <button
                   onClick={() => startEdit(t)}
                   className="rounded-lg p-1.5 text-slate-500 hover:bg-white/5 hover:text-cyan-400"
-                  title="Изменить"
+                  title={tr("editAction")}
                 >
                   ✎
                 </button>
                 <button
                   onClick={() => void remove(t.id)}
                   className="rounded-lg p-1.5 text-slate-500 hover:bg-white/5 hover:text-rose-400"
-                  title="Удалить"
+                  title={tr("remove")}
                 >
                   🗑️
                 </button>
@@ -184,17 +186,17 @@ export default function TransactionList({
             onClick={() => setPage((p) => Math.max(0, p - 1))}
             className="rounded-lg px-3 py-1.5 ring-1 ring-white/10 disabled:opacity-30"
           >
-            ← Назад
+            {tr("backNav")}
           </button>
           <span>
-            {pageSafe + 1} / {totalPages} · {filtered.length} опер.
+            {tr("txPageIndicator", { page: pageSafe + 1, total: totalPages, count: filtered.length })}
           </span>
           <button
             disabled={pageSafe >= totalPages - 1}
             onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
             className="rounded-lg px-3 py-1.5 ring-1 ring-white/10 disabled:opacity-30"
           >
-            Далее →
+            {tr("nextNav")}
           </button>
         </div>
       )}

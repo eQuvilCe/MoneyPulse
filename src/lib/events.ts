@@ -27,3 +27,18 @@ export function onSessionExpired(cb: () => void) {
   window.addEventListener(SESSION_EXPIRED_EVENT, handler);
   return () => window.removeEventListener(SESSION_EXPIRED_EVENT, handler);
 }
+
+const CELEBRATE_EVENT = "money-pulse-celebrate";
+
+/** Fired alongside a Confetti burst (health milestone, goal completed) so other UI (the AI buddy) can react too. */
+export function emitCelebrate() {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(new CustomEvent(CELEBRATE_EVENT));
+}
+
+export function onCelebrate(cb: () => void) {
+  if (typeof window === "undefined") return () => {};
+  const handler = () => cb();
+  window.addEventListener(CELEBRATE_EVENT, handler);
+  return () => window.removeEventListener(CELEBRATE_EVENT, handler);
+}

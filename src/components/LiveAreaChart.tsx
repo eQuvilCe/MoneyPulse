@@ -5,6 +5,7 @@ import {
   AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceDot,
 } from "recharts";
 import { motion, AnimatePresence } from "framer-motion";
+import { useApp } from "@/components/AppProvider";
 
 interface Point {
   date: string;
@@ -13,6 +14,8 @@ interface Point {
 }
 
 export default function LiveAreaChart({ data }: { data: Point[] }) {
+  const { tr, lang } = useApp();
+  const locale = lang === "en" ? "en-US" : "ru-RU";
   const [display, setDisplay] = useState(data);
   const [flash, setFlash] = useState(false);
   const [tick, setTick] = useState(0);
@@ -68,18 +71,18 @@ export default function LiveAreaChart({ data }: { data: Point[] }) {
           <YAxis tick={{ fill: "#475569", fontSize: 10 }} axisLine={false} tickLine={false} width={44} />
           <Tooltip
             contentStyle={{ background: "#0f172a", border: "1px solid #1e293b", borderRadius: 12, fontSize: 12 }}
-            formatter={(v: number) => `${Number(v).toLocaleString("ru-RU")} ₽`}
+            formatter={(v: number) => `${Number(v).toLocaleString(locale)} ₽`}
           />
-          <Area type="monotone" dataKey="income" stroke="#34d399" fill="url(#rtInc)" strokeWidth={2.5} name="Доход" animationDuration={900} isAnimationActive dot={false} activeDot={{ r: 5, fill: "#34d399" }} />
-          <Area type="monotone" dataKey="expense" stroke="#fb7185" fill="url(#rtExp)" strokeWidth={2.5} name="Расход" animationDuration={900} animationBegin={80} isAnimationActive dot={false} activeDot={{ r: 5, fill: "#fb7185" }} />
+          <Area type="monotone" dataKey="income" stroke="#34d399" fill="url(#rtInc)" strokeWidth={2.5} name={tr("addIncome")} animationDuration={900} isAnimationActive dot={false} activeDot={{ r: 5, fill: "#34d399" }} />
+          <Area type="monotone" dataKey="expense" stroke="#fb7185" fill="url(#rtExp)" strokeWidth={2.5} name={tr("addExpense")} animationDuration={900} animationBegin={80} isAnimationActive dot={false} activeDot={{ r: 5, fill: "#fb7185" }} />
           {last && last.income > 0 && <ReferenceDot x={last.date} y={last.income} r={3.5} fill="#34d399" stroke="#fff" strokeWidth={1} />}
           {last && last.expense > 0 && <ReferenceDot x={last.date} y={last.expense} r={3.5} fill="#fb7185" stroke="#fff" strokeWidth={1} />}
         </AreaChart>
       </ResponsiveContainer>
 
       <div className="pointer-events-none absolute bottom-0 left-0 right-0 flex justify-center gap-4">
-        <span className="text-[10px] tabular-nums text-emerald-400/70">Σ +{totalIn.toLocaleString("ru-RU")}</span>
-        <span className="text-[10px] tabular-nums text-rose-400/70">Σ −{totalEx.toLocaleString("ru-RU")}</span>
+        <span className="text-[10px] tabular-nums text-emerald-400/70">Σ +{totalIn.toLocaleString(locale)}</span>
+        <span className="text-[10px] tabular-nums text-rose-400/70">Σ −{totalEx.toLocaleString(locale)}</span>
       </div>
     </div>
   );

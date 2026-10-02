@@ -4,14 +4,14 @@ import LaserScanSceneLoader from "./LaserScanSceneLoader";
 import WebGLErrorBoundary from "./WebGLErrorBoundary";
 import { useWebglAllowed } from "./useWebglAllowed";
 
-/** Same gating pattern as DashboardSceneGate — layers the laser-scan scene for /scan. */
-export default function LaserScanSceneGate() {
+/** Same gating pattern as DashboardSceneGate — layers the laser-scan scene (tinted per `palette`). */
+export default function LaserScanSceneGate({ palette }: { palette?: [string, string] }) {
   const enabled = useWebglAllowed();
   if (!enabled) return null;
 
   return (
     <WebGLErrorBoundary fallback={null}>
-      <LaserScanSceneLoader />
+      <LaserScanSceneLoader palette={palette} />
     </WebGLErrorBoundary>
   );
 }

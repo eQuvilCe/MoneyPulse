@@ -26,3 +26,20 @@ export function useWebglAllowed(): boolean {
 
   return enabled;
 }
+
+/**
+ * "always" while the tab is visible, "never" while backgrounded — stops every WebGL scene's
+ * render loop when the user switches away instead of burning battery/CPU off-screen.
+ */
+export function useFrameloop(): "always" | "never" {
+  const [visible, setVisible] = useState(true);
+
+  useEffect(() => {
+    const onChange = () => setVisible(document.visibilityState === "visible");
+    onChange();
+    document.addEventListener("visibilitychange", onChange);
+    return () => document.removeEventListener("visibilitychange", onChange);
+  }, []);
+
+  return visible ? "always" : "never";
+}

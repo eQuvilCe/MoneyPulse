@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import * as THREE from "three";
+import { useFrameloop } from "./useWebglAllowed";
 
 const PALETTE = ["#60a5fa", "#3b82f6", "#8b5cf6"];
 const PARTICLE_COUNT = 120;
@@ -69,9 +70,11 @@ function DataMotes() {
 
 /** Fixed, full-viewport ambient WebGL backdrop for analytics/forecast. */
 export default function DataTerrainScene() {
+  const frameloop = useFrameloop();
   return (
     <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden lg:left-[240px]" aria-hidden>
       <Canvas
+        frameloop={frameloop}
         dpr={[1, 1.5]}
         camera={{ position: [0, 0, 8], fov: 50 }}
         gl={{ antialias: true, alpha: true, powerPreference: "low-power" }}

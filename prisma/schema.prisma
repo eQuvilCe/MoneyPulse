@@ -34,12 +34,38 @@ model User {
 }
 
 model Family {
-  id         String         @id @default(cuid())
-  name       String
-  inviteCode String         @unique
-  ownerId    String
-  createdAt  DateTime       @default(now())
-  members    FamilyMember[]
+  id            String         @id @default(cuid())
+  name          String
+  inviteCode    String         @unique
+  ownerId       String
+  createdAt     DateTime       @default(now())
+  members       FamilyMember[]
+  familyBudgets FamilyBudget[]
+  familyGoals   FamilyGoal[]
+}
+
+model FamilyBudget {
+  id        String @id @default(cuid())
+  familyId  String
+  family    Family @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  category  String
+  limit     Float
+  period    String @default("month")
+  createdBy String
+
+  @@unique([familyId, category])
+}
+
+model FamilyGoal {
+  id            String   @id @default(cuid())
+  familyId      String
+  family        Family   @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  title         String
+  targetAmount  Float
+  currentAmount Float    @default(0)
+  deadline      String?
+  emoji         String   @default("🎯")
+  createdBy     String
 }
 
 model FamilyMember {

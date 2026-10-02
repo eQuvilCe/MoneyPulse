@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { Canvas, useFrame, type RootState } from "@react-three/fiber";
 import * as THREE from "three";
+import { useFrameloop } from "./useWebglAllowed";
 
 const PALETTE = ["#3cf2b0", "#38bdf8", "#8b5cf6"];
 const PARTICLE_COUNT = 160;
@@ -83,9 +84,11 @@ function SceneRig({ children }: { children: React.ReactNode }) {
 
 /** Fixed, full-viewport ambient WebGL backdrop for the authenticated app — subtle, never competes with content. */
 export default function DashboardScene() {
+  const frameloop = useFrameloop();
   return (
     <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden lg:left-[240px]" aria-hidden>
       <Canvas
+        frameloop={frameloop}
         dpr={[1, 1.5]}
         camera={{ position: [0, 0, 8], fov: 50 }}
         gl={{ antialias: true, alpha: true, powerPreference: "low-power" }}

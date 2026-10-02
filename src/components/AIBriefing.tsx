@@ -4,10 +4,12 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { loadDataAsync } from "@/lib/storage";
 import { generateDailyBriefing, DailyBriefing } from "@/lib/ai";
+import { useApp } from "@/components/AppProvider";
 
 const SESSION_KEY = "mp-briefing-shown";
 
 export default function AIBriefing() {
+  const { tr } = useApp();
   const [open, setOpen] = useState(false);
   const [phase, setPhase] = useState<"scan" | "show">("scan");
   const [brief, setBrief] = useState<DailyBriefing | null>(null);
@@ -74,9 +76,9 @@ export default function AIBriefing() {
                   animate={{ opacity: [0.4, 1, 0.4] }}
                   transition={{ duration: 1.2, repeat: Infinity }}
                 >
-                  AI сканирует финансы...
+                  {tr("aiScanning")}
                 </motion.p>
-                <p className="mt-1 text-xs text-slate-500">доходы · расходы · бюджеты · цели</p>
+                <p className="mt-1 text-xs text-slate-500">{tr("aiScanningCategories")}</p>
               </div>
             )}
 
@@ -92,7 +94,7 @@ export default function AIBriefing() {
                     </p>
                     <h2 className="text-lg font-bold text-white">{brief.headline}</h2>
                     <p className="mt-0.5 text-xs text-slate-400">
-                      Пульс{" "}
+                      {tr("pulse")}{" "}
                       <span
                         className={
                           brief.health >= 70
@@ -129,7 +131,7 @@ export default function AIBriefing() {
                   className="mt-4 rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-4"
                 >
                   <p className="text-[11px] font-semibold uppercase tracking-wider text-emerald-400">
-                    Фокус дня
+                    {tr("aiBriefingFocus")}
                   </p>
                   <p className="mt-1 text-sm leading-relaxed text-slate-200">{brief.focus}</p>
                 </motion.div>
@@ -138,7 +140,7 @@ export default function AIBriefing() {
                   onClick={close}
                   className="mt-5 w-full rounded-xl bg-gradient-to-r from-emerald-500 to-cyan-500 py-3 text-sm font-bold text-slate-950 shadow-lg shadow-emerald-500/20 hover:opacity-95"
                 >
-                  Понял, поехали
+                  {tr("aiBriefingGotIt")}
                 </button>
               </div>
             )}

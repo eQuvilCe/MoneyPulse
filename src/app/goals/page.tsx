@@ -11,6 +11,7 @@ import { useToast } from "@/components/Toast";
 import AIInsightBar from "@/components/AIInsightBar";
 import Confetti from "@/components/fx/Confetti";
 import { useApp } from "@/components/AppProvider";
+import { emitCelebrate } from "@/lib/events";
 
 export default function GoalsPage() {
   const { tr, lang } = useApp();
@@ -78,6 +79,7 @@ export default function GoalsPage() {
     if (next >= g.targetAmount && g.currentAmount < g.targetAmount) {
       toast(tr("goalAchieved", { title: g.title }));
       setConfettiFire((f) => f + 1);
+      emitCelebrate();
     } else {
       toast(`+${formatMoney(amount, cur)} → ${g.title}`);
     }

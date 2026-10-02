@@ -3,6 +3,7 @@
 import { useMemo, useRef } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import * as THREE from "three";
+import { useFrameloop } from "./useWebglAllowed";
 
 const COLOR_LOW = new THREE.Color("#fb7185"); // rose — needs attention
 const COLOR_MID = new THREE.Color("#f59e0b"); // amber — tight/ok
@@ -131,9 +132,11 @@ function Rig({ children }: { children: React.ReactNode }) {
 /** Live 3D "Pulse" widget — morphs shape/speed/color with financial health. Drop-in size-matched replacement for PulseRing when WebGL is available. */
 export default function PulseOrbScene({ health, size = 160 }: { health: number; size?: number }) {
   const health01 = Math.max(0, Math.min(100, health)) / 100;
+  const frameloop = useFrameloop();
   return (
     <div style={{ width: size, height: size }} aria-hidden>
       <Canvas
+        frameloop={frameloop}
         dpr={[1, 1.5]}
         camera={{ position: [0, 0, 3], fov: 40 }}
         gl={{ antialias: true, alpha: true, powerPreference: "low-power" }}
