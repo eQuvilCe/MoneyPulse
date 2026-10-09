@@ -5,23 +5,30 @@ import { addTransactionForUser, deleteTransactionForUser, updateTransactionForUs
 import { getPrisma } from "@/lib/prisma";
 import { formatMoney, MAX_AMOUNT, DEFAULT_EXPENSE_CATEGORIES, DEFAULT_INCOME_CATEGORIES, CATEGORY_ICONS } from "@/lib/types";
 import { rateLimit } from "@/lib/server-auth";
-import { parseQuickEntry, looksLikeBankSms } from "@/lib/telegramParse";
+import { parseQuickEntry, parseAmountOnly, looksLikeBankSms } from "@/lib/telegramParse";
 import { tg, sendMessage, esc, tashkentToday, budgetAlertFor } from "@/lib/telegram";
 
 /**
  * Telegram bot webhook.
  *   "кофе 25 000" / "25к такси" / "+5 млн зарплата"  → saved instantly, with Undo and category buttons
  *   forwarded bank SMS                              → parsed and saved (income too)
+ *   "➖ Расход" / "➕ Доход" / "🏁 В цель"            → step-by-step: say what it is first, then send the amount
  *   /menu                                           → every app tab as a button that opens it inside Telegram
  *   /balance /today /week /budgets /undo /notify /unlink /help (the first five are also menu buttons)
  *   /start <code>                                   → links this chat to a MoneyPulse account (code from the app's Telegram button)
  * Always answers 200: Telegram retries anything else for hours.
  */
 
-type LinkedUser = { id: string; name: string; plan: string; tgNotify: boolean };
+type LinkedUser = { id: string; name: string; plan: string; tgNotify: boolean; tgPending: string | null; tgPendingAt: Date | null };
+
+/** How long the bot waits for the amount after "Расход" / "Доход" / "В цель" before forgetting the choice. */
+const PENDING_TTL_MS = 10 * 60_000;
+
+const BTN = { expense: "➖ Расход", income: "➕ Доход", goal: "🏁 В цель" } as const;
 
 const MENU = {
   keyboard: [
+    [{ text: BTN.expense }, { text: BTN.income }, { text: BTN.goal }],
     [{ text: "💰 Баланс" }, { text: "📅 Сегодня" }],
     [{ text: "📊 Неделя" }, { text: "🎯 Бюджеты" }],
     [{ text: "↩️ Отменить" }, { text: "❓ Помощь" }],
@@ -50,6 +57,9 @@ const SECTIONS: [string, string][] = [
   ["⚙️ Настройки", "/settings"],
 ];
 
+/** Pressing any of these while the bot waits for an amount means "never mind" — the wait is dropped. */
+const MENU_TEXTS = new Set<string>(MENU.keyboard.flat().map((b) => b.text));
+
 function sectionsKeyboard(origin: string) {
   const rows: { text: string; web_app: { url: string } }[][] = [];
   SECTIONS.forEach(([text, path], i) => {
@@ -60,14 +70,20 @@ function sectionsKeyboard(origin: string) {
 }
 
 const HELP =
-  "<b>Как записывать</b>\n" +
-  "Просто напишите сумму и на что:\n" +
+  "<b>По шагам</b>\n" +
+  "Нажмите <b>➖ Расход</b>, <b>➕ Доход</b> или <b>🏁 В цель</b> — я спрошу сумму, и следующее сообщение запишется именно так.\n\n" +
+  "<b>Одной строкой</b>\n" +
+  "Или просто напишите сумму и на что:\n" +
   "• <code>кофе 25 000</code>\n" +
   "• <code>25к такси</code>\n" +
   "• <code>1.5 млн аренда</code>\n" +
   "• <code>+5 000 000 зарплата</code> — доход (со знаком +)\n" +
   "Или перешлите SMS от банка — разберу сам.\n\n" +
   "<b>Команды</b>\n" +
+  "/expense — записать расход\n" +
+  "/income — записать доход\n" +
+  "/goal — пополнить цель\n" +
+  "/cancel — отменить ввод\n" +
   "/balance — баланс и месяц\n" +
   "/today — операции за сегодня\n" +
   "/week — расходы за 7 дней\n" +
@@ -190,8 +206,15 @@ export async function POST(req: NextRequest) {
   try {
     const user = (await prisma.user.findUnique({
       where: { telegramId: fromId },
-      select: { id: true, name: true, plan: true, tgNotify: true },
+      select: { id: true, name: true, plan: true, tgNotify: true, tgPending: true, tgPendingAt: true },
     })) as LinkedUser | null;
+
+    // What the next plain message means, if the user picked a type and the choice is still fresh.
+    const pending = user?.tgPending && user.tgPendingAt && Date.now() - user.tgPendingAt.getTime() < PENDING_TTL_MS ? user.tgPending : null;
+    const setPending = (value: string | null) =>
+      prisma.user.update({ where: { id: user!.id }, data: { tgPending: value, tgPendingAt: value ? new Date() : null } });
+    // Asks for the amount and opens the keyboard; the placeholder shows the expected format.
+    const ask = (placeholder: string) => ({ reply_markup: { force_reply: true, input_field_placeholder: placeholder } });
 
     // ——— inline buttons ———
     if (cb) {
@@ -240,6 +263,20 @@ export async function POST(req: NextRequest) {
           });
         }
       }
+      else if (action === "goal" && txId) {
+        const goal = await prisma.goal.findFirst({ where: { id: txId, userId: user.id } });
+        if (!goal) toast = "Цель не найдена";
+        else {
+          await setPending(`goal:${goal.id}`);
+          const cur = await currencyOf(user.id);
+          await tg("editMessageReplyMarkup", { chat_id: chatId, message_id: msgId, reply_markup: { inline_keyboard: [] } });
+          await sendMessage(
+            chatId,
+            `🏁 <b>${esc(goal.emoji)} ${esc(goal.title)}</b>\nНакоплено ${formatMoney(goal.currentAmount, cur)} из ${formatMoney(goal.targetAmount, cur)}.\n\nСколько добавить? Напишите сумму.`,
+            ask("500 000")
+          );
+        }
+      }
       await tg("answerCallbackQuery", { callback_query_id: cb.id, text: toast });
       return NextResponse.json({ ok: true });
     }
@@ -249,6 +286,10 @@ export async function POST(req: NextRequest) {
     const cmd = text.startsWith("/") ? text.split(/[\s@]/)[0].toLowerCase() : "";
     let reply = "";
     let extra: Record<string, unknown> = { reply_markup: MENU };
+
+    // Any other command or menu button while an amount is awaited means "never mind".
+    const continuesStep = !cmd && !MENU_TEXTS.has(text);
+    if (user && user.tgPending && !continuesStep) await setPending(null);
 
     // ——— linking ———
     if (cmd === "/start") {
@@ -275,6 +316,40 @@ export async function POST(req: NextRequest) {
       } else {
         await sendWelcome(chatId, origin, Boolean(user), user?.name.split(" ")[0]);
         reply = user ? HELP : NOT_LINKED;
+      }
+    } else if (user && pending && text && !cmd && !MENU_TEXTS.has(text)) {
+      if (pending.startsWith("goal:")) {
+        const goal = await prisma.goal.findFirst({ where: { id: pending.slice(5), userId: user.id } });
+        const amount = parseAmountOnly(text);
+        if (!goal) {
+          await setPending(null);
+          reply = "Эта цель уже удалена. Выберите другую: /goal";
+        } else if (!amount) {
+          reply = "Не вижу суммы. Напишите число, например: <code>500 000</code>\nОтменить — /cancel";
+          extra = ask("500 000");
+        } else {
+          const next = Math.min(goal.targetAmount, goal.currentAmount + amount);
+          await prisma.goal.update({ where: { id: goal.id }, data: { currentAmount: next } });
+          await setPending(null);
+          const cur = await currencyOf(user.id);
+          const added = next - goal.currentAmount;
+          reply =
+            next >= goal.targetAmount
+              ? `🎉 <b>Цель «${esc(goal.title)}» выполнена!</b>\nДобавлено ${formatMoney(added, cur)}, накоплено ${formatMoney(next, cur)}.`
+              : `🏁 <b>+${formatMoney(added, cur)}</b> в «${esc(goal.title)}»\n${bar(next / goal.targetAmount)} ${Math.round((next / goal.targetAmount) * 100)}%\nНакоплено ${formatMoney(next, cur)} из ${formatMoney(goal.targetAmount, cur)}, осталось ${formatMoney(goal.targetAmount - next, cur)}.`;
+          if (added < amount) reply += `\n\nДо цели не хватало меньше, чем вы написали — добавил только недостающие ${formatMoney(added, cur)}.`;
+        }
+      } else {
+        const type = pending === "income" ? "income" : "expense";
+        const entry = parseQuickEntry(text, type);
+        if (!entry) {
+          // keep waiting: the user is clearly still in this step
+          reply = `Не вижу суммы. Напишите, например: <code>${type === "income" ? "5 000 000 зарплата" : "25 000 кофе"}</code>\nОтменить — /cancel`;
+          extra = ask(type === "income" ? "5 000 000 зарплата" : "25 000 кофе");
+        } else {
+          await setPending(null);
+          ({ text: reply, extra } = await save(user, entry));
+        }
       }
     } else if (cmd === "/help" || text === "❓ Помощь") {
       reply = user ? HELP : `${NOT_LINKED}\n\n${HELP}`;
@@ -361,10 +436,45 @@ export async function POST(req: NextRequest) {
       await prisma.user.update({ where: { id: user.id }, data: { telegramId: null, telegramLinkedAt: null } });
       reply = "Чат отвязан. Данные в MoneyPulse остались на месте. Привязать снова — кнопка «Бот в Telegram» в приложении.";
       extra = { reply_markup: { remove_keyboard: true } };
-    } else if (cmd === "/expense" || cmd === "/income") {
-      const entry = parseQuickEntry((cmd === "/income" ? "+" : "") + text.replace(/^\/\w+\s*/, ""));
-      if (!entry) reply = "Формат: <code>/expense 25000 кофе</code>";
-      else ({ text: reply, extra } = await save(user, entry));
+    } else if (cmd === "/cancel") {
+      await setPending(null);
+      reply = pending ? "Ввод отменён." : "Нечего отменять — я ничего не жду.";
+    } else if (cmd === "/expense" || cmd === "/income" || text === BTN.expense || text === BTN.income) {
+      const type = cmd === "/income" || text === BTN.income ? "income" : "expense";
+      const rest = cmd ? text.replace(/^\/\w+\s*/, "") : "";
+      if (rest) {
+        // "/expense 25000 кофе" in one go
+        const entry = parseQuickEntry(rest, type);
+        if (!entry) reply = `Не вижу суммы. Формат: <code>/${type} 25000 ${type === "income" ? "зарплата" : "кофе"}</code>`;
+        else {
+          await setPending(null);
+          ({ text: reply, extra } = await save(user, entry));
+        }
+      } else {
+        await setPending(type);
+        reply =
+          type === "income"
+            ? "➕ <b>Доход</b>\nНапишите сумму и от чего, например: <code>5 000 000 зарплата</code>"
+            : "➖ <b>Расход</b>\nНапишите сумму и на что, например: <code>25 000 кофе</code>";
+        extra = ask(type === "income" ? "5 000 000 зарплата" : "25 000 кофе");
+      }
+    } else if (cmd === "/goal" || text === BTN.goal) {
+      await setPending(null);
+      const goals = await prisma.goal.findMany({ where: { userId: user.id }, take: 12 });
+      const open = goals.filter((g) => g.currentAmount < g.targetAmount);
+      if (goals.length === 0) reply = "Целей пока нет. Создайте первую в приложении: MoneyPulse → Цели.";
+      else if (open.length === 0) reply = "Все цели уже выполнены 🎉 Новую можно создать в приложении: MoneyPulse → Цели.";
+      else {
+        const cur = await currencyOf(user.id);
+        reply = "🏁 <b>В какую цель добавить?</b>";
+        extra = {
+          reply_markup: {
+            inline_keyboard: open.map((g) => [
+              { text: `${g.emoji} ${g.title.slice(0, 28)} · ${Math.round((g.currentAmount / g.targetAmount) * 100)}% из ${formatMoney(g.targetAmount, cur)}`, callback_data: `goal:${g.id}` },
+            ]),
+          },
+        };
+      }
     } else if (cmd) {
       reply = `Не знаю такую команду.\n\n${HELP}`;
     } else if (message.photo || message.document) {
