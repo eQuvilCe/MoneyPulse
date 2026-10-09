@@ -54,7 +54,12 @@ function pickCategory(text: string, table: Record<string, string[]>): string | n
   return null;
 }
 
-export function parseQuickEntry(input: string): QuickEntry | null {
+/**
+ * `forceType` is set when the user already said what the entry is (the bot's "Расход" /
+ * "Доход" buttons): the wording then only decides the category, never the type — so
+ * "зарплата няне 500 000" entered as an expense stays an expense.
+ */
+export function parseQuickEntry(input: string, forceType?: "income" | "expense"): QuickEntry | null {
   const text = input.replace(/\s+/g, " ").trim();
   if (!text) return null;
 
@@ -81,7 +86,7 @@ export function parseQuickEntry(input: string): QuickEntry | null {
 
   const lower = rest.toLowerCase();
   const incomeCat = pickCategory(lower, INCOME_WORDS);
-  const isIncome = plus || !!incomeCat || INCOME_HINTS.some((w) => lower.includes(w));
+  const isIncome = forceType ? forceType === "income" : plus || !!incomeCat || INCOME_HINTS.some((w) => lower.includes(w));
 
   const category = isIncome ? incomeCat ?? "другое" : pickCategory(lower, EXPENSE_WORDS) ?? "другое";
   const description = (rest || category).slice(0, 120);
@@ -92,4 +97,9 @@ export function parseQuickEntry(input: string): QuickEntry | null {
 /** A forwarded bank notification rather than something the user typed themselves. */
 export function looksLikeBankSms(text: string): boolean {
   return /(oplata|pokupka|spisanie|popolnenie|ostatok|karta\s*\*|\*{2,}\d{4}|списани|пополнени|покупка|оплата[:\s].*(uzs|сум)|остаток|доступно|humo|uzcard)/i.test(text) && text.length > 20;
+}
+
+/** Just the amount from a line like "500 000" or "1.5 млн" — for steps where only a number is expected. */
+export function parseAmountOnly(input: string): number | null {
+  return parseQuickEntry(input, "expense")?.amount ?? null;
 }

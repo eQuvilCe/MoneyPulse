@@ -48,12 +48,16 @@ console.log(`Webhook → ${site}/api/telegram`);
 
 await call("setMyCommands", {
   commands: [
+    { command: "expense", description: "Записать расход" },
+    { command: "income", description: "Записать доход" },
+    { command: "goal", description: "Пополнить цель" },
     { command: "menu", description: "Все разделы приложения" },
     { command: "balance", description: "Баланс и итог месяца" },
     { command: "today", description: "Операции за сегодня" },
     { command: "week", description: "Расходы за 7 дней" },
     { command: "budgets", description: "Бюджеты и остаток" },
     { command: "undo", description: "Отменить последнюю запись" },
+    { command: "cancel", description: "Отменить ввод" },
     { command: "notify", description: "Вкл/выкл уведомления" },
     { command: "help", description: "Как пользоваться" },
   ],
