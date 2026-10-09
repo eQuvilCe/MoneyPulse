@@ -63,6 +63,7 @@ export default function Onboarding() {
     if (!user) return;
     // per-user onboarding key so new accounts see tutorial
     const k = KEY + "-" + (user.id || "anon");
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- localStorage is only readable after mount (not during SSR)
     if (!localStorage.getItem(k) && !localStorage.getItem(KEY)) setOpen(true);
   }, [user]);
 

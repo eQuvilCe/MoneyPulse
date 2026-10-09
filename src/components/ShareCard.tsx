@@ -1,5 +1,6 @@
 "use client";
 
+import { formatNumber } from "@/lib/types";
 import { useRef, useState } from "react";
 import { FinanceData } from "@/lib/types";
 import { getHealthScore } from "@/lib/ai";
@@ -8,7 +9,6 @@ import { useApp } from "@/components/AppProvider";
 
 export default function ShareCard({ data }: { data: FinanceData }) {
   const { tr, lang } = useApp();
-  const locale = lang === "en" ? "en-US" : "ru-RU";
   const ref = useRef<HTMLDivElement>(null);
   const [copied, setCopied] = useState(false);
   const health = getHealthScore(data);
@@ -60,7 +60,7 @@ export default function ShareCard({ data }: { data: FinanceData }) {
             </p>
             <p className="mt-1 text-3xl font-bold text-emerald-300">{progress}%</p>
             <p className="text-xs text-slate-400">
-              {goal.currentAmount.toLocaleString(locale)} / {goal.targetAmount.toLocaleString(locale)} ₽
+              {formatNumber(goal.currentAmount, lang === "en" ? "en" : "ru")} / {formatNumber(goal.targetAmount, lang === "en" ? "en" : "ru")} {data.settings.currency || "₽"}
             </p>
           </>
         ) : (

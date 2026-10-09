@@ -5,9 +5,8 @@ import {
   Transaction,
   Goal,
   Budget,
-  Settings,
-} from "./types";
-import { emitDataChange, emitSessionExpired } from "./events";
+  Settings, dateKey } from "./types";
+import { emitApiError, emitDataChange, emitSessionExpired } from "./events";
 
 const BASE_KEY = "money-pulse-v5-cache";
 
@@ -19,7 +18,7 @@ function storageKey(): string {
 function daysAgo(n: number): string {
   const d = new Date();
   d.setDate(d.getDate() - n);
-  return d.toISOString().slice(0, 10);
+  return dateKey(d);
 }
 
 const defaultData: FinanceData = {
@@ -42,35 +41,92 @@ const defaultData: FinanceData = {
 };
 
 
+/**
+ * One page mounts several widgets that each ask for the same data (dashboard, sidebar,
+ * AI bar…). They share a single request: concurrent callers get the same in-flight
+ * promise, and a response stays "fresh" for a moment so the refresh that every mutation
+ * triggers reuses the data the POST already returned instead of fetching it again.
+ */
+const FRESH_MS = 1500;
+let inflight: Promise<FinanceData | null> | null = null;
+let fresh: { data: FinanceData; at: number } | null = null;
+let generation = 0; // bumped by clearDataCache so a response that arrives late is dropped
+
+/** Call on login / logout / account switch so one user never sees another's cached data. */
+export function clearDataCache() {
+  generation += 1;
+  inflight = null;
+  fresh = null;
+}
+
 async function apiGet(): Promise<FinanceData | null> {
+  if (fresh && Date.now() - fresh.at < FRESH_MS) return fresh.data;
+  if (inflight) return inflight;
+  const startedIn = generation;
+  const request = (async () => {
+    try {
+      const res = await fetch("/api/data", {
+        cache: "no-store",
+        credentials: "include",
+        signal: AbortSignal.timeout(8000),
+      });
+      if (res.status === 401) emitSessionExpired();
+      if (!res.ok) return null;
+      const data = (await res.json()) as FinanceData;
+      // ignore the answer if the cache was cleared (logout) while this request was in flight
+      if (startedIn === generation) fresh = { data, at: Date.now() };
+      return data;
+    } catch {
+      return null;
+    }
+  })();
+  inflight = request;
   try {
-    const res = await fetch("/api/data", {
-      cache: "no-store",
-      credentials: "include",
-      signal: AbortSignal.timeout(8000),
-    });
-    if (res.status === 401) emitSessionExpired();
-    if (!res.ok) return null;
-    return (await res.json()) as FinanceData;
-  } catch {
-    return null;
+    return await request;
+  } finally {
+    if (inflight === request) inflight = null;
   }
 }
 
+/**
+ * Returns the server's data after the write, or null when the server could not be
+ * reached (callers then keep the change locally). When the server *refuses* the write
+ * (400/403/409/429) the user is told why and gets the server's current data back, so a
+ * rejected entry is never kept as a phantom local-only record.
+ */
 async function apiPost(body: object): Promise<FinanceData | null> {
+  let res: Response;
   try {
-    const res = await fetch("/api/data", {
+    res = await fetch("/api/data", {
       method: "POST",
       credentials: "include",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
     });
-    if (res.status === 401) emitSessionExpired();
-    if (!res.ok) return null;
-    return (await res.json()) as FinanceData;
   } catch {
     return null;
   }
+  if (res.status === 401) {
+    emitSessionExpired();
+    return null;
+  }
+  if (res.ok) {
+    try {
+      const data = (await res.json()) as FinanceData;
+      inflight = null;
+      fresh = { data, at: Date.now() };
+      return data;
+    } catch {
+      return null;
+    }
+  }
+  if (res.status >= 400 && res.status < 500) {
+    const json = (await res.json().catch(() => ({}))) as { error?: string };
+    emitApiError(json.error || "Не удалось сохранить");
+    clearDataCache();
+    return apiGet();
+  }
+  return null;
 }
 
 function localLoad(): FinanceData {
@@ -128,10 +184,10 @@ export async function addTransaction(tx: Omit<Transaction, "id">): Promise<Trans
   const data = localLoad();
   const newTx: Transaction = { ...tx, id: crypto.randomUUID() };
   data.transactions.unshift(newTx);
-  const today = new Date().toISOString().slice(0, 10);
+  const today = dateKey();
   const last = data.settings.lastLogDate || "";
   const y = new Date(); y.setDate(y.getDate() - 1);
-  const yKey = y.toISOString().slice(0, 10);
+  const yKey = dateKey(y);
   if (last !== today) {
     data.settings.streak = last === yKey ? (data.settings.streak || 0) + 1 : 1;
     data.settings.lastLogDate = today;
@@ -314,10 +370,10 @@ export async function importTransactions(list: Omit<Transaction, "id">[]) {
     data.transactions.unshift({ ...tx, id: crypto.randomUUID() });
   }
   // streak
-  const today = new Date().toISOString().slice(0, 10);
+  const today = dateKey();
   const last = data.settings.lastLogDate || "";
   const y = new Date(); y.setDate(y.getDate() - 1);
-  const yKey = y.toISOString().slice(0, 10);
+  const yKey = dateKey(y);
   if (last !== today) {
     data.settings.streak = last === yKey ? (data.settings.streak || 0) + 1 : 1;
     data.settings.lastLogDate = today;
@@ -332,7 +388,7 @@ export function getStats(data: FinanceData, days?: number) {
   if (days) {
     const cutoff = new Date();
     cutoff.setDate(cutoff.getDate() - days);
-    const cut = cutoff.toISOString().slice(0, 10);
+    const cut = dateKey(cutoff);
     txs = txs.filter((t) => t.date >= cut);
   }
 
@@ -403,7 +459,7 @@ export function exportJSON(data: FinanceData) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = `money-pulse-${new Date().toISOString().slice(0, 10)}.json`;
+  a.download = `money-pulse-${dateKey()}.json`;
   a.click();
   URL.revokeObjectURL(url);
 }
@@ -417,7 +473,7 @@ export function exportCSV(data: FinanceData) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = `transactions-${new Date().toISOString().slice(0, 10)}.csv`;
+  a.download = `transactions-${dateKey()}.csv`;
   a.click();
   URL.revokeObjectURL(url);
 }

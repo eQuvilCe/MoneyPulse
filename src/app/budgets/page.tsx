@@ -3,12 +3,7 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { loadDataAsync, addBudget, deleteBudget, getBudgetStatus } from "@/lib/storage";
-import {
-  FinanceData,
-  CATEGORY_ICONS,
-  formatMoney,
-  allExpenseCategories,
-} from "@/lib/types";
+import { FinanceData, CATEGORY_ICONS, formatMoney, allExpenseCategories, MAX_AMOUNT, formatMoneyCompact, readAmount } from "@/lib/types";
 import { PageShell, FadeItem } from "@/components/motion/PageShell";
 import TiltCard from "@/components/motion/TiltCard";
 import { LetterReveal } from "@/components/motion/Reveal";
@@ -36,7 +31,11 @@ export default function BudgetsPage() {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    const num = parseFloat(limit);
+    const num = readAmount(limit);
+    if (num === "too-big") {
+      toast(tr("amountTooBig", { max: formatMoneyCompact(MAX_AMOUNT, cur) }), "err");
+      return;
+    }
     if (!num) return;
     await addBudget({ category: cat, limit: num, period: "month" });
     toast(editId ? tr("limitUpdated") : tr("limitCreated"));

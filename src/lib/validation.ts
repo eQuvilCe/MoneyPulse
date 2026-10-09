@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { MAX_AMOUNT } from "@/lib/types";
 
 /** Thrown by parseOrThrow — callers catch it (or let it bubble to validationErrorResponse). */
 export class ValidationError extends Error {
@@ -42,7 +43,7 @@ const isoDateString = z
 
 export const transactionPayloadSchema = z.object({
   type: z.enum(["income", "expense"]),
-  amount: z.number().finite().positive(),
+  amount: z.number().finite().positive().max(MAX_AMOUNT),
   category: z.string().trim().min(1).max(60),
   description: z.string().trim().max(500).default(""),
   date: isoDateString,
@@ -55,8 +56,8 @@ export const transactionUpdateSchema = transactionPayloadSchema.partial();
 
 export const goalPayloadSchema = z.object({
   title: z.string().trim().min(1).max(100),
-  targetAmount: z.number().finite().positive(),
-  currentAmount: z.number().finite().min(0).default(0),
+  targetAmount: z.number().finite().positive().max(MAX_AMOUNT),
+  currentAmount: z.number().finite().min(0).max(MAX_AMOUNT).default(0),
   deadline: z.string().trim().max(32).nullish().transform((v) => v ?? undefined),
   emoji: z.string().trim().min(1).max(8).default("🎯"),
   color: z.string().trim().max(20).nullish().transform((v) => v ?? undefined),
@@ -66,7 +67,7 @@ export const goalUpdateSchema = goalPayloadSchema.partial();
 
 export const budgetPayloadSchema = z.object({
   category: z.string().trim().min(1).max(60),
-  limit: z.number().finite().positive(),
+  limit: z.number().finite().positive().max(MAX_AMOUNT),
   period: z.enum(["month", "week"]).default("month"),
 });
 
@@ -172,7 +173,7 @@ export const removeFamilyMemberSchema = z.object({
 
 export const familyBudgetSchema = z.object({
   category: z.string().trim().min(1).max(60),
-  limit: z.number().finite().positive(),
+  limit: z.number().finite().positive().max(MAX_AMOUNT),
   period: z.enum(["month", "week"]).default("month"),
 });
 
@@ -182,20 +183,30 @@ export const familyBudgetDeleteSchema = z.object({
 
 export const familyGoalSchema = z.object({
   title: z.string().trim().min(1).max(100),
-  targetAmount: z.number().finite().positive(),
+  targetAmount: z.number().finite().positive().max(MAX_AMOUNT),
   emoji: z.string().trim().min(1).max(8).default("🎯"),
   deadline: z.string().trim().max(32).nullish().transform((v) => v ?? undefined),
 });
 
 export const familyGoalUpdateSchema = z.object({
   id: idSchema,
-  currentAmount: z.number().finite().min(0).optional(),
+  currentAmount: z.number().finite().min(0).max(MAX_AMOUNT).optional(),
   title: z.string().trim().min(1).max(100).optional(),
-  targetAmount: z.number().finite().positive().optional(),
+  targetAmount: z.number().finite().positive().max(MAX_AMOUNT).optional(),
   deadline: z.string().trim().max(32).nullish().transform((v) => v ?? undefined),
   emoji: z.string().trim().min(1).max(8).optional(),
 });
 
 export const familyGoalDeleteSchema = z.object({
+  id: idSchema,
+});
+
+export const FAMILY_MESSAGE_MAX = 500;
+
+export const familyMessageSchema = z.object({
+  text: z.string().trim().min(1).max(FAMILY_MESSAGE_MAX),
+});
+
+export const familyMessageDeleteSchema = z.object({
   id: idSchema,
 });

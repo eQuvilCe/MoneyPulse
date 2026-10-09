@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import FitText from "@/components/FitText";
 
 const tone: Record<string, { text: string; rgb: string }> = {
   green: { text: "text-emerald-400", rgb: "52,211,153" },
@@ -26,9 +27,10 @@ function Spark({ data, rgb }: { data: number[]; rgb: string }) {
 }
 
 export default function StatCard({
-  title, value, icon, color = "blue", subtitle, delay = 0, spark,
+  title, value, fullValue, icon, color = "blue", subtitle, delay = 0, spark,
 }: {
-  title: string; value: string; icon?: string; color?: string; subtitle?: string; delay?: number; spark?: number[];
+  title: string; value: string; /** exact value for the tooltip when `value` is abbreviated */ fullValue?: string;
+  icon?: string; color?: string; subtitle?: string; delay?: number; spark?: number[];
 }) {
   const c = tone[color] || tone.blue;
   return (
@@ -37,7 +39,7 @@ export default function StatCard({
       animate={{ opacity: 1, y: 0, scale: 1 }}
       whileHover={{ y: -4 }}
       transition={{ type: "spring", stiffness: 300, damping: 26, delay }}
-      className="mp-card relative overflow-hidden p-5"
+      className="mp-card relative min-w-0 overflow-hidden p-5"
       style={{ boxShadow: `inset 0 1px 0 rgba(255,255,255,0.08), 0 20px 50px -24px rgba(${c.rgb},0.45)` }}
     >
       <div className="pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full blur-2xl" style={{ background: `rgba(${c.rgb},0.16)` }} />
@@ -49,7 +51,9 @@ export default function StatCard({
           </span>
         )}
       </div>
-      <p className={`relative mt-3 font-display text-3xl font-semibold tabular-nums tracking-tight ${c.text}`}>{value}</p>
+      <p className={`relative mt-3 font-display text-3xl font-semibold tabular-nums tracking-tight ${c.text}`}>
+        <FitText title={fullValue}>{value}</FitText>
+      </p>
       {subtitle && <p className="relative mt-1 text-[11px] text-slate-500">{subtitle}</p>}
       {spark && <Spark data={spark} rgb={c.rgb} />}
     </motion.div>

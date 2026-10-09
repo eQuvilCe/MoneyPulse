@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { loadDataAsync, updateSettings, exportJSON, exportCSV } from "@/lib/storage";
-import { FinanceData } from "@/lib/types";
+import { FinanceData, MAX_AMOUNT, formatMoneyCompact, readAmount } from "@/lib/types";
 import { PageShell, FadeItem, Skeleton } from "@/components/motion/PageShell";
 import TiltCard from "@/components/motion/TiltCard";
+import TelegramCard from "@/components/TelegramCard";
 import { LetterReveal } from "@/components/motion/Reveal";
 import { useApp } from "@/components/AppProvider";
 import { useToast } from "@/components/Toast";
@@ -107,6 +108,7 @@ export default function SettingsPage() {
       setCurrency(d.settings.currency || "₽");
     });
     if (user) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- form fields are seeded from the session user once it is known
       setName(user.name);
       setEmail(user.email);
     }
@@ -164,10 +166,15 @@ export default function SettingsPage() {
   };
 
   const saveFinance = async () => {
+    const goal = incomeGoal ? readAmount(incomeGoal) : null;
+    if (goal === "too-big") {
+      toast(tr("amountTooBig", { max: formatMoneyCompact(MAX_AMOUNT, currency) }), "err");
+      return;
+    }
     setSavingFinance(true);
     await updateSettings({
       currency,
-      monthlyIncomeGoal: incomeGoal ? parseFloat(incomeGoal) : undefined,
+      monthlyIncomeGoal: goal ?? undefined,
       savingsTargetPercent: parseInt(savings) || 20,
     });
     setSavingFinance(false);
@@ -305,6 +312,10 @@ export default function SettingsPage() {
             </button>
           </div>
         </TiltCard>
+      </FadeItem>
+
+      <FadeItem>
+        <TelegramCard />
       </FadeItem>
 
       {/* Password */}

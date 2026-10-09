@@ -29,6 +29,7 @@ export function useRealtimeData(_intervalMs = 0) {
     // Instant paint from local cache, then refresh from API
     try {
       const cached = loadData();
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- instant paint from the local cache, then refresh from the API
       if (cached) setData(cached);
     } catch {}
     refresh();

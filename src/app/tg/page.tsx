@@ -77,6 +77,13 @@ export default function TelegramWebAppPage() {
         });
         const json = await res.json();
         if (res.ok && json.linked) {
+          // opened from the bot's "Разделы" menu: go straight to that tab (full load, so the
+          // app picks up the session cookie that verify just set)
+          const to = new URLSearchParams(window.location.search).get("to") || "";
+          if (/^\/[a-z]*$/.test(to)) {
+            window.location.replace(to);
+            return;
+          }
           setState("linked");
           const d = await loadDataAsync();
           setData(d);
@@ -175,7 +182,6 @@ export default function TelegramWebAppPage() {
           Dashboard
         </Link>
       </div>
-      <p className="mt-8 text-xs text-slate-600">BotFather → Menu Button → https://YOUR_DOMAIN/tg</p>
     </div>
   );
 }

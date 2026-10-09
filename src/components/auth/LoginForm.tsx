@@ -37,6 +37,7 @@ export default function LoginForm() {
     try {
       const saved = localStorage.getItem(REMEMBER_KEY);
       if (saved) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- remembered email lives in localStorage, readable only after mount
         setEmail(saved);
         setRemember(true);
       }

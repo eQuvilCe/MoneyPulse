@@ -1,3 +1,4 @@
+import { formatNumber, dateKey } from "./types";
 import { formatMoney, allExpenseCategories, allIncomeCategories } from "./types";
 import { FinanceData } from "./types";
 
@@ -28,11 +29,11 @@ export interface DailyBriefing {
 function daysAgo(n: number): string {
   const d = new Date();
   d.setDate(d.getDate() - n);
-  return d.toISOString().slice(0, 10);
+  return dateKey(d);
 }
 
 function todayKey() {
-  return new Date().toISOString().slice(0, 10);
+  return dateKey();
 }
 
 function calcStats(data: FinanceData, days?: number) {
@@ -240,12 +241,12 @@ export function generateAIAnalysis(data: FinanceData): AIAdvice[] {
     if (a.why) continue;
     a.why = [
       `Основано на ${data.transactions.length} операциях (из них ${exp30.length} расходов за 30 дней).`,
-      `Доход: ${stats.income.toLocaleString("ru-RU")}, расход: ${stats.expense.toLocaleString("ru-RU")}, баланс: ${stats.balance.toLocaleString("ru-RU")}.`,
+      `Доход: ${formatNumber(stats.income)}, расход: ${formatNumber(stats.expense)}, баланс: ${formatNumber(stats.balance)}.`,
       stats.byCategory && Object.keys(stats.byCategory).length
         ? `Категории расходов: ${Object.entries(stats.byCategory)
             .sort((x, y) => y[1] - x[1])
             .slice(0, 3)
-            .map(([c, v]) => `${c} ${v.toLocaleString("ru-RU")}`)
+            .map(([c, v]) => `${c} ${formatNumber(v)}`)
             .join("; ")}.`
         : "Категорий расходов пока нет.",
       budgets.length
@@ -294,9 +295,9 @@ export function generateDailyBriefing(data: FinanceData): DailyBriefing {
   const lines: string[] = [
     `Баланс ${m(stats.balance)} · сбережения ${stats.savingsRate}%`,
     dayTx.length
-      ? `Сегодня: +${dayIn.toLocaleString("ru-RU")} / −${m(dayEx)} (${dayTx.length} опер.)`
+      ? `Сегодня: +${formatNumber(dayIn)} / −${m(dayEx)} (${dayTx.length} опер.)`
       : "Сегодня записей пока нет — самое время добавить первую",
-    `Неделя: доход +${s7.income.toLocaleString("ru-RU")} · расход −${m(s7.expense)}`,
+    `Неделя: доход +${formatNumber(s7.income)} · расход −${m(s7.expense)}`,
   ];
   if (top) lines.push(`Топ-трата: «${top[0]}» — ${m(top[1])}`);
   if (over.length) lines.push(`⚠ Превышены бюджеты: ${over.map((b) => b.category).join(", ")}`);
@@ -386,7 +387,7 @@ export function answerAIChat(question: string, data: FinanceData): string {
   }
 
   if (/сравн|недел.*месяц|месяц.*недел/.test(q)) {
-    return `Сравнение:\n• 7 дней: +${stats7.income.toLocaleString("ru-RU")} / −${stats7.expense.toLocaleString("ru-RU")} (баланс ${stats7.balance.toLocaleString("ru-RU")})\n• 30 дней: +${stats30.income.toLocaleString("ru-RU")} / −${stats30.expense.toLocaleString("ru-RU")} (баланс ${stats30.balance.toLocaleString("ru-RU")})\n• Всё время: +${stats.income.toLocaleString("ru-RU")} / −${stats.expense.toLocaleString("ru-RU")}`;
+    return `Сравнение:\n• 7 дней: +${formatNumber(stats7.income)} / −${formatNumber(stats7.expense)} (баланс ${formatNumber(stats7.balance)})\n• 30 дней: +${formatNumber(stats30.income)} / −${formatNumber(stats30.expense)} (баланс ${formatNumber(stats30.balance)})\n• Всё время: +${formatNumber(stats.income)} / −${formatNumber(stats.expense)}`;
   }
 
   if (/сбереж|отклад|копить|накоп/.test(q)) {
@@ -405,7 +406,7 @@ export function answerAIChat(question: string, data: FinanceData): string {
       budgets
         .map((b) => {
           const flag = b.over ? "🔴" : b.percent >= 85 ? "🟡" : "🟢";
-          return `${flag} ${b.category}: ${b.spent.toLocaleString("ru-RU")}/${m(b.limit)} (${b.percent}%)`;
+          return `${flag} ${b.category}: ${formatNumber(b.spent)}/${m(b.limit)} (${b.percent}%)`;
         })
         .join("\n")
     );

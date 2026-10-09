@@ -1,5 +1,6 @@
 "use client";
 
+import { dateKey } from "@/lib/types";
 export async function enableBrowserNotifications(): Promise<boolean> {
   if (typeof window === "undefined" || !("Notification" in window)) return false;
   if (Notification.permission === "granted") return true;
@@ -25,7 +26,7 @@ export function notifyIfAllowed(title: string, body: string, enabled = true) {
  */
 export function scheduleEveningNudge(enabled: boolean, hasToday: boolean, lang: "ru" | "en" = "ru") {
   if (typeof window === "undefined" || !enabled) return;
-  const dayKey = new Date().toISOString().slice(0, 10);
+  const dayKey = dateKey();
   const doneKey = "mp-evening-nudge-" + dayKey;
   if (localStorage.getItem(doneKey)) return;
 

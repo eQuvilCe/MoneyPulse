@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { importTransactions } from "@/lib/storage";
 import { useToast } from "@/components/Toast";
-import { EXPENSE_CATEGORIES, ExpenseCategory } from "@/lib/types";
+import { EXPENSE_CATEGORIES, ExpenseCategory, MAX_AMOUNT, dateKey } from "@/lib/types";
 import { useApp } from "@/components/AppProvider";
 
 function parseCSV(text: string, fallbackDesc: string) {
@@ -24,7 +24,7 @@ function parseCSV(text: string, fallbackDesc: string) {
     };
     const amountRaw = get("amount", "сумма", "sum", "value");
     const amount = Math.abs(parseFloat(amountRaw.replace(/\s/g, "").replace(",", ".")));
-    if (!amount || isNaN(amount)) continue;
+    if (!amount || isNaN(amount) || amount > MAX_AMOUNT) continue;
     let date = get("date", "дата", "time");
     if (date.includes(".")) {
       const [d, m, y] = date.split(".");
@@ -33,7 +33,7 @@ function parseCSV(text: string, fallbackDesc: string) {
       const parts = date.split("/");
       date = `${parts[2]}-${parts[1].padStart(2, "0")}-${parts[0].padStart(2, "0")}`;
     }
-    if (!/^\d{4}-\d{2}-\d{2}/.test(date)) date = new Date().toISOString().slice(0, 10);
+    if (!/^\d{4}-\d{2}-\d{2}/.test(date)) date = dateKey();
     const desc = get("description", "описан", "memo", "detail", "назначен") || fallbackDesc;
     const typeHint = get("type", "тип");
     const signed = parseFloat(amountRaw.replace(/\s/g, "").replace(",", "."));

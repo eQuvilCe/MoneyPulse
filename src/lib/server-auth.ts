@@ -2,7 +2,7 @@ import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
 import { randomBytes, scryptSync, timingSafeEqual } from "crypto";
 import { getPrisma, prismaEnabled } from "./prisma";
-import { getDemoData, writeStore, UserNotFoundError } from "./db";
+import { getDemoData, writeStore, UserNotFoundError, leaveFamily } from "./db";
 
 const COOKIE = "mp_session";
 
@@ -254,6 +254,11 @@ export async function deleteAccountForUser(
       return { ok: false, error: "Неверный пароль." };
     }
   }
+  // Leave the family first: the cascade alone would remove only the membership row, leaving
+  // an empty family behind (or a family whose ownerId points at a deleted user).
+  const membership = await prisma.familyMember.findUnique({ where: { userId } });
+  if (membership) await leaveFamily(userId);
+  await prisma.telegramLinkCode.deleteMany({ where: { userId } });
   await prisma.user.delete({ where: { id: userId } });
   return { ok: true };
 }

@@ -22,6 +22,8 @@ model User {
   image            String?
   telegramId       String?   @unique
   telegramLinkedAt DateTime?
+  // Telegram notifications (budget alerts, family chat, evening summary) — on by default once linked.
+  tgNotify         Boolean   @default(true)
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
 
@@ -42,6 +44,20 @@ model Family {
   members       FamilyMember[]
   familyBudgets FamilyBudget[]
   familyGoals   FamilyGoal[]
+  messages      FamilyMessage[]
+}
+
+model FamilyMessage {
+  id         String   @id @default(cuid())
+  familyId   String
+  family     Family   @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  userId     String
+  // Snapshot — the message stays readable after its author leaves the family.
+  authorName String
+  text       String
+  createdAt  DateTime @default(now())
+
+  @@index([familyId, createdAt])
 }
 
 model FamilyBudget {
@@ -78,6 +94,15 @@ model FamilyMember {
   joinedAt DateTime @default(now())
 
   @@index([familyId])
+}
+
+// One-time code shown in Settings; the user sends it to the bot as /start <code> to link the chat.
+model TelegramLinkCode {
+  code      String   @id
+  userId    String
+  expiresAt DateTime
+
+  @@index([userId])
 }
 
 model WaitlistEntry {

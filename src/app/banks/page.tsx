@@ -8,7 +8,7 @@ import Link from "next/link";
 import { parseBankSms, guessCategory } from "@/lib/smsParser";
 import { addTransaction } from "@/lib/storage";
 import { useRealtimeData } from "@/hooks/useRealtimeData";
-import { formatMoney } from "@/lib/types";
+import { formatMoney, dateKey } from "@/lib/types";
 import { useToast } from "@/components/Toast";
 import { useApp } from "@/components/AppProvider";
 
@@ -43,7 +43,7 @@ export default function BanksPage() {
       amount: parsed.amount,
       category: guessCategory(parsed.merchant),
       description: parsed.merchant,
-      date: new Date().toISOString().slice(0, 10),
+      date: dateKey(),
     });
     toast(
       `${parsed.type === "expense" ? "−" : "+"}${formatMoney(parsed.amount, parsed.currency || cur)} · ${parsed.merchant}`

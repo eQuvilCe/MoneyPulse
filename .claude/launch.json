@@ -4,8 +4,20 @@
     {
       "name": "money-pulse-dev",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev"],
+      "runtimeArgs": [
+        "run",
+        "dev"
+      ],
       "port": 3000
+    },
+    {
+      "name": "vibe",
+      "runtimeExecutable": "/bin/sh",
+      "runtimeArgs": [
+        "-c",
+        "cd \"/Users/saidxonalavkhanov/Downloads/finance-doctor 2/vibe project\" && exec npm run dev"
+      ],
+      "port": 3210
     }
   ]
 }

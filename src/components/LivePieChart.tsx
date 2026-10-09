@@ -1,5 +1,6 @@
 "use client";
 
+import { formatNumber } from "@/lib/types";
 import { useEffect, useState, useRef } from "react";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { useApp } from "@/components/AppProvider";
@@ -12,7 +13,6 @@ interface Slice {
 
 export default function LivePieChart({ data }: { data: Slice[] }) {
   const { tr, lang } = useApp();
-  const locale = lang === "en" ? "en-US" : "ru-RU";
   const [tick, setTick] = useState(0);
   const prev = useRef(JSON.stringify(data));
 
@@ -50,7 +50,7 @@ export default function LivePieChart({ data }: { data: Slice[] }) {
           </Pie>
           <Tooltip
             contentStyle={{ background: "#0f172a", border: "1px solid #1e293b", borderRadius: 12, fontSize: 12 }}
-            formatter={(v: number) => `${Number(v).toLocaleString(locale)} ₽`}
+            formatter={(v: number) => `${formatNumber(Number(v), lang === "en" ? "en" : "ru")} ₽`}
           />
         </PieChart>
       </ResponsiveContainer>

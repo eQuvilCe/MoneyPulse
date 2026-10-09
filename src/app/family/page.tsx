@@ -7,7 +7,8 @@ import { LetterReveal, MagneticButton } from "@/components/motion/Reveal";
 import { useApp } from "@/components/AppProvider";
 import { useToast } from "@/components/Toast";
 import { useRealtimeData } from "@/hooks/useRealtimeData";
-import { CATEGORY_ICONS, formatMoney, allExpenseCategories } from "@/lib/types";
+import { CATEGORY_ICONS, formatMoney, formatMoneySmart, allExpenseCategories, MAX_AMOUNT, formatMoneyCompact, readAmount } from "@/lib/types";
+import FitText from "@/components/FitText";
 import type {
   FamilyMemberPublic,
   FamilyMemberStat,
@@ -18,6 +19,7 @@ import type {
   FamilyAlert,
 } from "@/lib/db";
 import Confetti from "@/components/fx/Confetti";
+import FamilyChat from "@/components/FamilyChat";
 import { emitCelebrate } from "@/lib/events";
 
 const FAMILY_MAX_MEMBERS = 7;
@@ -38,7 +40,7 @@ async function api<T>(url: string, init?: RequestInit): Promise<{ ok: boolean; d
 }
 
 export default function FamilyPage() {
-  const { tr, user } = useApp();
+  const { tr, user, lang } = useApp();
   const toast = useToast();
   const { data } = useRealtimeData(0);
   const cur = data?.settings.currency || "₽";
@@ -158,7 +160,8 @@ export default function FamilyPage() {
   };
 
   const saveBudget = async () => {
-    const num = parseFloat(budgetLimit);
+    const num = readAmount(budgetLimit);
+    if (num === "too-big") return toast(tr("amountTooBig", { max: formatMoneyCompact(MAX_AMOUNT, cur) }), "err");
     if (!num || busy) return;
     setBusy(true);
     const res = await api("/api/family/budget", {
@@ -183,7 +186,8 @@ export default function FamilyPage() {
   };
 
   const saveGoal = async () => {
-    const num = parseFloat(goalTarget);
+    const num = readAmount(goalTarget);
+    if (num === "too-big") return toast(tr("amountTooBig", { max: formatMoneyCompact(MAX_AMOUNT, cur) }), "err");
     if (!goalTitle.trim() || !num || busy) return;
     setBusy(true);
     const res = await api("/api/family/goal", {
@@ -262,11 +266,12 @@ export default function FamilyPage() {
         </FadeItem>
       ) : !family ? (
         <>
-          <FadeItem className="grid gap-3 sm:grid-cols-3">
+          <FadeItem className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {[
               { icon: "🔑", text: tr("familyFeatureInvite") },
               { icon: "👀", text: tr("familyFeatureVisibility") },
               { icon: "📒", text: tr("familyFeatureFeed") },
+              { icon: "💬", text: tr("familyFeatureChat") },
             ].map((f) => (
               <div
                 key={f.text}
@@ -319,8 +324,8 @@ export default function FamilyPage() {
           <FadeItem>
             <TiltCard className="mp-card rounded-2xl p-5">
               <div className="flex flex-wrap items-center justify-between gap-4">
-                <div>
-                  <h2 className="text-lg font-bold">{family.name}</h2>
+                <div className="min-w-0">
+                  <h2 className="truncate text-lg font-bold">{family.name}</h2>
                   <p className="mt-0.5 text-xs text-slate-500">
                     {family.members.length}/{FAMILY_MAX_MEMBERS} · {tr("familyMembers").toLowerCase()}
                   </p>
@@ -370,12 +375,12 @@ export default function FamilyPage() {
             </FadeItem>
           )}
 
-          <FadeItem className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <FadeItem className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {family.members.map((m: FamilyMemberPublic) => {
               const stat = stats.find((s) => s.userId === m.userId);
               const isMe = user?.id === m.userId;
               return (
-                <TiltCard key={m.id} className="mp-card rounded-2xl p-4">
+                <TiltCard key={m.id} className="mp-card min-w-0 rounded-2xl p-4">
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex min-w-0 items-center gap-3">
                       <span
@@ -410,16 +415,20 @@ export default function FamilyPage() {
                     )}
                   </div>
                   <div className="mt-3 grid grid-cols-2 gap-2">
-                    <div>
+                    <div className="min-w-0">
                       <p className="text-[10px] uppercase tracking-wider text-slate-500">{tr("income")}</p>
                       <p className="font-display text-sm font-semibold tabular-nums text-emerald-400">
-                        +{formatMoney(stat?.income || 0, cur)}
+                        <FitText title={formatMoney(stat?.income || 0, cur)}>
+                          +{formatMoneySmart(stat?.income || 0, cur, lang === "en" ? "en" : "ru")}
+                        </FitText>
                       </p>
                     </div>
-                    <div>
+                    <div className="min-w-0">
                       <p className="text-[10px] uppercase tracking-wider text-slate-500">{tr("expenses")}</p>
                       <p className="font-display text-sm font-semibold tabular-nums text-rose-400">
-                        −{formatMoney(stat?.expense || 0, cur)}
+                        <FitText title={formatMoney(stat?.expense || 0, cur)}>
+                          −{formatMoneySmart(stat?.expense || 0, cur, lang === "en" ? "en" : "ru")}
+                        </FitText>
                       </p>
                     </div>
                   </div>
@@ -427,6 +436,10 @@ export default function FamilyPage() {
                 </TiltCard>
               );
             })}
+          </FadeItem>
+
+          <FadeItem>
+            <FamilyChat isOwner={isOwner} />
           </FadeItem>
 
           <FadeItem>
