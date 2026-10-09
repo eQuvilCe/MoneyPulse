@@ -50,13 +50,13 @@ export default function LoginForm() {
     e.preventDefault();
     setError("");
     if (!email.trim() || !password) {
-      setError(ru ? "Введи email и пароль" : "Enter email and password");
+      setError(ru ? "Введите email и пароль" : "Enter email and password");
       setShake(true);
       setTimeout(() => setShake(false), 450);
       return;
     }
     if (mode === "register" && password.length < 6) {
-      setError(ru ? "Пароль минимум 6 символов" : "Password min 6 characters");
+      setError(ru ? "Пароль — минимум 6 символов" : "Password min 6 characters");
       setShake(true);
       setTimeout(() => setShake(false), 450);
       return;
@@ -88,105 +88,96 @@ export default function LoginForm() {
 
   const str = strength(password);
 
+  const field =
+    "rc-well w-full min-w-0 px-3 py-3 text-[15px] text-white outline-none transition-shadow placeholder:text-[color:var(--rc-smoke)] focus:shadow-[inset_0_0_0_1px_rgba(255,255,255,0.45)]";
+  const label = "mb-2 block text-[13px] text-[color:var(--rc-ash)]";
+  const strengthWord = [ru ? "слабый" : "weak", ru ? "слабый" : "weak", ru ? "средний" : "fair", ru ? "хороший" : "good", ru ? "надёжный" : "strong"][str];
+
   return (
     <motion.div
-      initial={{ opacity: 0, y: 18 }}
+      initial={{ opacity: 0, y: 24 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, delay: 0.1 }}
-      className="relative mx-auto w-full max-w-md"
+      transition={{ duration: 0.7, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
+      className="relative mx-auto w-full max-w-[420px]"
     >
-      <div
-        className="absolute -inset-[1px] rounded-[1.35rem] opacity-80"
-        style={{
-          background: "conic-gradient(from var(--angle, 0deg), #3cf2b0, #38bdf8, #8b5cf6, #3cf2b0)",
-          animation: "mp-spin-border 6s linear infinite",
-          WebkitMask: "linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)",
-          WebkitMaskComposite: "xor",
-          maskComposite: "exclude",
-          padding: "1px",
-        }}
-      />
       <motion.div
         animate={shake ? { x: [0, -8, 8, -6, 6, 0] } : { x: 0 }}
         transition={{ duration: 0.4 }}
-        className="relative overflow-hidden rounded-[1.3rem] border border-white/[0.08] bg-[#0a0e17]/90 shadow-2xl backdrop-blur-xl"
+        className="rc-card-key overflow-hidden"
+        style={{ boxShadow: "var(--rc-key), rgba(0,0,0,0.45) 0 4px 40px 8px, rgba(0,0,0,0.6) 0 40px 80px -20px" }}
       >
-        <div className="border-b border-white/[0.05] px-6 py-4 lg:hidden">
-          <p className="font-display text-sm font-semibold">MoneyPulse</p>
-          <p className="text-xs text-slate-500">
-            {ru ? "Знайте, куда уходят деньги" : "Know where your money goes"}
+        <div className="px-6 pt-6">
+          <h2 className="rc-h">{mode === "login" ? (ru ? "С возвращением" : "Welcome back") : ru ? "Создайте аккаунт" : "Create your account"}</h2>
+          <p className="mt-2 text-[14px] text-[color:var(--rc-ash)]">
+            {mode === "login"
+              ? ru ? "Войдите, чтобы продолжить учёт." : "Sign in to keep tracking."
+              : ru ? "Бесплатно и без привязки карты." : "Free, and no card needed."}
           </p>
+
+          {/* segmented switch */}
+          <div className="relative mt-5 grid grid-cols-2 rounded-lg bg-white/[0.05] p-1" role="tablist">
+            {(["login", "register"] as const).map((m) => (
+              <button
+                key={m}
+                type="button"
+                role="tab"
+                aria-selected={mode === m}
+                onClick={() => {
+                  setMode(m);
+                  setError("");
+                }}
+                className={`relative rounded-md py-2 text-[13px] font-medium transition-colors ${mode === m ? "text-[#18191a]" : "text-[color:var(--rc-ash)] hover:text-white"}`}
+              >
+                {mode === m && (
+                  <motion.span
+                    layoutId="auth-tab-pill"
+                    className="absolute inset-0 rounded-md bg-[color:var(--rc-mist)]"
+                    transition={{ type: "spring", stiffness: 420, damping: 34 }}
+                  />
+                )}
+                <span className="relative">{m === "login" ? tr("login") : tr("register")}</span>
+              </button>
+            ))}
+          </div>
         </div>
 
-        <div className="relative flex border-b border-white/[0.05]">
-          {(["login", "register"] as const).map((m) => (
-            <button
-              key={m}
-              type="button"
-              onClick={() => {
-                setMode(m);
-                setError("");
-              }}
-              className={`relative flex-1 py-3.5 text-sm font-medium transition ${
-                mode === m ? "text-white" : "text-slate-500 hover:text-slate-300"
-              }`}
-            >
-              {m === "login" ? tr("login") : tr("register")}
-              {mode === m && (
-                <motion.span
-                  layoutId="auth-tab-pill"
-                  className="absolute inset-x-3 bottom-0 h-0.5 rounded-full bg-gradient-to-r from-emerald-400 to-cyan-400"
-                  transition={{ type: "spring", stiffness: 380, damping: 30 }}
-                />
-              )}
-            </button>
-          ))}
-        </div>
-
-        <form onSubmit={submit} className="space-y-3.5 p-6">
-          <AnimatePresence mode="wait">
+        <form onSubmit={submit} className="space-y-4 p-6" noValidate>
+          <AnimatePresence mode="wait" initial={false}>
             <motion.div
               key={mode}
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -6 }}
-              transition={{ duration: 0.22 }}
-              className="space-y-3.5"
+              transition={{ duration: 0.2 }}
+              className="space-y-4"
             >
               {mode === "register" && (
                 <div>
-                  <label htmlFor="mp-name" className="mb-1.5 block text-[11px] text-slate-500">
+                  <label htmlFor="mp-name" className={label}>
                     {tr("name") || (ru ? "Имя" : "Name")}
                   </label>
-                  <input
-                    id="mp-name"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    autoComplete="name"
-                    className="w-full rounded-xl border border-white/[0.08] bg-[#05070d] px-3.5 py-2.5 text-sm text-white outline-none transition focus:border-cyan-400/50 focus:ring-2 focus:ring-cyan-400/15"
-                  />
+                  <input id="mp-name" value={name} onChange={(e) => setName(e.target.value)} autoComplete="name" maxLength={80} className={field} />
                 </div>
               )}
               <div>
-                <label
-                  htmlFor="mp-email"
-                  className="mb-1.5 flex items-center justify-between text-[11px] text-slate-500"
-                >
+                <label htmlFor="mp-email" className={`${label} flex items-center justify-between`}>
                   <span>Email</span>
-                  {emailOk(email) && <span className="text-emerald-400">✓</span>}
+                  {emailOk(email) && <span className="text-[color:var(--rc-green)]" aria-hidden="true">✓</span>}
                 </label>
                 <input
                   id="mp-email"
                   type="email"
+                  inputMode="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
                   autoComplete="email"
-                  className="w-full rounded-xl border border-white/[0.08] bg-[#05070d] px-3.5 py-2.5 text-sm text-white outline-none transition focus:border-cyan-400/50 focus:ring-2 focus:ring-cyan-400/15"
+                  placeholder="you@example.com"
+                  className={field}
                 />
               </div>
               <div>
-                <label htmlFor="mp-pass" className="mb-1.5 block text-[11px] text-slate-500">
+                <label htmlFor="mp-pass" className={label}>
                   {ru ? "Пароль" : "Password"}
                 </label>
                 <div className="relative">
@@ -198,91 +189,72 @@ export default function LoginForm() {
                     required
                     minLength={6}
                     autoComplete={mode === "login" ? "current-password" : "new-password"}
-                    className="w-full rounded-xl border border-white/[0.08] bg-[#05070d] px-3.5 py-2.5 pr-14 text-sm text-white outline-none transition focus:border-cyan-400/50 focus:ring-2 focus:ring-cyan-400/15"
+                    className={`${field} pr-24`}
                   />
                   <button
                     type="button"
                     onClick={() => setShowPass((v) => !v)}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 px-2 text-[11px] text-slate-500 hover:text-slate-300"
+                    aria-pressed={showPass}
+                    className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded-md px-2 py-1.5 text-[12px] text-[color:var(--rc-ash)] transition-colors hover:text-white"
                   >
                     {showPass ? (ru ? "Скрыть" : "Hide") : ru ? "Показать" : "Show"}
                   </button>
                 </div>
                 {mode === "register" && password.length > 0 && (
-                  <div className="mt-2 flex gap-1">
-                    {[0, 1, 2, 3].map((i) => (
-                      <div
-                        key={i}
-                        className={`h-1 flex-1 rounded-full transition-colors ${
-                          i < str ? "bg-cyan-400" : "bg-white/10"
-                        }`}
-                      />
-                    ))}
+                  <div className="mt-2 flex items-center gap-3">
+                    <div className="flex flex-1 gap-1" aria-hidden="true">
+                      {[0, 1, 2, 3].map((i) => (
+                        <div key={i} className={`h-1 flex-1 rounded-full transition-colors ${i < str ? (str <= 1 ? "bg-[color:var(--rc-coral)]" : "bg-white") : "bg-white/10"}`} />
+                      ))}
+                    </div>
+                    <span className="rc-mono shrink-0 text-[color:var(--rc-smoke)]">{strengthWord}</span>
                   </div>
                 )}
               </div>
             </motion.div>
           </AnimatePresence>
 
-          <label className="flex cursor-pointer items-center gap-2 text-xs text-slate-500">
-            <input
-              type="checkbox"
-              checked={remember}
-              onChange={(e) => setRemember(e.target.checked)}
-              className="rounded border-white/20 accent-cyan-400"
-            />
+          <label className="flex cursor-pointer items-center gap-2.5 text-[13px] text-[color:var(--rc-ash)]">
+            <input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} className="h-4 w-4 accent-[#e6e6e6]" />
             {ru ? "Запомнить меня" : "Remember me"}
           </label>
 
           <AnimatePresence>
             {error && (
               <motion.p
+                role="alert"
                 initial={{ opacity: 0, y: -4 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0 }}
-                className="rounded-xl border border-rose-500/20 bg-rose-500/5 px-3 py-2 text-xs text-rose-300"
+                className="rounded-lg px-3 py-2.5 text-[13px] text-white"
+                style={{ background: "var(--rc-ember)", boxShadow: "inset 0 0 0 1px rgba(255,99,99,0.4)" }}
               >
                 {error}
               </motion.p>
             )}
           </AnimatePresence>
 
-          <button
-            type="submit"
-            disabled={loading || success}
-            className="mp-btn-primary flex w-full items-center justify-center gap-2 py-3 text-sm"
-          >
-            {loading && (
-              <span className="h-4 w-4 animate-spin rounded-full border-2 border-slate-900/30 border-t-slate-900" />
-            )}
+          <button type="submit" disabled={loading || success} className="rc-btn rc-btn-fill !min-h-[46px] w-full disabled:opacity-70">
+            {loading && <span className="h-4 w-4 animate-spin rounded-full border-2 border-black/20 border-t-black/70" />}
             {success ? "✓" : mode === "login" ? tr("login") : tr("register")}
           </button>
 
-          <div className="relative py-1 text-center">
-            <span className="relative z-10 bg-[#0a0e17] px-2 text-[10px] uppercase tracking-wider text-slate-600">
-              {ru ? "или" : "or"}
-            </span>
-            <div className="absolute inset-x-0 top-1/2 h-px bg-white/[0.06]" />
+          <div className="flex items-center gap-3" aria-hidden="true">
+            <span className="h-px flex-1 bg-[color:var(--rc-border)]" />
+            <span className="rc-eyebrow !text-[10px]">{ru ? "или" : "or"}</span>
+            <span className="h-px flex-1 bg-[color:var(--rc-border)]" />
           </div>
 
-          <button type="button" onClick={() => void enterDemo()} className="mp-btn-ghost w-full py-2.5 text-sm">
+          <button type="button" onClick={() => void enterDemo()} className="rc-btn rc-btn-dark !min-h-[44px] w-full">
             {ru ? "Попробовать демо" : "Try demo"}
+            <span aria-hidden="true">→</span>
           </button>
+
+          <p className="rc-mono text-center text-[color:var(--rc-smoke)]">
+            {ru ? "пароль хранится как scrypt-хеш" : "passwords are stored as scrypt hashes"}
+          </p>
         </form>
       </motion.div>
-      <style>{`
-        @property --angle {
-          syntax: "<angle>";
-          initial-value: 0deg;
-          inherits: false;
-        }
-        @keyframes mp-spin-border {
-          to { --angle: 360deg; }
-        }
-        @media (prefers-reduced-motion: reduce) {
-          [style*="mp-spin-border"] { animation: none !important; }
-        }
-      `}</style>
     </motion.div>
   );
 }

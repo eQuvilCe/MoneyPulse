@@ -67,7 +67,21 @@ export default function Landing() {
             <a href="#faq" className="rc-link">FAQ</a>
           </nav>
           <div className="flex shrink-0 items-center gap-1">
-            <button type="button" onClick={start} className="rc-link px-3 py-2 text-[13px] font-medium">
+            {/* language switch — up here where it is seen, not only in the footer */}
+            <span className="flex items-center gap-0.5 rounded-lg border border-[color:var(--rc-border)] p-0.5" role="group" aria-label={ru ? "Язык" : "Language"}>
+              {(["ru", "en"] as const).map((l) => (
+                <button
+                  key={l}
+                  type="button"
+                  onClick={() => setLang(l)}
+                  aria-pressed={lang === l}
+                  className={`rc-mono rounded-md px-1.5 py-1 uppercase transition-colors ${lang === l ? "bg-white/10 text-white" : "text-[color:var(--rc-smoke)] hover:text-white"}`}
+                >
+                  {l}
+                </button>
+              ))}
+            </span>
+            <button type="button" onClick={start} className="rc-link px-2 py-2 text-[13px] font-medium sm:px-3">
               {ru ? "Войти" : "Sign in"}
             </button>
             <button type="button" onClick={start} className="rc-btn rc-btn-fill rc-btn-sm">

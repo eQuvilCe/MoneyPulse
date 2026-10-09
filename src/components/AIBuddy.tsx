@@ -1,12 +1,121 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { loadDataAsync } from "@/lib/storage";
-import { FinanceData } from "@/lib/types";
+import { flushSync } from "react-dom";
+import { usePathname } from "next/navigation";
+import { motion, AnimatePresence, animate, useMotionValue } from "framer-motion";
+import { addTransaction, getBudgetStatus, loadDataAsync } from "@/lib/storage";
+import { CATEGORY_ICONS, FinanceData, dateKey, formatMoney } from "@/lib/types";
 import { answerAIChat, getDoctorGreeting, getHealthScore } from "@/lib/ai";
+import { parseQuickEntry } from "@/lib/telegramParse";
 import { useApp } from "@/components/AppProvider";
-import { onCelebrate } from "@/lib/events";
+import { onCelebrate, onDataChange } from "@/lib/events";
+
+/** Where the user parked the buddy: which edge, and how far from the bottom (px). */
+type Pos = { side: "left" | "right"; bottom: number };
+const POS_KEY = "mp-buddy-pos";
+const EDGE = 16;
+const SIZE = 64;
+
+/** Keeps the buddy on screen and, on phones, above the bottom tab bar it used to cover. */
+function clampBottom(bottom: number) {
+  const min = window.innerWidth < 1024 ? 92 : EDGE;
+  const max = Math.max(min, window.innerHeight - SIZE - 72);
+  return Math.round(Math.min(max, Math.max(min, bottom)));
+}
+
+type Nudge = { text: string; query?: string };
+
+/**
+ * What is actually worth saying right now, most urgent first — computed from the user's
+ * data and the page they are on, no AI request involved. Empty when nothing stands out.
+ */
+function smartNudges(data: FinanceData, path: string, ru: boolean): Nudge[] {
+  const out: Nudge[] = [];
+  const cur = data.settings.currency;
+  const today = dateKey();
+  const budgets = getBudgetStatus(data);
+
+  for (const b of budgets.filter((x) => x.over).slice(0, 2)) {
+    out.push({
+      text: ru ? `Бюджет «${b.category}» превышен на ${formatMoney(b.spent - b.limit, cur)}` : `"${b.category}" budget is over by ${formatMoney(b.spent - b.limit, cur)}`,
+      query: "Бюджеты",
+    });
+  }
+  for (const b of budgets.filter((x) => !x.over && x.percent >= 80).slice(0, 2)) {
+    out.push({
+      text: ru ? `«${b.category}»: уже ${b.percent}% бюджета, осталось ${formatMoney(b.remaining, cur)}` : `"${b.category}": ${b.percent}% of budget used, ${formatMoney(b.remaining, cur)} left`,
+      query: "Бюджеты",
+    });
+  }
+
+  const hasToday = data.transactions.some((t) => t.date === today);
+  if (!hasToday && new Date().getHours() >= 18) {
+    out.push({ text: ru ? "Сегодня ещё нет записей. Напишите мне, например: кофе 25 000" : "Nothing logged today yet. Tell me, e.g.: coffee 25 000" });
+  }
+
+  const day = (n: number) => {
+    const d = new Date();
+    d.setDate(d.getDate() - n);
+    return dateKey(d);
+  };
+  const spent = (from: string, to?: string) =>
+    data.transactions.reduce((s, t) => (t.type === "expense" && t.date >= from && (!to || t.date <= to) ? s + t.amount : s), 0);
+  const thisWeek = spent(day(6));
+  const lastWeek = spent(day(13), day(7));
+  if (lastWeek > 0 && thisWeek > lastWeek * 1.25) {
+    out.push({
+      text: ru ? `Расходы за неделю выросли на ${Math.round((thisWeek / lastWeek - 1) * 100)}%` : `Spending is up ${Math.round((thisWeek / lastWeek - 1) * 100)}% this week`,
+      query: "Топ расходов",
+    });
+  } else if (lastWeek > 0 && thisWeek < lastWeek * 0.8) {
+    out.push({ text: ru ? `Расходы за неделю ниже на ${Math.round((1 - thisWeek / lastWeek) * 100)}% — так держать` : `Spending is down ${Math.round((1 - thisWeek / lastWeek) * 100)}% this week — nice` });
+  }
+
+  const nearGoal = data.goals.find((g) => g.targetAmount > 0 && g.currentAmount < g.targetAmount && g.currentAmount / g.targetAmount >= 0.8);
+  if (nearGoal) {
+    out.push({
+      text: ru ? `До цели «${nearGoal.title}» осталось ${formatMoney(nearGoal.targetAmount - nearGoal.currentAmount, cur)}` : `${formatMoney(nearGoal.targetAmount - nearGoal.currentAmount, cur)} to go for "${nearGoal.title}"`,
+      query: "Цели",
+    });
+  }
+
+  // a hint for the page that is open, when there is nothing more urgent about it
+  const page: Record<string, Nudge> = ru
+    ? {
+        "/budgets": { text: budgets.length ? "Нажмите — расскажу, где бюджеты под угрозой" : "Бюджетов пока нет. Начните с категории, где тратите больше всего", query: "Бюджеты" },
+        "/goals": { text: data.goals.length ? "Нажмите — посчитаю, когда закроются цели" : "Поставьте первую цель — буду следить за прогрессом", query: "Цели" },
+        "/forecast": { text: "Нажмите — объясню прогноз простыми словами", query: "Прогноз месяца" },
+        "/analytics": { text: "Нажмите — покажу, на что уходит больше всего", query: "Топ расходов" },
+        "/expenses": { text: "Можно не заполнять форму: напишите мне «такси 24 000»" },
+        "/income": { text: "Доход можно записать одной строкой: «+5 млн зарплата»" },
+        "/family": { text: "Общие бюджеты и чат — всё в этой вкладке" },
+        "/": { text: "Нажмите — дам короткий отчёт по месяцу", query: "Полный отчёт" },
+      }
+    : {
+        "/budgets": { text: budgets.length ? "Tap — I'll show which budgets are at risk" : "No budgets yet. Start with your biggest category", query: "Бюджеты" },
+        "/goals": { text: data.goals.length ? "Tap — I'll estimate when your goals close" : "Set a first goal and I'll track it", query: "Цели" },
+        "/forecast": { text: "Tap — I'll explain the forecast in plain words", query: "Прогноз месяца" },
+        "/analytics": { text: "Tap — I'll show where most money goes", query: "Топ расходов" },
+        "/expenses": { text: "Skip the form: just tell me “taxi 24 000”" },
+        "/income": { text: "Log income in one line: “+5 mln salary”" },
+        "/family": { text: "Shared budgets and chat live in this tab" },
+        "/": { text: "Tap — I'll give a short report on the month", query: "Полный отчёт" },
+      };
+  if (page[path]) out.push(page[path]);
+  return out;
+}
+
+/** "кофе 25 000" is an entry; "сколько за 7 дней?" is a question that merely contains a number. */
+function asQuickEntry(text: string) {
+  if (/[?？]/.test(text)) return null;
+  if (/^\s*(сколько|как|какой|какая|какие|что|почему|когда|где|покажи|дай|расскажи|прогноз|отчёт|отчет|баланс|бюджет|цели|топ|мой|how|what|why|when|show|give|tell)/i.test(text)) return null;
+  const entry = parseQuickEntry(text);
+  if (!entry) return null;
+  // a bare small number ("7", "30") is far more likely part of a question than a purchase
+  if (entry.amount < 100 && !/^\s*\+/.test(text)) return null;
+  return entry;
+}
 
 type Mood = "happy" | "calm" | "worried";
 
@@ -46,7 +155,9 @@ const QUICK: { label: "quickFullReport" | "quickToday" | "quickMonthForecast" | 
 ];
 
 export default function AIBuddy() {
-  const { tr } = useApp();
+  const { tr, lang } = useApp();
+  const ru = lang !== "en";
+  const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [data, setData] = useState<FinanceData | null>(null);
   const [messages, setMessages] = useState<{ role: "user" | "assistant"; text: string }[]>([]);
@@ -54,20 +165,72 @@ export default function AIBuddy() {
   const [typing, setTyping] = useState(false);
   const [bounce, setBounce] = useState(false);
   const [celebrating, setCelebrating] = useState(false);
-  const [nudge, setNudge] = useState<string | null>(null);
+  const [nudge, setNudge] = useState<Nudge | null>(null);
   const endRef = useRef<HTMLDivElement>(null);
+
+  // ——— dragging: the buddy can be parked on either edge, at any height ———
+  const [pos, setPos] = useState<Pos | null>(null);
+  const x = useMotionValue(0);
+  const y = useMotionValue(0);
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const dragged = useRef(false);
+
+  useEffect(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem(POS_KEY) || "null") as Pos | null;
+      if (saved && (saved.side === "left" || saved.side === "right") && Number.isFinite(saved.bottom)) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- the saved spot lives in localStorage, readable only after mount
+        setPos({ side: saved.side, bottom: clampBottom(saved.bottom) });
+      }
+    } catch {
+      /* ignore a corrupted value */
+    }
+    // rotating the phone or resizing the window must not leave the buddy off screen
+    const onResize = () => setPos((p) => (p ? { ...p, bottom: clampBottom(p.bottom) } : p));
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+
+  const onDragEnd = () => {
+    const el = wrapRef.current;
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    const side: Pos["side"] = r.left + r.width / 2 < window.innerWidth / 2 ? "left" : "right";
+    const bottom = clampBottom(window.innerHeight - r.bottom);
+    const next = { side, bottom };
+    // Move the element's real position to the snapped spot, then let the transform
+    // glide from where the finger let go to zero — it "flies" to the nearest edge.
+    const newLeft = side === "left" ? EDGE : window.innerWidth - EDGE - r.width;
+    const newTop = window.innerHeight - bottom - r.height;
+    flushSync(() => setPos(next));
+    x.set(r.left - newLeft);
+    y.set(r.top - newTop);
+    animate(x, 0, { type: "spring", stiffness: 420, damping: 32 });
+    animate(y, 0, { type: "spring", stiffness: 420, damping: 32 });
+    try {
+      localStorage.setItem(POS_KEY, JSON.stringify(next));
+    } catch {
+      /* private mode */
+    }
+    // the click that ends a drag must not open the chat
+    window.setTimeout(() => (dragged.current = false), 60);
+  };
 
   const health = data ? getHealthScore(data) : 0;
   const mood: Mood = !data ? "calm" : health >= 70 ? "happy" : health >= 40 ? "calm" : "worried";
   const moodRef = useRef<Mood>(mood);
   const trRef = useRef(tr);
+  // latest inputs for the nudge timer, which is set up once
+  const live = useRef({ data, pathname, ru, open });
+  const nudgeIndex = useRef(0);
   useEffect(() => {
     moodRef.current = mood;
     trRef.current = tr;
-  }, [mood, tr]);
+    live.current = { data, pathname, ru, open };
+  }, [mood, tr, data, pathname, ru, open]);
 
-  const showNudge = (text: string, ms = 4200) => {
-    setNudge(text);
+  const showNudge = (n: Nudge | string, ms = 5200) => {
+    setNudge(typeof n === "string" ? { text: n } : n);
     setBounce(true);
     window.setTimeout(() => setNudge(null), ms);
   };
@@ -77,7 +240,16 @@ export default function AIBuddy() {
       setData(d);
       setMessages([{ role: "assistant", text: getDoctorGreeting(d) }]);
     });
-    const t = setInterval(() => {
+    // Speak up with something specific (a budget about to burst, a quiet day, a hint for
+    // this page), cycling through what is relevant; fall back to a mood line otherwise.
+    const speak = () => {
+      const { data: d, pathname: path, ru: isRu, open: chatOpen } = live.current;
+      if (chatOpen || document.hidden) return;
+      const smart = d ? smartNudges(d, path, isRu) : [];
+      if (smart.length) {
+        showNudge(smart[nudgeIndex.current++ % smart.length]);
+        return;
+      }
       const m = moodRef.current;
       const k = trRef.current;
       const lines =
@@ -87,7 +259,11 @@ export default function AIBuddy() {
             ? [k("buddyNudgeWorried1"), k("buddyNudgeWorried2")]
             : [k("buddyNudgeCalm1"), k("buddyNudgeCalm2")];
       showNudge(lines[Math.floor(Math.random() * lines.length)]);
-    }, 26000);
+    };
+    const first = window.setTimeout(speak, 5000);
+    const t = setInterval(speak, 26000);
+    // stay current: a new entry may have tipped a budget over
+    const offData = onDataChange(() => void loadDataAsync().then(setData));
     const offCelebrate = onCelebrate(() => {
       setCelebrating(true);
       showNudge(trRef.current("buddyCelebrate"), 3000);
@@ -105,7 +281,9 @@ export default function AIBuddy() {
     };
     window.addEventListener("mp-open-ai-tutorial", onTutorial);
     return () => {
+      clearTimeout(first);
       clearInterval(t);
+      offData();
       offCelebrate();
       window.removeEventListener("mp-open-ai-tutorial", onTutorial);
     };
@@ -128,6 +306,37 @@ export default function AIBuddy() {
     setMessages((m) => [...m, { role: "user", text }]);
     setInput("");
     setTyping(true);
+
+    // "кофе 25 000" → log it right here, no form and no AI request spent
+    const entry = asQuickEntry(text);
+    if (entry) {
+      try {
+        const before = data.transactions.length;
+        await addTransaction({ ...entry, date: dateKey() });
+        const fresh = await loadDataAsync();
+        setData(fresh);
+        if (fresh.transactions.length <= before) {
+          // the server refused it (plan limit, validation) — the reason is shown as a toast
+          setMessages((m) => [...m, { role: "assistant", text: ru ? "Не получилось записать — причина в уведомлении выше." : "Couldn't log that — see the notice above." }]);
+        } else {
+          const cur = fresh.settings.currency;
+          const b = getBudgetStatus(fresh).find((x) => x.category === entry.category);
+          const line = `✅ ${entry.type === "income" ? "+" : "−"}${formatMoney(entry.amount, cur)} · ${CATEGORY_ICONS[entry.category] || "📦"} ${entry.category}`;
+          const budgetLine =
+            entry.type === "expense" && b
+              ? ru
+                ? `\nБюджет «${b.category}»: ${b.percent}%${b.over ? ` — превышен на ${formatMoney(b.spent - b.limit, cur)}` : `, осталось ${formatMoney(b.remaining, cur)}`}`
+                : `\n"${b.category}" budget: ${b.percent}%${b.over ? ` — over by ${formatMoney(b.spent - b.limit, cur)}` : `, ${formatMoney(b.remaining, cur)} left`}`
+              : "";
+          setMessages((m) => [...m, { role: "assistant", text: `${line}\n${entry.description}${budgetLine}` }]);
+        }
+      } catch {
+        setMessages((m) => [...m, { role: "assistant", text: ru ? "Не получилось записать, попробуйте ещё раз." : "Couldn't log that, please try again." }]);
+      }
+      setTyping(false);
+      return;
+    }
+
     try {
       const res = await fetch("/api/ai", {
         method: "POST",
@@ -152,21 +361,53 @@ export default function AIBuddy() {
   return (
     <>
       {/* Floating 3D buddy — "Пульси": face/color/energy follow your financial health */}
-      <div className="fixed bottom-6 right-6 z-50 lg:bottom-8 lg:right-8">
+      {/* Drag it anywhere; on release it snaps to the nearest edge and remembers the spot.
+          Default spot on phones sits above the bottom tab bar instead of on top of it. */}
+      <motion.div
+        ref={wrapRef}
+        drag
+        dragMomentum={false}
+        dragElastic={0.12}
+        onDragStart={() => {
+          dragged.current = true;
+          setNudge(null);
+        }}
+        onDragEnd={onDragEnd}
+        whileDrag={{ scale: 1.08, cursor: "grabbing" }}
+        style={{
+          x,
+          y,
+          touchAction: "none",
+          ...(pos ? { bottom: pos.bottom, [pos.side]: EDGE } : null),
+        }}
+        className={`fixed z-50 ${pos ? "" : "bottom-[calc(92px+env(safe-area-inset-bottom))] right-4 lg:bottom-8 lg:right-8"}`}
+      >
         <AnimatePresence>
           {nudge && (
-            <motion.div
+            <motion.button
+              type="button"
               initial={{ opacity: 0, y: 8, scale: 0.9 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 4, scale: 0.95 }}
-              className="absolute -top-3 right-0 w-max max-w-[220px] -translate-y-full rounded-2xl rounded-br-sm border border-white/10 bg-[#0e1420] px-3 py-2 text-xs font-medium text-slate-200 shadow-xl"
+              onClick={() => {
+                const q = nudge.query;
+                setNudge(null);
+                setOpen(true);
+                if (q) void send(q);
+              }}
+              className={`absolute -top-3 w-max max-w-[min(240px,calc(100vw-48px))] -translate-y-full rounded-2xl border border-white/10 bg-[#0e1420] px-3 py-2 text-left text-xs font-medium text-slate-200 shadow-xl ${
+                pos?.side === "left" ? "left-0 rounded-bl-sm" : "right-0 rounded-br-sm"
+              }`}
             >
-              {nudge}
-            </motion.div>
+              {nudge.text}
+            </motion.button>
           )}
         </AnimatePresence>
         <motion.button
-          onClick={() => setOpen(true)}
+          aria-label={ru ? "Открыть помощника Пульси (можно перетаскивать)" : "Open the Pulse assistant (draggable)"}
+          onClick={() => {
+            if (!dragged.current) setOpen(true);
+          }}
           className="flex h-16 w-16 items-center justify-center rounded-2xl perspective-1000"
           style={{ perspective: 800 }}
           whileHover={{ scale: 1.08 }}
@@ -238,7 +479,7 @@ export default function AIBuddy() {
             </span>
           </motion.div>
         </motion.button>
-      </div>
+      </motion.div>
 
       {/* Chat panel */}
       <AnimatePresence>
@@ -257,7 +498,7 @@ export default function AIBuddy() {
               exit={{ opacity: 0, y: 30, scale: 0.95 }}
               transition={{ type: "spring", stiffness: 380, damping: 28 }}
               style={{ transformPerspective: 1000 }}
-              className="fixed bottom-24 right-4 z-[70] flex h-[min(520px,70vh)] w-[min(380px,calc(100vw-2rem))] flex-col overflow-hidden rounded-3xl border border-white/10 bg-[#0a0f1a]/95 shadow-2xl shadow-black/50 backdrop-blur-xl lg:right-8"
+              className="fixed bottom-[calc(96px+env(safe-area-inset-bottom))] right-4 z-[70] flex h-[min(520px,calc(100dvh-140px))] w-[min(380px,calc(100vw-2rem))] flex-col overflow-hidden rounded-3xl border border-white/10 bg-[#0a0f1a]/95 shadow-2xl shadow-black/50 backdrop-blur-xl lg:right-8"
             >
               {/* header */}
               <div className="flex items-center gap-3 border-b border-white/5 bg-gradient-to-r from-emerald-500/15 to-cyan-500/10 px-4 py-3">
@@ -342,7 +583,8 @@ export default function AIBuddy() {
                 <input
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
-                  placeholder={tr("buddyInputPlaceholder")}
+                  placeholder={ru ? "Вопрос или трата: кофе 25 000" : "Ask, or log: coffee 25 000"}
+                  aria-label={tr("buddyInputPlaceholder")}
                   className="flex-1 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-sm text-white outline-none focus:border-emerald-500/40"
                 />
                 <button
