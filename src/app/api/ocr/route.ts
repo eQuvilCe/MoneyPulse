@@ -1,3 +1,4 @@
+import { dateKey } from "@/lib/types";
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthUser, rateLimit } from "@/lib/server-auth";
 
@@ -46,7 +47,7 @@ function parseOcrJson(text: string): Partial<OcrResult> | null {
     if (!Number.isFinite(amount) || amount < 0) {
       return { error: "blurry_or_no_amount" };
     }
-    const today = new Date().toISOString().slice(0, 10);
+    const today = dateKey();
     let date = typeof p.date === "string" ? p.date.slice(0, 10) : today;
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) date = today;
     return {
@@ -136,7 +137,7 @@ If the image is blurry, not a receipt, or total is unreadable: {"amount":0,"erro
             ok: false,
             source: "vision",
             amount: 0,
-            date: new Date().toISOString().slice(0, 10),
+            date: dateKey(),
             description: "",
             category: "другое",
             items: [],
@@ -157,7 +158,7 @@ If the image is blurry, not a receipt, or total is unreadable: {"amount":0,"erro
           ok: false,
           source: "vision",
           amount: 0,
-          date: new Date().toISOString().slice(0, 10),
+          date: dateKey(),
           description: "",
           category: "другое",
           items: [],
@@ -184,7 +185,7 @@ If the image is blurry, not a receipt, or total is unreadable: {"amount":0,"erro
         ok: false,
         source: "vision",
         amount: 0,
-        date: new Date().toISOString().slice(0, 10),
+        date: dateKey(),
         description: "",
         category: "другое",
         items: [],
@@ -199,7 +200,7 @@ If the image is blurry, not a receipt, or total is unreadable: {"amount":0,"erro
     ok: true,
     source: "manual",
     amount: 0,
-    date: new Date().toISOString().slice(0, 10),
+    date: dateKey(),
     description: "Чек (проверь сумму)",
     category: "еда",
     items: [],

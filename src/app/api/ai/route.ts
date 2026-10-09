@@ -1,3 +1,4 @@
+import { dateKey } from "@/lib/types";
 import { NextRequest, NextResponse } from "next/server";
 import { readStore, consumeMonthlyAiQuota } from "@/lib/db";
 import {
@@ -79,7 +80,7 @@ function buildContext(data: Awaited<ReturnType<typeof readStore>>): string {
     .join("; ");
   const budgets = data.budgets.map((b) => `${b.category}: лимит ${b.limit}/${b.period}`).join("; ");
   const accounts = (data.accounts || []).map((a) => `${a.name} (${a.type}): ${a.balance}`).join("; ");
-  const today = new Date().toISOString().slice(0, 10);
+  const today = dateKey();
 
   return [
     `Сегодня: ${today}. Валюта: ${data.settings.currency}.`,

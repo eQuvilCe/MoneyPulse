@@ -16,7 +16,8 @@ const LivePieChart = dynamic(() => import("@/components/LivePieChart"), {
 
 import { getStats, getBudgetStatus } from "@/lib/storage";
 import { useRealtimeData } from "@/hooks/useRealtimeData";
-import { CATEGORY_ICONS, CATEGORY_COLORS, formatMoney } from "@/lib/types";
+import { CATEGORY_ICONS, CATEGORY_COLORS, formatMoney, formatMoneySmart, compactNumber, dateKey } from "@/lib/types";
+import { useHideAmounts, HIDDEN_AMOUNT } from "@/hooks/useHideAmounts";
 import StatCard from "@/components/StatCard";
 import AIInsightBar from "@/components/AIInsightBar";
 import TransactionList from "@/components/TransactionList";
@@ -30,13 +31,15 @@ import ShareCard from "@/components/ShareCard";
 import { getHealthScore, getHealthBreakdown } from "@/lib/ai";
 import SmartAlerts from "@/components/SmartAlerts";
 import MoneyFlow from "@/components/MoneyFlow";
+import { QuickActions, MonthPace, ActivityTicker } from "@/components/DashboardLive";
 import { useApp } from "@/components/AppProvider";
 
 export default function Dashboard() {
   const { data, refresh, live } = useRealtimeData(0);
   const { tr, lang } = useApp();
   const ru = lang !== "en";
-  const [selectedDay, setSelectedDay] = useState(() => new Date().toISOString().slice(0, 10));
+  const { hidden } = useHideAmounts();
+  const [selectedDay, setSelectedDay] = useState(() => dateKey());
   const [txFilter, setTxFilter] = useState<"all" | "income" | "expense">("all");
 
   const dayTx = useMemo(() => {
@@ -70,7 +73,7 @@ export default function Dashboard() {
     color: CATEGORY_COLORS[name] || "#64748b",
   }));
 
-  const today = new Date().toISOString().slice(0, 10);
+  const today = dateKey();
   const todayIncome = data.transactions
     .filter((t) => t.type === "income" && t.date === today)
     .reduce((s, t) => s + t.amount, 0);
@@ -82,13 +85,16 @@ export default function Dashboard() {
   const dayExpense = dayTx.filter((t) => t.type === "expense").reduce((s, t) => s + t.amount, 0);
 
   const cur = data.settings.currency;
+  /** Exact while it fits the row, abbreviated from 10 million up. */
+  const short = (n: number) =>
+    Math.abs(n) >= 1e7 ? compactNumber(n, ru ? "ru" : "en") : n.toLocaleString(ru ? "ru-RU" : "en-US");
   const health = getHealthScore(data);
 
   const spark = (type: "income" | "expense") => {
     const arr = Array.from({ length: 14 }, (_, i) => {
       const d = new Date();
       d.setDate(d.getDate() - (13 - i));
-      const k = d.toISOString().slice(0, 10);
+      const k = dateKey(d);
       return data.transactions
         .filter((t) => t.type === type && t.date === k)
         .reduce((a, t) => a + t.amount, 0);
@@ -152,8 +158,8 @@ export default function Dashboard() {
       </FadeItem>
 
       {/* Hero + Quick add */}
-      <div className="grid gap-4 lg:grid-cols-12">
-        <FadeItem className="lg:col-span-8 [&>*]:h-full">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
+        <FadeItem className="min-w-0 lg:col-span-8 [&>*]:h-full">
           <PulseHero
             balance={stats.balance}
             income={stats.income}
@@ -164,10 +170,22 @@ export default function Dashboard() {
             parts={getHealthBreakdown(data).parts}
           />
         </FadeItem>
-        <FadeItem className="lg:col-span-4 [&>*]:h-full">
-          <DailyQuickAdd onAdded={refresh} todayIncome={todayIncome} todayExpense={todayExpense} />
+        <FadeItem className="min-w-0 lg:col-span-4 [&>*]:h-full">
+          <DailyQuickAdd
+            onAdded={refresh}
+            todayIncome={todayIncome}
+            todayExpense={todayExpense}
+            currency={cur}
+            settings={data.settings}
+            recent={data.transactions}
+          />
         </FadeItem>
       </div>
+
+      {/* Main menu: shortcuts */}
+      <FadeItem>
+        <QuickActions />
+      </FadeItem>
 
       {/* Alerts + AI */}
       <FadeItem>
@@ -177,18 +195,24 @@ export default function Dashboard() {
         <AIInsightBar data={data} />
       </FadeItem>
 
+      <FadeItem>
+        <ActivityTicker data={data} />
+      </FadeItem>
+
       {/* Stats row */}
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <StatCard
           title={tr("income") || (ru ? "Доход" : "Income")}
-          value={`+${formatMoney(stats.income, cur)}`}
+          value={hidden ? HIDDEN_AMOUNT : `+${formatMoneySmart(stats.income, cur, ru ? "ru" : "en")}`}
+          fullValue={hidden ? undefined : `+${formatMoney(stats.income, cur)}`}
           icon="↑"
           color="green"
           spark={spark("income")}
         />
         <StatCard
           title={tr("expenses") || (ru ? "Расход" : "Expense")}
-          value={`−${formatMoney(stats.expense, cur)}`}
+          value={hidden ? HIDDEN_AMOUNT : `−${formatMoneySmart(stats.expense, cur, ru ? "ru" : "en")}`}
+          fullValue={hidden ? undefined : `−${formatMoney(stats.expense, cur)}`}
           icon="↓"
           color="red"
           delay={0.06}
@@ -203,6 +227,10 @@ export default function Dashboard() {
           subtitle={`${tr("goal") || (ru ? "Цель" : "Goal")} ${data.settings.savingsTargetPercent}%`}
         />
       </div>
+
+      <FadeItem>
+        <MonthPace data={data} />
+      </FadeItem>
 
       {/* Charts */}
       <div className="grid gap-4 lg:grid-cols-12">
@@ -333,12 +361,12 @@ export default function Dashboard() {
             <div className="space-y-3.5">
               {budgets.slice(0, 4).map((b) => (
                 <div key={b.id}>
-                  <div className="mb-1.5 flex justify-between text-xs">
-                    <span className="text-slate-300">
+                  <div className="mb-1.5 flex justify-between gap-3 text-xs">
+                    <span className="min-w-0 truncate text-slate-300">
                       {CATEGORY_ICONS[b.category] || "•"} {b.category}
                     </span>
-                    <span className={b.over ? "text-rose-400" : "text-slate-500"}>
-                      {b.spent.toLocaleString(ru ? "ru-RU" : "en-US")} / {b.limit.toLocaleString(ru ? "ru-RU" : "en-US")}
+                    <span className={`shrink-0 tabular-nums ${b.over ? "text-rose-400" : "text-slate-500"}`}>
+                      {short(b.spent)} / {short(b.limit)}
                     </span>
                   </div>
                   <div className="h-1.5 overflow-hidden rounded-full bg-white/[0.06]">
@@ -379,8 +407,8 @@ export default function Dashboard() {
                 const progress = Math.min(100, Math.round((g.currentAmount / g.targetAmount) * 100));
                 return (
                   <div key={g.id}>
-                    <div className="mb-1.5 flex items-center justify-between text-xs">
-                      <span className="text-slate-300">
+                    <div className="mb-1.5 flex items-center justify-between gap-3 text-xs">
+                      <span className="min-w-0 truncate text-slate-300">
                         {g.emoji} {g.title}
                       </span>
                       <span className="tabular-nums text-violet-400">{progress}%</span>

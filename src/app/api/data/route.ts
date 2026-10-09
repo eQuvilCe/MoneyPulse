@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import {
   readStore,
   resetUser,
@@ -19,6 +19,7 @@ import {
 } from "@/lib/db";
 import { FinanceData } from "@/lib/types";
 import { getAuthUser } from "@/lib/server-auth";
+import { budgetAlertFor, notifyUser } from "@/lib/telegram";
 import { apiError } from "@/lib/api-errors";
 import {
   idSchema,
@@ -66,13 +67,13 @@ export async function POST(req: NextRequest) {
       const count = await freeTransactionCount(user.id);
       if (count >= 200) {
         return NextResponse.json(
-          { error: "Free plan limit: 200 transactions. Upgrade to Pro." },
+          { error: "Лимит бесплатного тарифа — 200 операций. Удалите старые записи или дождитесь Pro." },
           { status: 403 }
         );
       }
     }
     if (user.plan === "free" && body.action === "import_transactions") {
-      return NextResponse.json({ error: "CSV import is Pro. Upgrade or use Demo." }, { status: 403 });
+      return NextResponse.json({ error: "Импорт CSV доступен в Pro и в демо-режиме." }, { status: 403 });
     }
 
     switch (body.action) {
@@ -81,6 +82,13 @@ export async function POST(req: NextRequest) {
         const ownerErr = await checkAccountOwnership(user.id, payload.accountId);
         if (ownerErr) return ownerErr;
         await addTransactionForUser(user.id, payload);
+        if (payload.type === "expense") {
+          // After the response: a Telegram alert if this expense crossed 80% / 100% of a budget.
+          after(async () => {
+            const alert = await budgetAlertFor(user.id, payload.category, payload.amount);
+            if (alert) await notifyUser(user.id, alert);
+          });
+        }
         break;
       }
       case "delete_transaction": {

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { loadDataAsync, addGoal, updateGoal, deleteGoal } from "@/lib/storage";
-import { FinanceData, Goal, formatMoney } from "@/lib/types";
+import { FinanceData, Goal, formatMoney, MAX_AMOUNT, formatMoneyCompact, readAmount } from "@/lib/types";
 import { PageShell, FadeItem, Skeleton } from "@/components/motion/PageShell";
 import TiltCard from "@/components/motion/TiltCard";
 import { LetterReveal, MagneticButton } from "@/components/motion/Reveal";
@@ -43,7 +43,11 @@ export default function GoalsPage() {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    const num = parseFloat(target);
+    const num = readAmount(target);
+    if (num === "too-big") {
+      toast(tr("amountTooBig", { max: formatMoneyCompact(MAX_AMOUNT, cur) }), "err");
+      return;
+    }
     if (!title.trim() || !num) return;
     if (editId) {
       await updateGoal(editId, {

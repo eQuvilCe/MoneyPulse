@@ -1,5 +1,6 @@
 "use client";
 
+import { clearDataCache } from "@/lib/storage";
 import { createContext, useContext, useEffect, useState, ReactNode, useCallback, useRef } from "react";
 import { Lang, t, TKey } from "@/lib/i18n";
 import { onSessionExpired, emitSessionExpired } from "@/lib/events";
@@ -85,6 +86,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     // this just syncs the <html> class + lang cookie for the value we booted with.
     document.documentElement.classList.toggle("light", theme === "light");
     document.cookie = `${LANG_KEY}=${lang}; path=/; max-age=31536000; samesite=lax`;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- session bootstrap: state is set when the /me request settles
     fetchMe().finally(() => setReady(true));
 
     const onFocus = () => fetchMe();
@@ -133,6 +135,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const data = await res.json();
     if (!res.ok) return { ok: false, error: data.error || "Login failed" };
     hadUserRef.current = true;
+    clearDataCache();
     setUser(data.user);
     setShowAuth(false);
     return { ok: true };
@@ -148,6 +151,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const data = await res.json();
     if (!res.ok) return { ok: false, error: data.error || "Register failed" };
     hadUserRef.current = true;
+    clearDataCache();
     setUser(data.user);
     setShowAuth(false);
     return { ok: true };
@@ -158,6 +162,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const data = await res.json();
     if (res.ok) {
       hadUserRef.current = true;
+      clearDataCache();
       setUser(data.user);
       setShowAuth(false);
     }
@@ -166,6 +171,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const logout = useCallback(async () => {
     await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
     hadUserRef.current = false;
+    clearDataCache();
     setUser(null);
   }, []);
 

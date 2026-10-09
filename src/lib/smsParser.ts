@@ -1,3 +1,4 @@
+import { MAX_AMOUNT } from "./types";
 /** Parse bank SMS / push notification text → transaction fields */
 
 export type ParsedSms = {
@@ -49,7 +50,7 @@ function parseAmount(s: string): number | null {
     else n = n.replace(",", ".");
   }
   const val = parseFloat(n);
-  return Number.isFinite(val) ? val : null;
+  return Number.isFinite(val) && val <= MAX_AMOUNT ? val : null;
 }
 
 export function parseBankSms(text: string): ParsedSms | null {

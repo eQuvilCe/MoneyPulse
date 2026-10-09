@@ -1,4 +1,4 @@
-import { FinanceData, formatMoney } from "./types";
+import { FinanceData, formatMoney, dateKey } from "./types";
 
 function monthKey(d = new Date()) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
@@ -12,7 +12,7 @@ function shiftMonth(key: string, delta: number) {
 
 export function periodRange(period: "this" | "last" | "3m" | "1y") {
   const now = new Date();
-  const end = now.toISOString().slice(0, 10);
+  const end = dateKey(now);
   if (period === "this") {
     return { start: monthKey() + "-01", end, label: "Этот месяц" };
   }
@@ -24,11 +24,11 @@ export function periodRange(period: "this" | "last" | "3m" | "1y") {
   if (period === "3m") {
     const d = new Date();
     d.setMonth(d.getMonth() - 3);
-    return { start: d.toISOString().slice(0, 10), end, label: "3 месяца" };
+    return { start: dateKey(d), end, label: "3 месяца" };
   }
   const d = new Date();
   d.setFullYear(d.getFullYear() - 1);
-  return { start: d.toISOString().slice(0, 10), end, label: "Год" };
+  return { start: dateKey(d), end, label: "Год" };
 }
 
 export function statsInRange(data: FinanceData, start: string, end: string) {

@@ -1,9 +1,11 @@
+import Link from "next/link";
+
 export default function PrivacyPage() {
   return (
     <div className="mx-auto max-w-2xl px-4 py-16 text-white">
-      <a href="/" className="text-sm text-cyan-400 hover:underline">
+      <Link href="/" className="text-sm text-cyan-400 hover:underline">
         ← MoneyPulse
-      </a>
+      </Link>
       <h1 className="mt-6 text-3xl font-bold tracking-tight">Privacy Policy</h1>
       <p className="mt-2 text-sm text-slate-500">Last updated: September 2026 · Uzbekistan</p>
 

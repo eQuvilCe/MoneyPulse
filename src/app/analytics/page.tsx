@@ -1,5 +1,6 @@
 "use client";
 
+import { formatNumber } from "@/lib/types";
 import { useState } from "react";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
@@ -20,7 +21,6 @@ import { useApp } from "@/components/AppProvider";
 
 export default function AnalyticsPage() {
   const { tr, lang } = useApp();
-  const numLocale = lang === "en" ? "en-US" : "ru-RU";
   const { data, live } = useRealtimeData(0);
   const [period, setPeriod] = useState<number | undefined>(undefined);
   if (!data) return <div className="py-20 text-center text-slate-500">{tr("loading")}</div>;
@@ -119,9 +119,9 @@ export default function AnalyticsPage() {
       </FadeItem>
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <TiltCard><StatCard title={tr("income")} value={`+${stats.income.toLocaleString(numLocale)}`} icon="↑" color="green" /></TiltCard>
-        <TiltCard><StatCard title={tr("expenses")} value={`−${stats.expense.toLocaleString(numLocale)}`} icon="↓" color="red" /></TiltCard>
-        <TiltCard><StatCard title={tr("balance")} value={`${stats.balance.toLocaleString(numLocale)}`} icon="◈" color={stats.balance >= 0 ? "cyan" : "red"} /></TiltCard>
+        <TiltCard><StatCard title={tr("income")} value={`+${formatNumber(stats.income, lang === "en" ? "en" : "ru")}`} icon="↑" color="green" /></TiltCard>
+        <TiltCard><StatCard title={tr("expenses")} value={`−${formatNumber(stats.expense, lang === "en" ? "en" : "ru")}`} icon="↓" color="red" /></TiltCard>
+        <TiltCard><StatCard title={tr("balance")} value={`${formatNumber(stats.balance, lang === "en" ? "en" : "ru")}`} icon="◈" color={stats.balance >= 0 ? "cyan" : "red"} /></TiltCard>
         <TiltCard><StatCard title={tr("savings")} value={`${stats.savingsRate}%`} icon="◎" color={stats.savingsRate >= 20 ? "green" : "amber"} /></TiltCard>
       </div>
       <div className="grid gap-4 lg:grid-cols-2">

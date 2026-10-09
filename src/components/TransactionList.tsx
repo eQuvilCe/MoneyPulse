@@ -2,9 +2,10 @@
 
 import { useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Transaction, CATEGORY_ICONS, CATEGORY_COLORS, formatMoney } from "@/lib/types";
+import { Transaction, CATEGORY_ICONS, CATEGORY_COLORS, formatMoney, MAX_AMOUNT, formatMoneyCompact, readAmount } from "@/lib/types";
 import { deleteTransaction, updateTransaction } from "@/lib/storage";
 import { useApp } from "@/components/AppProvider";
+import { useToast } from "@/components/Toast";
 
 interface Props {
   transactions: Transaction[];
@@ -30,6 +31,7 @@ export default function TransactionList({
   const [editCat, setEditCat] = useState("");
   const [editDate, setEditDate] = useState("");
   const { tr } = useApp();
+  const toast = useToast();
 
   const filtered = useMemo(() => {
     let list = type ? transactions.filter((t) => t.type === type) : transactions;
@@ -51,8 +53,12 @@ export default function TransactionList({
 
   const saveEdit = async () => {
     if (!editId) return;
-    const num = parseFloat(editAmount);
-    if (!num || num <= 0) return;
+    const num = readAmount(editAmount);
+    if (num === "too-big") {
+      toast(tr("amountTooBig", { max: formatMoneyCompact(MAX_AMOUNT, currency) }), "err");
+      return;
+    }
+    if (!num) return;
     await updateTransaction(editId, {
       amount: num,
       description: editDesc,

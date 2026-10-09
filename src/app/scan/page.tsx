@@ -1,5 +1,6 @@
 "use client";
 
+import { readAmount, dateKey } from "@/lib/types";
 import { useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { PageShell, FadeItem } from "@/components/motion/PageShell";
@@ -19,7 +20,7 @@ export default function ScanPage() {
   const [amount, setAmount] = useState("");
   const [desc, setDesc] = useState("");
   const [category, setCategory] = useState("еда");
-  const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
+  const [date, setDate] = useState(dateKey());
   const [note, setNote] = useState("");
 
   const onFile = async (file: File) => {
@@ -64,8 +65,12 @@ export default function ScanPage() {
   };
 
   const save = async () => {
-    const num = parseFloat(amount);
-    if (!num || num <= 0) {
+    const num = readAmount(amount);
+    if (num === "too-big") {
+      toast(lang === "ru" ? "Слишком большая сумма" : "That amount is too large", "err");
+      return;
+    }
+    if (!num) {
       toast(lang === "ru" ? "Укажи сумму" : "Enter amount", "err");
       return;
     }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { FinanceData } from "@/lib/types";
@@ -8,15 +8,12 @@ import { getQuickInsights, generateAIAnalysis, getHealthScore } from "@/lib/ai";
 import { useApp } from "@/components/AppProvider";
 
 export default function AIInsightBar({ data }: { data: FinanceData }) {
-  const [health, setHealth] = useState(0);
   const [whyOpen, setWhyOpen] = useState(false);
   const { lang } = useApp();
   const insights = getQuickInsights(data);
   const top = generateAIAnalysis(data)[0];
 
-  useEffect(() => {
-    setHealth(getHealthScore(data));
-  }, [data]);
+  const health = getHealthScore(data);
 
   const healthColor =
     health >= 70 ? "text-emerald-400" : health >= 40 ? "text-amber-400" : "text-rose-400";

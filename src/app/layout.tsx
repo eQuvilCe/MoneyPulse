@@ -66,7 +66,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
           <ToastProvider>
             <AuthShell>
               <Sidebar />
-              <main className="relative z-10 min-h-screen lg:ml-[240px]">
+              <main className="relative z-10 min-h-screen min-w-0 overflow-x-clip lg:ml-[240px]">
                 <div className="mx-auto max-w-5xl px-4 py-6 pb-28 pt-16 lg:px-8 lg:py-8 lg:pb-10 lg:pt-8">
                   {children}
                 </div>

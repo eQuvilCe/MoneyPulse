@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import TiltCard from "@/components/motion/TiltCard";
-import { SectionTitle, MagneticButton } from "./shared";
+import { Check } from "lucide-react";
+import { Reveal, SectionHead, spotlight, untilt } from "./ui";
 
 function WaitlistForm({ ru }: { ru: boolean }) {
   const [email, setEmail] = useState("");
@@ -26,66 +26,96 @@ function WaitlistForm({ ru }: { ru: boolean }) {
 
   if (status === "done") {
     return (
-      <p className="mt-6 rounded-xl bg-emerald-500/10 px-4 py-2.5 text-center text-sm font-medium text-emerald-300 ring-1 ring-emerald-500/20">
-        {ru ? "Готово — напишем, когда Pro откроется ✓" : "You're on the list ✓"}
+      <p className="flex min-h-[40px] items-center gap-2 text-[14px] text-white" role="status">
+        <Check size={16} className="text-[color:var(--rc-green)]" />
+        {ru ? "Готово — напишем, когда Pro откроется" : "You're on the list — we'll write when Pro opens"}
       </p>
     );
   }
 
   return (
-    <form onSubmit={submit} className="mt-6 flex gap-2">
-      <input
-        type="email"
-        required
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-        placeholder={ru ? "твой email" : "your email"}
-        className="w-full rounded-xl border border-white/10 bg-slate-900/80 px-4 py-2.5 text-sm outline-none focus:border-cyan-400/40"
-      />
-      <button
-        type="submit"
-        disabled={status === "sending"}
-        className="mp-btn-primary shrink-0 px-5 py-2.5 text-sm disabled:opacity-60"
-      >
-        {ru ? "В лист" : "Join"}
-      </button>
-      {status === "error" && (
-        <p className="absolute mt-12 text-xs text-rose-400">{ru ? "Ошибка — попробуй снова" : "Something went wrong"}</p>
-      )}
+    <form onSubmit={submit}>
+      <div className="flex gap-2">
+        <label htmlFor="waitlist-email" className="sr-only">Email</label>
+        <input
+          id="waitlist-email"
+          type="email"
+          required
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder={ru ? "ваш email" : "your email"}
+          className="rc-well min-h-[40px] w-full min-w-0 px-3 text-[14px] text-white outline-none placeholder:text-[color:var(--rc-smoke)] focus:shadow-[inset_0_0_0_1px_rgba(255,255,255,0.4)]"
+        />
+        <button type="submit" disabled={status === "sending"} className="rc-btn rc-btn-fill shrink-0 disabled:opacity-60">
+          {status === "sending" ? "…" : ru ? "В лист ожидания" : "Join waitlist"}
+        </button>
+      </div>
+      <p className="mt-2 min-h-[18px] text-[12px] text-[color:var(--rc-coral)]" role="alert">
+        {status === "error" ? (ru ? "Не получилось — попробуйте ещё раз" : "That didn't work — please try again") : ""}
+      </p>
     </form>
+  );
+}
+
+function List({ items }: { items: string[] }) {
+  return (
+    <ul className="mt-6 space-y-3">
+      {items.map((t) => (
+        <li key={t} className="flex items-start gap-3 text-[15px] text-[color:var(--rc-ash)]">
+          <Check size={16} className="mt-[3px] shrink-0 text-[color:var(--rc-mist)]" />
+          {t}
+        </li>
+      ))}
+    </ul>
   );
 }
 
 export default function Pricing({ ru, onStart }: { ru: boolean; onStart: () => void }) {
   return (
-    <section id="pricing" className="border-t border-white/[0.05] py-20">
-      <div className="mx-auto max-w-4xl px-6">
-        <SectionTitle eyebrow={ru ? "Тарифы" : "Pricing"} title={ru ? "Цены" : "Simple pricing"} />
-        <div className="mt-14 grid gap-4 sm:grid-cols-2">
-          <TiltCard className="mp-card p-6">
-            <p className="mp-label">Free</p>
-            <p className="mt-2 font-display text-3xl font-semibold">0</p>
-            <ul className="mt-4 space-y-2 text-sm text-slate-400">
-              <li>• {ru ? "Операции без лимита" : "Unlimited transactions"}</li>
-              <li>• {ru ? "Бюджеты и цели" : "Budgets & goals"}</li>
-              <li>• {ru ? "SMS-парсер" : "SMS parser"}</li>
-              <li>• {ru ? "10 AI / мес" : "10 AI / month"}</li>
-            </ul>
-            <MagneticButton onClick={onStart} className="mt-6 w-full">
-              {ru ? "Начать" : "Start"}
-            </MagneticButton>
-          </TiltCard>
-          <TiltCard className="mp-card border-cyan-400/25 p-6 shadow-[0_0_40px_rgba(56,189,248,0.08)]">
-            <p className="mp-label text-cyan-400">Pro</p>
-            <p className="mt-2 font-display text-3xl font-semibold">{ru ? "скоро" : "soon"}</p>
-            <ul className="mt-4 space-y-2 text-sm text-slate-400">
-              <li>• {ru ? "Безлимитный AI + OCR" : "Unlimited AI + OCR"}</li>
-              <li>• {ru ? "Несколько счетов" : "Multi-account"}</li>
-              <li>• {ru ? "Общие бюджеты" : "Shared budgets"}</li>
-              <li>• {ru ? "Экспорт Excel/PDF" : "Excel/PDF export"}</li>
-            </ul>
-            <WaitlistForm ru={ru} />
-          </TiltCard>
+    <section id="pricing" className="rc-section">
+      <div className="rc-wrap">
+        <SectionHead
+          center
+          eyebrow={ru ? "Тарифы" : "Pricing"}
+          title={ru ? "Основа бесплатна" : "The core is free"}
+          sub={ru ? "Учёт, бюджеты, цели, SMS-импорт и Telegram-бот — без оплаты." : "Tracking, budgets, goals, SMS import and the Telegram bot — no payment."}
+        />
+        <div className="mx-auto mt-14 grid max-w-[880px] grid-cols-1 gap-4 md:grid-cols-2" onPointerMove={spotlight} onPointerLeave={untilt}>
+          <Reveal>
+            <div className="rc-card rc-spot rc-tilt flex h-full flex-col p-6 sm:p-8">
+              <p className="rc-eyebrow">Free</p>
+              <p className="mt-5 text-[56px] font-normal leading-none tabular-nums">0<span className="ml-2 text-[16px] text-[color:var(--rc-smoke)]">{ru ? "сум / всегда" : "so'm / forever"}</span></p>
+              <List
+                items={
+                  ru
+                    ? ["До 200 операций", "Бюджеты и цели", "SMS-парсер и Telegram-бот", "Семья до 7 человек и чат", "10 AI-запросов в месяц"]
+                    : ["Up to 200 transactions", "Budgets & goals", "SMS parser and Telegram bot", "Family of up to 7, with chat", "10 AI requests a month"]
+                }
+              />
+              <button type="button" onClick={onStart} className="rc-btn rc-btn-fill mt-8 w-full">
+                {ru ? "Начать бесплатно" : "Start free"}
+              </button>
+            </div>
+          </Reveal>
+          <Reveal delay={0.1}>
+            <div className="rc-card rc-spot rc-tilt flex h-full flex-col p-6 sm:p-8" style={{ background: "linear-gradient(180deg, var(--rc-ember) 0%, var(--rc-card) 62%)" }}>
+              <div className="flex items-center gap-2">
+                <p className="rc-eyebrow">Pro</p>
+                <span className="rc-badge rc-badge-ai">AI</span>
+              </div>
+              <p className="mt-5 text-[56px] font-normal leading-none">{ru ? "Скоро" : "Soon"}</p>
+              <List
+                items={
+                  ru
+                    ? ["Операции без лимита", "Безлимитный AI и сканер чеков", "Импорт выписки из CSV", "Экспорт в Excel и PDF"]
+                    : ["Unlimited transactions", "Unlimited AI and receipt scanning", "CSV statement import", "Excel and PDF export"]
+                }
+              />
+              <div className="mt-auto pt-8">
+                <WaitlistForm ru={ru} />
+              </div>
+            </div>
+          </Reveal>
         </div>
       </div>
     </section>

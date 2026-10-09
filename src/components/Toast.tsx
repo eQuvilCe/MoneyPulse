@@ -1,6 +1,7 @@
 "use client";
 
-import { createContext, useCallback, useContext, useState, ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useRef, useState, ReactNode } from "react";
+import { onApiError } from "@/lib/events";
 import { motion, AnimatePresence } from "framer-motion";
 
 type ToastItem = { id: number; text: string; type: "ok" | "err" | "info" };
@@ -14,11 +15,25 @@ export function useToast() {
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<ToastItem[]>([]);
 
+  // When the server refuses a write, the form that sent it still fires its usual "saved"
+  // toast a moment later. Swallow success toasts briefly so the user only sees the error.
+  const rejectedAt = useRef(0);
+
   const push = useCallback((text: string, type: ToastItem["type"] = "ok") => {
+    if (type === "ok" && Date.now() - rejectedAt.current < 2000) return;
     const id = Date.now() + Math.random();
     setItems((prev) => [...prev.slice(-3), { id, text, type }]);
     setTimeout(() => setItems((prev) => prev.filter((t) => t.id !== id)), 2800);
   }, []);
+
+  useEffect(
+    () =>
+      onApiError((message) => {
+        rejectedAt.current = Date.now();
+        push(message, "err");
+      }),
+    [push]
+  );
 
   const colors = {
     ok: "border-emerald-500/30 bg-emerald-500/15 text-emerald-200",

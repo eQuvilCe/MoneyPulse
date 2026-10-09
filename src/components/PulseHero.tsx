@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence, useMotionValue, useSpring, useTransform } from "framer-motion";
 import Link from "next/link";
+import { Eye, EyeOff } from "lucide-react";
 import PulseRing from "@/components/fx/PulseRing";
 import Confetti from "@/components/fx/Confetti";
 import PulseOrbSceneLoader from "@/components/three/PulseOrbSceneLoader";
@@ -10,6 +11,9 @@ import WebGLErrorBoundary from "@/components/three/WebGLErrorBoundary";
 import { useWebglAllowed } from "@/components/three/useWebglAllowed";
 import { useApp } from "@/components/AppProvider";
 import { emitCelebrate } from "@/lib/events";
+import FitText from "@/components/FitText";
+import { compactNumber, formatMoney } from "@/lib/types";
+import { useHideAmounts, HIDDEN_AMOUNT } from "@/hooks/useHideAmounts";
 
 /**
  * Live "Pulse" widget — the classic SVG ring by default. A 3D orb variant exists
@@ -27,7 +31,20 @@ function PulseWidget({ score, size, flash }: { score: number; size: number; flas
   );
 }
 
-function CountMoney({ value, currency }: { value: number; currency: string }) {
+/** Animated amount. Switches to "12,5 млн" from `compactFrom` so a huge number can never push the card apart. */
+function CountMoney({
+  value,
+  currency,
+  lang,
+  compactFrom,
+  hidden,
+}: {
+  value: number;
+  currency: string;
+  lang: "ru" | "en";
+  compactFrom: number;
+  hidden: boolean;
+}) {
   const [n, setN] = useState(0);
   useEffect(() => {
     let raf = 0;
@@ -40,13 +57,24 @@ function CountMoney({ value, currency }: { value: number; currency: string }) {
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
   }, [value]);
+  if (hidden) return <span className="tracking-widest">{HIDDEN_AMOUNT}</span>;
+  // decide by the final value, not the animated one, so the format does not flip mid-count
+  const compact = Math.abs(value) >= compactFrom;
+  const abs = Math.abs(n);
+  const text = compact
+    ? compactNumber(abs, lang)
+    : new Intl.NumberFormat("ru-RU", { maximumFractionDigits: 0 }).format(Math.round(abs));
   return (
     <span className="tabular-nums">
-      {new Intl.NumberFormat("ru-RU", { maximumFractionDigits: 0 }).format(Math.round(n))}{" "}
-      <span className="text-[0.55em] font-medium text-slate-500">{currency}</span>
+      {value < 0 ? "−" : ""}
+      {text} <span className="text-[0.55em] font-medium text-slate-500">{currency}</span>
     </span>
   );
 }
+
+/** Above these the full number no longer fits its slot even after FitText shrinks it. */
+const BALANCE_COMPACT_FROM = 1e10;
+const TILE_COMPACT_FROM = 1e8;
 
 function healthLabel(score: number, ru: boolean, empty: boolean) {
   if (empty) return ru ? "Пока пусто — добавьте доход" : "Empty — add income";
@@ -77,6 +105,7 @@ export default function PulseHero({
 }) {
   const { tr, lang } = useApp();
   const ru = lang !== "en";
+  const { hidden, toggle: toggleHidden } = useHideAmounts();
   const [showHow, setShowHow] = useState(false);
   const good = balance >= 0;
   const isEmpty = income === 0 && expense === 0;
@@ -158,47 +187,66 @@ export default function PulseHero({
       />
 
       <div
-        className="relative grid gap-6 p-6 sm:p-7 lg:grid-cols-[1.15fr_auto_0.9fr] lg:items-center"
+        className="relative grid h-full content-center gap-6 p-6 sm:p-7 lg:grid-cols-[1.15fr_auto_0.9fr] lg:items-center"
         style={{ transform: "translateZ(20px)" }}
       >
-        <div className="order-2 space-y-5 lg:order-1">
-          <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
-              {tr("balance") || (ru ? "Баланс месяца" : "Month balance")}
-            </p>
+        <div className="order-2 min-w-0 space-y-5 lg:order-1">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+                {tr("balance") || (ru ? "Баланс месяца" : "Month balance")}
+              </p>
+              <button
+                type="button"
+                onClick={toggleHidden}
+                aria-pressed={hidden}
+                aria-label={ru ? (hidden ? "Показать суммы" : "Скрыть суммы") : hidden ? "Show amounts" : "Hide amounts"}
+                title={ru ? (hidden ? "Показать суммы" : "Скрыть суммы") : hidden ? "Show amounts" : "Hide amounts"}
+                className="flex h-6 w-6 items-center justify-center rounded-lg text-slate-500 transition hover:bg-white/[0.06] hover:text-cyan-300"
+              >
+                {hidden ? <EyeOff size={14} /> : <Eye size={14} />}
+              </button>
+            </div>
             <p
               className={`mt-1.5 font-display text-3xl font-semibold tracking-tight sm:text-4xl ${
                 good ? "text-white" : "text-rose-300"
               }`}
               style={{ textShadow: good ? "0 0 40px rgba(56,189,248,0.25)" : "0 0 30px rgba(248,113,113,0.3)" }}
             >
-              <CountMoney value={balance} currency={currency} />
+              <FitText title={hidden ? undefined : formatMoney(balance, currency)}>
+                <CountMoney value={balance} currency={currency} lang={ru ? "ru" : "en"} compactFrom={BALANCE_COMPACT_FROM} hidden={hidden} />
+              </FitText>
             </p>
+            {!hidden && Math.abs(balance) >= BALANCE_COMPACT_FROM && (
+              <p className="mt-1 break-all text-[11px] tabular-nums text-slate-500">= {formatMoney(balance, currency)}</p>
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <motion.div
               whileHover={{ y: -3, scale: 1.02 }}
-              className="rounded-2xl border border-emerald-500/20 bg-emerald-500/[0.08] px-3.5 py-3 shadow-[0_8px_32px_-8px_rgba(52,211,153,0.35)]"
+              className="min-w-0 rounded-2xl border border-emerald-500/20 bg-emerald-500/[0.08] px-3.5 py-3 shadow-[0_8px_32px_-8px_rgba(52,211,153,0.35)]"
             >
               <p className="text-[10px] font-medium uppercase tracking-wider text-emerald-500/80">
                 {tr("income") || (ru ? "Доход" : "Income")}
               </p>
               <p className="mt-1 font-display text-lg font-semibold tabular-nums text-emerald-400">
-                +
-                <CountMoney value={income} currency={currency} />
+                <FitText title={hidden ? undefined : formatMoney(income, currency)}>
+                  +<CountMoney value={income} currency={currency} lang={ru ? "ru" : "en"} compactFrom={TILE_COMPACT_FROM} hidden={hidden} />
+                </FitText>
               </p>
             </motion.div>
             <motion.div
               whileHover={{ y: -3, scale: 1.02 }}
-              className="rounded-2xl border border-rose-500/20 bg-rose-500/[0.08] px-3.5 py-3 shadow-[0_8px_32px_-8px_rgba(248,113,113,0.3)]"
+              className="min-w-0 rounded-2xl border border-rose-500/20 bg-rose-500/[0.08] px-3.5 py-3 shadow-[0_8px_32px_-8px_rgba(248,113,113,0.3)]"
             >
               <p className="text-[10px] font-medium uppercase tracking-wider text-rose-400/80">
                 {tr("expenses") || (ru ? "Расход" : "Expense")}
               </p>
               <p className="mt-1 font-display text-lg font-semibold tabular-nums text-rose-400">
-                −
-                <CountMoney value={expense} currency={currency} />
+                <FitText title={hidden ? undefined : formatMoney(expense, currency)}>
+                  −<CountMoney value={expense} currency={currency} lang={ru ? "ru" : "en"} compactFrom={TILE_COMPACT_FROM} hidden={hidden} />
+                </FitText>
               </p>
             </motion.div>
           </div>

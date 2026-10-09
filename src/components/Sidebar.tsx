@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { Send } from "lucide-react";
 import { useApp } from "@/components/AppProvider";
 
 import PulseRing from "@/components/fx/PulseRing";
@@ -145,6 +146,22 @@ export default function Sidebar() {
       </nav>
 
       <div className="border-t border-white/[0.05] p-3 space-y-2">
+        {/* one tap → the bot; /api/telegram/go links the account on the way if needed */}
+        <a
+          href="/api/telegram/go"
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={() => setMobileOpen(false)}
+          className="flex items-center gap-3 rounded-xl bg-sky-500/10 px-3 py-2.5 text-sky-200 ring-1 ring-sky-400/20 transition hover:bg-sky-500/20"
+        >
+          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-sky-500 text-white">
+            <Send size={14} aria-hidden />
+          </span>
+          <span className="min-w-0">
+            <span className="block text-[13px] font-semibold leading-tight">{lang === "ru" ? "Бот в Telegram" : "Telegram bot"}</span>
+            <span className="block truncate text-[10px] text-sky-300/70">{lang === "ru" ? "Траты одной строкой" : "Log spending in one line"}</span>
+          </span>
+        </a>
         <div className="flex gap-1">
           {(["ru", "en"] as const).map((l) => (
             <button

@@ -1,5 +1,6 @@
 "use client";
 
+import { formatNumber } from "@/lib/types";
 import { useEffect, useState, useRef, useMemo } from "react";
 import {
   AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceDot,
@@ -15,7 +16,6 @@ interface Point {
 
 export default function LiveAreaChart({ data }: { data: Point[] }) {
   const { tr, lang } = useApp();
-  const locale = lang === "en" ? "en-US" : "ru-RU";
   const [display, setDisplay] = useState(data);
   const [flash, setFlash] = useState(false);
   const [tick, setTick] = useState(0);
@@ -71,7 +71,7 @@ export default function LiveAreaChart({ data }: { data: Point[] }) {
           <YAxis tick={{ fill: "#475569", fontSize: 10 }} axisLine={false} tickLine={false} width={44} />
           <Tooltip
             contentStyle={{ background: "#0f172a", border: "1px solid #1e293b", borderRadius: 12, fontSize: 12 }}
-            formatter={(v: number) => `${Number(v).toLocaleString(locale)} ₽`}
+            formatter={(v: number) => `${formatNumber(Number(v), lang === "en" ? "en" : "ru")} ₽`}
           />
           <Area type="monotone" dataKey="income" stroke="#34d399" fill="url(#rtInc)" strokeWidth={2.5} name={tr("addIncome")} animationDuration={900} isAnimationActive dot={false} activeDot={{ r: 5, fill: "#34d399" }} />
           <Area type="monotone" dataKey="expense" stroke="#fb7185" fill="url(#rtExp)" strokeWidth={2.5} name={tr("addExpense")} animationDuration={900} animationBegin={80} isAnimationActive dot={false} activeDot={{ r: 5, fill: "#fb7185" }} />
@@ -81,8 +81,8 @@ export default function LiveAreaChart({ data }: { data: Point[] }) {
       </ResponsiveContainer>
 
       <div className="pointer-events-none absolute bottom-0 left-0 right-0 flex justify-center gap-4">
-        <span className="text-[10px] tabular-nums text-emerald-400/70">Σ +{totalIn.toLocaleString(locale)}</span>
-        <span className="text-[10px] tabular-nums text-rose-400/70">Σ −{totalEx.toLocaleString(locale)}</span>
+        <span className="text-[10px] tabular-nums text-emerald-400/70">Σ +{formatNumber(totalIn, lang === "en" ? "en" : "ru")}</span>
+        <span className="text-[10px] tabular-nums text-rose-400/70">Σ −{formatNumber(totalEx, lang === "en" ? "en" : "ru")}</span>
       </div>
     </div>
   );

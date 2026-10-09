@@ -1,4 +1,4 @@
-import { FinanceData, Transaction, Goal, Budget, Account, Settings } from "./types";
+import { FinanceData, Transaction, Goal, Budget, Account, Settings, dateKey } from "./types";
 import { getPrisma } from "./prisma";
 import type { Prisma } from "@prisma/client";
 import { randomBytes } from "crypto";
@@ -16,13 +16,13 @@ function requirePrisma() {
 function daysAgo(n: number): string {
   const d = new Date();
   d.setDate(d.getDate() - n);
-  return d.toISOString().slice(0, 10);
+  return dateKey(d);
 }
 
 function monthsAhead(n: number): string {
   const d = new Date();
   d.setMonth(d.getMonth() + n);
-  return d.toISOString().slice(0, 10);
+  return dateKey(d);
 }
 
 const emptySettings = (): FinanceData["settings"] => ({
@@ -344,11 +344,11 @@ export async function writeStore(userId: string, data: FinanceData): Promise<voi
 async function bumpStreak(userId: string) {
   const prisma = requirePrisma();
   const row = await ensureSettingsRow(userId);
-  const today = new Date().toISOString().slice(0, 10);
+  const today = dateKey();
   if (row.lastLogDate === today) return; // already logged today
   const yesterday = new Date();
   yesterday.setDate(yesterday.getDate() - 1);
-  const yKey = yesterday.toISOString().slice(0, 10);
+  const yKey = dateKey(yesterday);
   const streak = row.lastLogDate === yKey ? row.streak + 1 : 1;
   const bestStreak = Math.max(row.bestStreak, streak);
   const txCount = await prisma.transaction.count({ where: { userId } });
@@ -973,4 +973,72 @@ export async function getFamilyOverview(
   }
 
   return { stats, transactions, familyBudgets, familyGoals, familyAlerts };
+}
+
+// ——— Family chat (members only; newest FAMILY_CHAT_PAGE messages, polled by the client) ———
+
+export type FamilyMessagePublic = {
+  id: string;
+  userId: string;
+  authorName: string;
+  text: string;
+  createdAt: string;
+};
+
+const FAMILY_CHAT_PAGE = 60;
+
+function toMessagePublic(m: { id: string; userId: string; authorName: string; text: string; createdAt: Date }): FamilyMessagePublic {
+  return { id: m.id, userId: m.userId, authorName: m.authorName, text: m.text, createdAt: m.createdAt.toISOString() };
+}
+
+async function requireFamilyId(prisma: ReturnType<typeof requirePrisma>, userId: string): Promise<string> {
+  const membership = await prisma.familyMember.findUnique({ where: { userId } });
+  if (!membership) throw new FamilyError("NOT_IN_FAMILY", "Вы не состоите в семье.");
+  return membership.familyId;
+}
+
+/** Without `after`: the latest page, oldest first. With `after` (ISO date): only messages newer than it. */
+export async function listFamilyMessages(userId: string, after?: string): Promise<FamilyMessagePublic[]> {
+  const prisma = requirePrisma();
+  const familyId = await requireFamilyId(prisma, userId);
+  const since = after ? new Date(after) : null;
+  if (since && !Number.isNaN(since.getTime())) {
+    const rows = await prisma.familyMessage.findMany({
+      where: { familyId, createdAt: { gt: since } },
+      orderBy: { createdAt: "asc" },
+      take: FAMILY_CHAT_PAGE,
+    });
+    return rows.map(toMessagePublic);
+  }
+  const rows = await prisma.familyMessage.findMany({
+    where: { familyId },
+    orderBy: { createdAt: "desc" },
+    take: FAMILY_CHAT_PAGE,
+  });
+  return rows.reverse().map(toMessagePublic);
+}
+
+export async function addFamilyMessage(userId: string, text: string): Promise<FamilyMessagePublic> {
+  const prisma = requirePrisma();
+  const familyId = await requireFamilyId(prisma, userId);
+  const author = await prisma.user.findUnique({ where: { id: userId }, select: { name: true } });
+  const row = await prisma.familyMessage.create({
+    data: { familyId, userId, authorName: author?.name || "?", text },
+  });
+  return toMessagePublic(row);
+}
+
+/** Authors delete their own messages; the family owner can delete anyone's. */
+export async function deleteFamilyMessage(userId: string, messageId: string): Promise<void> {
+  const prisma = requirePrisma();
+  const membership = await prisma.familyMember.findUnique({ where: { userId } });
+  if (!membership) throw new FamilyError("NOT_IN_FAMILY", "Вы не состоите в семье.");
+  const msg = await prisma.familyMessage.findUnique({ where: { id: messageId } });
+  if (!msg || msg.familyId !== membership.familyId) {
+    throw new FamilyError("NOT_SAME_FAMILY", "Сообщение не найдено.");
+  }
+  if (msg.userId !== userId && membership.role !== "owner") {
+    throw new FamilyError("NOT_OWNER", "Удалить можно только своё сообщение.");
+  }
+  await prisma.familyMessage.delete({ where: { id: messageId } });
 }

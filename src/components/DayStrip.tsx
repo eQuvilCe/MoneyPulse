@@ -1,13 +1,13 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { FinanceData } from "@/lib/types";
+import { FinanceData, dateKey } from "@/lib/types";
 
 function dayKey(offset: number) {
   const d = new Date();
   d.setDate(d.getDate() - offset);
   return {
-    key: d.toISOString().slice(0, 10),
+    key: dateKey(d),
     label: d.toLocaleDateString("ru-RU", { weekday: "short" }),
     num: d.getDate(),
     isToday: offset === 0,

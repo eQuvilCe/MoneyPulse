@@ -2,16 +2,7 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  EXPENSE_CATEGORIES,
-  INCOME_CATEGORIES,
-  CATEGORY_ICONS,
-  TransactionType,
-  formatMoney,
-  allExpenseCategories,
-  allIncomeCategories,
-  Settings,
-} from "@/lib/types";
+import { EXPENSE_CATEGORIES, INCOME_CATEGORIES, CATEGORY_ICONS, TransactionType, formatMoney, allExpenseCategories, allIncomeCategories, Settings, MAX_AMOUNT, formatMoneyCompact, readAmount, dateKey } from "@/lib/types";
 import { addTransaction } from "@/lib/storage";
 import { useToast } from "@/components/Toast";
 import { useApp } from "@/components/AppProvider";
@@ -47,7 +38,7 @@ export default function TransactionForm({ type, onAdded, currency = "₽", setti
   const [amount, setAmount] = useState("");
   const [category, setCategory] = useState(type === "income" ? "зарплата" : "еда");
   const [description, setDescription] = useState("");
-  const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
+  const [date, setDate] = useState(dateKey());
   const [recurring, setRecurring] = useState(false);
   const [open, setOpen] = useState(false);
   const toast = useToast();
@@ -60,8 +51,12 @@ export default function TransactionForm({ type, onAdded, currency = "₽", setti
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const num = parseFloat(amount);
-    if (!num || num <= 0) return;
+    const num = readAmount(amount);
+    if (num === "too-big") {
+      toast(tr("amountTooBig", { max: formatMoneyCompact(MAX_AMOUNT, currency) }), "err");
+      return;
+    }
+    if (!num) return;
     void addTransaction({
       type,
       amount: num,

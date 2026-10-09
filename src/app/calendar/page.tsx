@@ -5,7 +5,7 @@ import { useRealtimeData } from "@/hooks/useRealtimeData";
 import { PageShell, FadeItem } from "@/components/motion/PageShell";
 import TiltCard from "@/components/motion/TiltCard";
 import { LetterReveal } from "@/components/motion/Reveal";
-import { formatMoney } from "@/lib/types";
+import { formatMoney, dateKey } from "@/lib/types";
 import TransactionList from "@/components/TransactionList";
 import { motion } from "framer-motion";
 import { useApp } from "@/components/AppProvider";
@@ -20,7 +20,7 @@ export default function CalendarPage() {
     const d = new Date();
     return new Date(d.getFullYear(), d.getMonth(), 1);
   });
-  const [selected, setSelected] = useState(() => new Date().toISOString().slice(0, 10));
+  const [selected, setSelected] = useState(() => dateKey());
 
   const year = cursor.getFullYear();
   const month = cursor.getMonth();
@@ -110,7 +110,7 @@ export default function CalendarPage() {
             const info = byDay[c.key];
             const intensity = info ? info.expense / maxExp : 0;
             const isSel = selected === c.key;
-            const isToday = c.key === new Date().toISOString().slice(0, 10);
+            const isToday = c.key === dateKey();
             return (
               <motion.button
                 key={c.key}

@@ -21,6 +21,7 @@ export function useWebglAllowed(): boolean {
     const lowEnd =
       (nav.hardwareConcurrency ?? 8) < 4 || (nav.deviceMemory ?? 8) < 4 || window.innerWidth < 768;
 
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- device capability can only be probed in the browser, after mount
     setEnabled(!reducedMotion && !lowEnd && supportsWebGL());
   }, []);
 
