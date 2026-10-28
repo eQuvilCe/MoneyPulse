@@ -60,7 +60,7 @@ export default function Dashboard() {
           animate={{ rotate: 360 }}
           transition={{ duration: 0.9, repeat: Infinity, ease: "linear" }}
         />
-        <p className="text-sm text-slate-500">{ru ? "Загрузка…" : "Loading…"}</p>
+        <p className="text-sm text-slate-500">{tr("loading")}</p>
       </div>
     );
   }
@@ -104,16 +104,10 @@ export default function Dashboard() {
 
   const greeting = () => {
     const h = new Date().getHours();
-    if (ru) {
-      if (h < 6) return "Доброй ночи";
-      if (h < 12) return "Доброе утро";
-      if (h < 18) return "Добрый день";
-      return "Добрый вечер";
-    }
-    if (h < 6) return "Good night";
-    if (h < 12) return "Good morning";
-    if (h < 18) return "Good afternoon";
-    return "Good evening";
+    if (h < 6) return tr("goodNight");
+    if (h < 12) return tr("goodMorning");
+    if (h < 18) return tr("goodAfternoon");
+    return tr("goodEvening");
   };
 
   return (
@@ -127,12 +121,10 @@ export default function Dashboard() {
               {data.settings.name ? ` · ${data.settings.name.split(" ")[0]}` : ""}
             </p>
             <h1 className="mt-1 font-display text-2xl font-semibold tracking-tight sm:text-3xl">
-              <span className="mp-gradient-text">{ru ? "Финансовый пульс" : "Financial pulse"}</span>
+              <span className="mp-gradient-text">{tr("healthTitle")}</span>
             </h1>
             <p className="mt-1 text-sm text-slate-500">
-              {ru
-                ? "Баланс, AI-совет и быстрый ввод — на одном экране"
-                : "Balance, AI tip and quick add — one screen"}
+              {tr("dashboardHeroSubtitle")}
             </p>
           </div>
           <div className="flex items-center gap-2">
