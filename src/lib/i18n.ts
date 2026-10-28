@@ -175,6 +175,8 @@ export const translations = {
     dangerZone: "Аккаунт",
     // ai page
     aiHeroTitle: "Анализ финансов",
+    analyzeMyFinances: "Разбери мои финансы",
+    sendMessage: "Отправить",
     aiNotChatbot: "· не chatbot, а вывод из твоих цифр",
     fullReport: "Полный отчёт",
     topExpenses: "Топ расходов",
@@ -662,6 +664,8 @@ export const translations = {
     dangerZone: "Account",
     // ai page
     aiHeroTitle: "Financial analysis",
+    analyzeMyFinances: "Analyze my finances",
+    sendMessage: "Send",
     aiNotChatbot: "· not a chatbot — reasoning from your numbers",
     fullReport: "Full report",
     topExpenses: "Top expenses",
