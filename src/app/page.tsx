@@ -16,7 +16,7 @@ const LivePieChart = dynamic(() => import("@/components/LivePieChart"), {
 
 import { getStats, getBudgetStatus } from "@/lib/storage";
 import { useRealtimeData } from "@/hooks/useRealtimeData";
-import { CATEGORY_ICONS, CATEGORY_COLORS, formatMoney, formatMoneySmart, compactNumber, dateKey } from "@/lib/types";
+import { CATEGORY_ICONS, CATEGORY_COLORS, formatMoney, formatMoneySmart, compactNumber, dateKey, formatShortDate } from "@/lib/types";
 import { useHideAmounts, HIDDEN_AMOUNT } from "@/hooks/useHideAmounts";
 import StatCard from "@/components/StatCard";
 import AIInsightBar from "@/components/AIInsightBar";
@@ -280,11 +280,7 @@ export default function Dashboard() {
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
             <div>
               <h2 className="font-display text-sm font-semibold text-white">
-                {ru ? "День" : "Day"} ·{" "}
-                {new Date(selectedDay).toLocaleDateString(ru ? "ru-RU" : "en-US", {
-                  day: "numeric",
-                  month: "long",
-                })}
+                {tr("dayWord")} · {formatShortDate(selectedDay, ru ? "ru" : "en")}
               </h2>
               <p className="mt-0.5 text-xs text-slate-500">
                 <span className="text-emerald-400">+{formatMoney(dayIncome, cur)}</span>
