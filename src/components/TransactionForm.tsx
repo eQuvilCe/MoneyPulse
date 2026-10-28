@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { CATEGORY_ICONS, TransactionType, formatMoney, allExpenseCategories, allIncomeCategories, Settings, MAX_AMOUNT, formatMoneyCompact, readAmount, dateKey } from "@/lib/types";
 import { addTransaction } from "@/lib/storage";
@@ -43,6 +43,15 @@ export default function TransactionForm({ type, onAdded, currency = "₽", setti
   const [open, setOpen] = useState(false);
   const toast = useToast();
   const { tr } = useApp();
+
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open]);
 
   const categories =
     type === "income"
@@ -104,9 +113,12 @@ export default function TransactionForm({ type, onAdded, currency = "₽", setti
               exit={{ y: 20, opacity: 0 }}
               onClick={(e) => e.stopPropagation()}
               onSubmit={handleSubmit}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby={`tx-form-title-${type}`}
               className="w-full max-w-md space-y-3 rounded-3xl border border-white/10 bg-[#0a0f1a] p-5 shadow-2xl"
             >
-              <h3 className="text-lg font-bold">
+              <h3 id={`tx-form-title-${type}`} className="text-lg font-bold">
                 {type === "income" ? tr("newIncomeTitle") : tr("newExpenseTitle")}
               </h3>
               <input
