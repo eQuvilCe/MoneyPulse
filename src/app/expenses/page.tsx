@@ -183,7 +183,29 @@ export default function ExpensesPage() {
           {tr("history")}{" "}
           {filtered.length !== expenseTx.length ? `(${filtered.length})` : ""}
         </h2>
-        <TransactionList transactions={filtered} type="expense" onChange={refresh} currency={cur} />
+        <TransactionList
+          transactions={filtered}
+          type="expense"
+          onChange={refresh}
+          currency={cur}
+          emptyText={
+            expenseTx.length > 0 && (q.trim() || filter !== "all") ? (
+              <>
+                <p>{q.trim() ? tr("nothingFoundFor", { q: q.trim() }) : tr("nothingFound")}</p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setQ("");
+                    setFilter("all");
+                  }}
+                  className="mt-3 rounded-lg px-3 py-1.5 text-xs ring-1 ring-white/10 transition hover:bg-white/5 hover:text-white"
+                >
+                  {tr("resetFilters")}
+                </button>
+              </>
+            ) : undefined
+          }
+        />
       </FadeItem>
     </PageShell>
   );
