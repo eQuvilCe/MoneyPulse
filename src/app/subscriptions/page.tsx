@@ -11,7 +11,7 @@ import { useApp } from "@/components/AppProvider";
 
 export default function SubscriptionsPage() {
   const { data } = useRealtimeData();
-  const { tr, lang } = useApp();
+  const { tr } = useApp();
 
   if (!data) {
     return (
@@ -60,9 +60,7 @@ export default function SubscriptionsPage() {
           <p className="mt-1 text-2xl font-bold text-amber-300">{formatMoney(yearly, cur)}</p>
         </TiltCard>
         <TiltCard className="mp-card rounded-2xl p-5">
-          <p className="text-[11px] uppercase text-slate-500">
-            {lang === "ru" ? "% от дохода" : "% of income"}
-          </p>
+          <p className="text-[11px] uppercase text-slate-500">{tr("pctOfIncome")}</p>
           <p className="mt-1 text-2xl font-bold text-cyan-300">{pctOfIncome}%</p>
         </TiltCard>
       </FadeItem>
@@ -76,14 +74,9 @@ export default function SubscriptionsPage() {
             </Link>
           </div>
           <ol className="mx-auto mt-6 max-w-sm space-y-2 text-left text-xs text-slate-400">
-            <li>1. {lang === "ru" ? "Открой Расходы → Добавить" : "Open Expenses → Add"}</li>
-            <li>
-              2.{" "}
-              {lang === "ru"
-                ? "Поставь галочку «Повторять каждый месяц» или категорию «подписки»"
-                : "Check “Repeat monthly” or category “subscriptions”"}
-            </li>
-            <li>3. {lang === "ru" ? "Они появятся здесь автоматически" : "They appear here automatically"}</li>
+            <li>1. {tr("openExpensesAdd")}</li>
+            <li>2. {tr("checkRepeatMonthly")}</li>
+            <li>3. {tr("theyAppearHere")}</li>
           </ol>
         </FadeItem>
       ) : (
@@ -102,7 +95,7 @@ export default function SubscriptionsPage() {
                     {formatMoney(s.amount, cur)}
                   </p>
                   <p className="text-[10px] text-slate-500">
-                    {formatMoney(s.amount * 12, cur)} / {lang === "ru" ? "год" : "yr"}
+                    {formatMoney(s.amount * 12, cur)} / {tr("perYear")}
                   </p>
                 </div>
               </div>
@@ -121,10 +114,7 @@ export default function SubscriptionsPage() {
               boxShadow: "inset 0 0 0 1px rgba(var(--page-accent-rgb),0.2)",
             }}
           >
-            💡 {lang === "ru" ? "Примерно" : "About"} {formatMoney(yearly, cur)}{" "}
-            {lang === "ru"
-              ? "в год уходит на подписки и регулярные платежи. Раз в квартал сверь, что реально используешь."
-              : "per year goes to subscriptions. Review quarterly what you still use."}
+            💡 {tr("approximately")} {formatMoney(yearly, cur)} {tr("perYearSubsHint")}
           </div>
         </FadeItem>
       )}
