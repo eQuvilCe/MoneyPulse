@@ -6,14 +6,19 @@ import { FinanceData } from "@/lib/types";
 import { getHealthScore } from "@/lib/ai";
 import { motion } from "framer-motion";
 import { useApp } from "@/components/AppProvider";
+import { useToast } from "@/components/Toast";
+
+/** How long the Copy button reads "Copied" after a successful copy. */
+const COPIED_RESET_MS = 2000;
 
 export default function ShareCard({ data }: { data: FinanceData }) {
   const { tr, lang } = useApp();
+  const toast = useToast();
   const ref = useRef<HTMLDivElement>(null);
   const [copied, setCopied] = useState(false);
   const health = getHealthScore(data);
   const goal = data.goals[0];
-  const progress = goal
+  const progress = goal && goal.targetAmount > 0
     ? Math.min(100, Math.round((goal.currentAmount / goal.targetAmount) * 100))
     : 0;
   const streak = data.settings.streak || 0;
@@ -26,9 +31,9 @@ export default function ShareCard({ data }: { data: FinanceData }) {
     try {
       await navigator.clipboard.writeText(text);
       setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      setTimeout(() => setCopied(false), COPIED_RESET_MS);
     } catch {
-      /* ignore */
+      toast(tr("copyFailed"), "err");
     }
   };
 
