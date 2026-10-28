@@ -333,17 +333,17 @@ export default function Dashboard() {
         <FadeItem className="rounded-3xl border border-white/[0.08] bg-[#0a0e17]/75 p-5 shadow-[0_20px_60px_-24px_rgba(0,0,0,0.65)] backdrop-blur-xl">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="font-display text-sm font-semibold text-white">
-              {tr("budgets") || (ru ? "Бюджеты" : "Budgets")}
+              {tr("budgets")}
             </h2>
             <Link href="/budgets" className="text-xs text-cyan-400/80 hover:text-cyan-300">
-              {ru ? "все →" : "all →"}
+              {tr("allBudgetsLink")}
             </Link>
           </div>
           {budgets.length === 0 ? (
             <div className="py-6 text-center">
-              <p className="text-sm text-slate-600">{ru ? "Нет бюджетов" : "No budgets"}</p>
+              <p className="text-sm text-slate-600">{tr("noBudgets")}</p>
               <Link href="/budgets" className="mt-2 inline-block text-xs text-cyan-400 hover:underline">
-                {ru ? "Создать бюджет" : "Create budget"}
+                {tr("createBudget")}
               </Link>
             </div>
           ) : (
@@ -377,17 +377,17 @@ export default function Dashboard() {
         <FadeItem className="rounded-3xl border border-white/[0.08] bg-[#0a0e17]/75 p-5 shadow-[0_20px_60px_-24px_rgba(0,0,0,0.65)] backdrop-blur-xl">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="font-display text-sm font-semibold text-white">
-              {tr("goals") || (ru ? "Цели" : "Goals")}
+              {tr("goals")}
             </h2>
             <Link href="/goals" className="text-xs text-cyan-400/80 hover:text-cyan-300">
-              {ru ? "все →" : "all →"}
+              {tr("allGoalsLink")}
             </Link>
           </div>
           {data.goals.length === 0 ? (
             <div className="py-6 text-center">
-              <p className="text-sm text-slate-600">{ru ? "Нет целей" : "No goals"}</p>
+              <p className="text-sm text-slate-600">{tr("noGoals")}</p>
               <Link href="/goals" className="mt-2 inline-block text-xs text-cyan-400 hover:underline">
-                {ru ? "Добавить цель" : "Add goal"}
+                {tr("addGoal")}
               </Link>
             </div>
           ) : (
@@ -445,7 +445,7 @@ export default function Dashboard() {
             <div>
               <h3 className="font-display font-semibold text-cyan-200">AI Pulse</h3>
               <p className="text-sm text-slate-400">
-                {ru ? "Разбор месяца, советы и прогноз" : "Month review, tips and forecast"}
+                {tr("monthBreakdownHint")}
               </p>
             </div>
           </div>
