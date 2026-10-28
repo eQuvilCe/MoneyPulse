@@ -30,12 +30,14 @@ export function notifyIfAllowed(title: string, body: string, enabled = true) {
 /**
  * Evening reminder after 20:00 local time if user has no transactions today.
  * Also schedules a check so if they open the app before 20:00, nudge fires later.
+ * Returns a function that cancels the pending timer (no-op when nothing was scheduled).
  */
-export function scheduleEveningNudge(enabled: boolean, hasToday: boolean, lang: "ru" | "en" = "ru") {
-  if (typeof window === "undefined" || !enabled) return;
+export function scheduleEveningNudge(enabled: boolean, hasToday: boolean, lang: "ru" | "en" = "ru"): () => void {
+  const noop = () => {};
+  if (typeof window === "undefined" || !enabled) return noop;
   const dayKey = dateKey();
   const doneKey = "mp-evening-nudge-" + dayKey;
-  if (localStorage.getItem(doneKey)) return;
+  if (localStorage.getItem(doneKey)) return noop;
 
   const fire = () => {
     if (localStorage.getItem(doneKey)) return;
@@ -57,9 +59,10 @@ export function scheduleEveningNudge(enabled: boolean, hasToday: boolean, lang: 
   if (now >= target) {
     // already past 20:00 — fire once this session if no txs
     fire();
-    return;
+    return noop;
   }
   const ms = target.getTime() - now.getTime();
-  window.setTimeout(fire, Math.min(ms, MAX_NUDGE_DELAY_MS));
+  const timer = window.setTimeout(fire, Math.min(ms, MAX_NUDGE_DELAY_MS));
+  return () => window.clearTimeout(timer);
 }
 
