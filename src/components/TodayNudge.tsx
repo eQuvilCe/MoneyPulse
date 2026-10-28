@@ -18,13 +18,17 @@ export default function TodayNudge({ data }: { data: FinanceData }) {
     if (enabled) {
       void enableBrowserNotifications();
     }
-    scheduleEveningNudge(enabled, hasToday, lang);
+    const cancelNudge = scheduleEveningNudge(enabled, hasToday, lang);
     if (!hasToday) {
       const t = setTimeout(() => setShow(true), 1500);
-      return () => clearTimeout(t);
+      return () => {
+        clearTimeout(t);
+        cancelNudge();
+      };
     }
     // eslint-disable-next-line react-hooks/set-state-in-effect -- visibility follows a timer; hiding it when today's entry appears is the same sync
     setShow(false);
+    return cancelNudge;
   }, [hasToday, data.transactions.length, enabled, lang]);
 
   return (
