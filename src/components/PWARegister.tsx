@@ -3,9 +3,15 @@
 import { useEffect, useState } from "react";
 import { useApp } from "@/components/AppProvider";
 
+/** Chromium's install prompt event — not part of the standard DOM typings. */
+interface BeforeInstallPromptEvent extends Event {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: "accepted" | "dismissed"; platform: string }>;
+}
+
 export default function PWARegister() {
   const { tr } = useApp();
-  const [deferred, setDeferred] = useState<Event | null>(null);
+  const [deferred, setDeferred] = useState<BeforeInstallPromptEvent | null>(null);
   const [show, setShow] = useState(false);
 
   useEffect(() => {
@@ -30,7 +36,7 @@ export default function PWARegister() {
 
     const onBip = (e: Event) => {
       e.preventDefault();
-      setDeferred(e);
+      setDeferred(e as BeforeInstallPromptEvent);
       setShow(true);
     };
     window.addEventListener("beforeinstallprompt", onBip);
@@ -48,8 +54,7 @@ export default function PWARegister() {
           type="button"
           className="flex-1 rounded-xl bg-emerald-500 py-2 text-sm font-semibold text-white"
           onClick={async () => {
-            // @ts-expect-error beforeinstallprompt
-            await deferred.prompt?.();
+            await deferred.prompt();
             setShow(false);
             setDeferred(null);
           }}
