@@ -301,16 +301,17 @@ export default function SettingsPage() {
             <SectionHeading icon={User}>{tr("profile")}</SectionHeading>
             <div className="grid gap-3 sm:grid-cols-2">
               <div>
-                <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-slate-500">
+                <label htmlFor="set-name" className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-slate-500">
                   {tr("name")}
                 </label>
-                <input value={name} onChange={(e) => setName(e.target.value)} className={fieldClass} />
+                <input id="set-name" value={name} onChange={(e) => setName(e.target.value)} className={fieldClass} />
               </div>
               <div>
-                <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-slate-500">
+                <label htmlFor="set-email" className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-slate-500">
                   {tr("email")}
                 </label>
                 <input
+                  id="set-email"
                   type="email"
                   value={email}
                   onChange={(e) => {
@@ -344,10 +345,11 @@ export default function SettingsPage() {
         <SectionHeading icon={Lock}>{tr("changePasswordTitle")}</SectionHeading>
         <div className="grid gap-3 sm:grid-cols-3">
           <div>
-            <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-slate-500">
+            <label htmlFor="set-current-password" className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-slate-500">
               {tr("currentPassword")}
             </label>
             <input
+              id="set-current-password"
               type="password"
               value={currentPassword}
               onChange={(e) => setCurrentPassword(e.target.value)}
@@ -356,10 +358,11 @@ export default function SettingsPage() {
             />
           </div>
           <div>
-            <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-slate-500">
+            <label htmlFor="set-new-password" className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-slate-500">
               {tr("newPassword")}
             </label>
             <input
+              id="set-new-password"
               type="password"
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
@@ -368,10 +371,11 @@ export default function SettingsPage() {
             />
           </div>
           <div>
-            <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-slate-500">
+            <label htmlFor="set-repeat-password" className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-slate-500">
               {tr("repeatPassword")}
             </label>
             <input
+              id="set-repeat-password"
               type="password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
@@ -396,10 +400,11 @@ export default function SettingsPage() {
         <SectionHeading icon={Target}>{tr("financialGoalsTitle")}</SectionHeading>
         <div className="grid gap-3 sm:grid-cols-2">
           <div>
-            <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-slate-500">
+            <label htmlFor="set-income-goal" className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-slate-500">
               {tr("incomeGoal")}
             </label>
             <input
+              id="set-income-goal"
               type="number"
               value={incomeGoal}
               onChange={(e) => setIncomeGoal(e.target.value)}
@@ -407,10 +412,11 @@ export default function SettingsPage() {
             />
           </div>
           <div>
-            <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-slate-500">
+            <label htmlFor="set-savings-target" className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-slate-500">
               {tr("savingsTarget")}
             </label>
             <input
+              id="set-savings-target"
               type="number"
               value={savings}
               onChange={(e) => setSavings(e.target.value)}
