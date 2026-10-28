@@ -596,7 +596,8 @@ export default function FamilyPage() {
               ) : (
                 <div className="mt-3 grid gap-3 sm:grid-cols-2">
                   {familyGoals.map((g) => {
-                    const progress = Math.min(100, Math.round((g.currentAmount / g.targetAmount) * 100));
+                    const progress =
+                      g.targetAmount > 0 ? Math.min(100, Math.round((g.currentAmount / g.targetAmount) * 100)) : 0;
                     const left = g.targetAmount - g.currentAmount;
                     const creator = family.members.find((m) => m.userId === g.createdBy)?.name;
                     return (
@@ -615,8 +616,11 @@ export default function FamilyPage() {
                           </div>
                           <button
                             type="button"
-                            onClick={() => void removeGoal(g.id)}
-                            className="rounded-lg p-1 text-slate-600 hover:text-rose-400"
+                            onClick={() => {
+                              if (window.confirm(tr("deleteGoalConfirm", { title: g.title }))) void removeGoal(g.id);
+                            }}
+                            title={tr("deleteGoal")}
+                            className="rounded-lg p-1 text-slate-600 hover:bg-white/5 hover:text-rose-400"
                             aria-label={tr("remove")}
                           >
                             ✕
