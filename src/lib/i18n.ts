@@ -238,6 +238,7 @@ export const translations = {
     budgetsHeroSubtitle: "Лимиты · редактирование · AI",
     addLimitButton: "+ Лимит",
     perMonthLabel: "в месяц",
+    budgetPerDay: "≈ {v} в день до конца месяца",
     // calendar page
     dayMon: "Пн",
     dayTue: "Вт",
@@ -718,6 +719,7 @@ export const translations = {
     budgetsHeroSubtitle: "Limits · editing · AI",
     addLimitButton: "+ Limit",
     perMonthLabel: "per month",
+    budgetPerDay: "≈ {v} a day until month end",
     // calendar page
     dayMon: "Mon",
     dayTue: "Tue",
