@@ -204,8 +204,9 @@ export default function BanksPage() {
             className="hidden"
             onChange={(e) => {
               const f = e.target.files?.[0];
+              e.target.value = "";
               if (!f) return;
-              if (f.name.endsWith(".csv")) {
+              if (f.name.toLowerCase().endsWith(".csv")) {
                 toast(tr("csvGoToImport"));
                 return;
               }
