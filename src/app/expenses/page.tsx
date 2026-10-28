@@ -27,12 +27,15 @@ export default function ExpensesPage() {
     let list = data.transactions.filter((t) => t.type === "expense");
     if (filter !== "all") list = list.filter((t) => t.category === filter);
     if (q.trim()) {
-      const s = q.toLowerCase();
+      const s = q.trim().toLowerCase();
+      // "45 000" and "45,5" should still match the stored number
+      const digits = s.replace(/\s/g, "").replace(",", ".");
       list = list.filter(
         (t) =>
           t.description.toLowerCase().includes(s) ||
           t.category.toLowerCase().includes(s) ||
-          String(t.amount).includes(s)
+          t.date.includes(s) ||
+          (digits !== "" && String(t.amount).includes(digits))
       );
     }
     return list;
