@@ -60,7 +60,8 @@ export function ToastProvider({ children }: { children: ReactNode }) {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -8, scale: 0.95 }}
               role={t.type === "err" ? "alert" : "status"}
-              className={`pointer-events-auto rounded-2xl border px-4 py-3 text-sm font-medium shadow-xl backdrop-blur-xl ${TOAST_COLORS[t.type]}`}
+              onClick={() => setItems((prev) => prev.filter((x) => x.id !== t.id))}
+              className={`pointer-events-auto cursor-pointer rounded-2xl border px-4 py-3 text-sm font-medium shadow-xl backdrop-blur-xl ${TOAST_COLORS[t.type]}`}
             >
               {t.text}
             </motion.div>
