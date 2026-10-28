@@ -17,6 +17,7 @@ export default function ScanPage() {
   const { tr } = useApp();
   const [preview, setPreview] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [amount, setAmount] = useState("");
   const [desc, setDesc] = useState("");
   const [category, setCategory] = useState("еда");
@@ -67,15 +68,21 @@ export default function ScanPage() {
       toast(tr("specifyAmount"), "err");
       return;
     }
-    await addTransaction({
-      type: "expense",
-      amount: num,
-      category,
-      description: desc || tr("receiptWord"),
-      date,
-    });
-    toast(tr("expenseFromReceiptSaved"));
-    router.push("/expenses");
+    if (saving) return;
+    setSaving(true);
+    try {
+      await addTransaction({
+        type: "expense",
+        amount: num,
+        category,
+        description: desc || tr("receiptWord"),
+        date,
+      });
+      toast(tr("expenseFromReceiptSaved"));
+      router.push("/expenses");
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -175,9 +182,10 @@ export default function ScanPage() {
           <button
             type="button"
             onClick={() => void save()}
-            className="mp-btn-primary w-full rounded-xl py-3 text-sm font-bold"
+            disabled={saving || busy}
+            className="mp-btn-primary w-full rounded-xl py-3 text-sm font-bold disabled:opacity-50"
           >
-            {tr("saveExpense")}
+            {saving ? tr("saving") : tr("saveExpense")}
           </button>
         </FadeItem>
       )}
