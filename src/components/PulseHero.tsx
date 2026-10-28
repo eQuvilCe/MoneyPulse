@@ -12,7 +12,7 @@ import { useWebglAllowed } from "@/components/three/useWebglAllowed";
 import { useApp } from "@/components/AppProvider";
 import { emitCelebrate } from "@/lib/events";
 import FitText from "@/components/FitText";
-import { compactNumber, formatMoney } from "@/lib/types";
+import { compactNumber, formatMoney, dateKey } from "@/lib/types";
 import { useHideAmounts, HIDDEN_AMOUNT } from "@/hooks/useHideAmounts";
 
 /**
@@ -126,7 +126,8 @@ export default function PulseHero({
   const [confettiFire, setConfettiFire] = useState(0);
   useEffect(() => {
     if (isEmpty || health < 75) return;
-    const key = `mp-celebrated-${new Date().toISOString().slice(0, 7)}`;
+    // local month, not UTC: east of Greenwich the first hours of the 1st would still count as last month
+    const key = `mp-celebrated-${dateKey().slice(0, 7)}`;
     try {
       if (localStorage.getItem(key)) return;
       localStorage.setItem(key, "1");
