@@ -44,7 +44,8 @@ export default function AIInsightBar({ data }: { data: FinanceData }) {
               <button
                 type="button"
                 onClick={() => setWhyOpen((v) => !v)}
-                className="text-[11px] font-semibold uppercase tracking-wider text-cyan-400/90 hover:text-cyan-300"
+                aria-expanded={whyOpen}
+                className="rounded text-[11px] font-semibold uppercase tracking-wider text-cyan-400/90 hover:text-cyan-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/50"
               >
                 {whyOpen ? tr("hideWhy") : tr("showWhy")}
               </button>
