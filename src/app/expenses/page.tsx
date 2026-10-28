@@ -146,6 +146,7 @@ export default function ExpensesPage() {
           <button
             type="button"
             onClick={() => setFilter("all")}
+            aria-pressed={filter === "all"}
             className="rounded-full px-3 py-1 text-xs transition"
             style={
               filter === "all"
@@ -160,6 +161,7 @@ export default function ExpensesPage() {
               key={cat}
               type="button"
               onClick={() => setFilter(cat)}
+              aria-pressed={filter === cat}
               className="rounded-full px-3 py-1 text-xs transition"
               style={
                 filter === cat
