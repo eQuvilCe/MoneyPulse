@@ -193,7 +193,14 @@ export default function BudgetsPage() {
                   </span>
                   <span className="text-slate-500">{formatMoney(b.limit, cur)}</span>
                 </div>
-                <div className="h-2 overflow-hidden rounded-full bg-slate-800">
+                <div
+                  className="h-2 overflow-hidden rounded-full bg-slate-800"
+                  role="progressbar"
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-valuenow={Math.min(100, b.percent)}
+                  aria-label={b.category}
+                >
                   <motion.div
                     initial={{ width: 0 }}
                     animate={{ width: `${Math.min(100, b.percent)}%` }}
