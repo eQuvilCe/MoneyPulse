@@ -9,7 +9,7 @@ import { useApp } from "@/components/AppProvider";
 
 export default function AIInsightBar({ data }: { data: FinanceData }) {
   const [whyOpen, setWhyOpen] = useState(false);
-  const { lang } = useApp();
+  const { tr } = useApp();
   const insights = getQuickInsights(data);
   const top = generateAIAnalysis(data)[0];
 
@@ -29,17 +29,14 @@ export default function AIInsightBar({ data }: { data: FinanceData }) {
             </span>
             <span className="flex items-center gap-1.5 text-[10px] text-slate-500">
               <span className="h-1.5 w-1.5 rounded-full bg-cyan-400 shadow-[0_0_6px_rgba(34,211,238,0.9)]" />
-              {lang === "ru" ? "анализ активен" : "analysis active"}
+              {tr("aiAnalysisActive")}
             </span>
           </div>
           <h3 className="mt-2 text-base font-semibold tracking-tight text-white">
-            {top?.title || (lang === "ru" ? "Ваш финансовый AI" : "Your finance AI")}
+            {top?.title || tr("aiInsightFallbackTitle")}
           </h3>
           <p className="mt-1.5 text-sm leading-relaxed text-slate-400">
-            {top?.message ||
-              (lang === "ru"
-                ? "Добавь операции — система начнёт строить инсайты."
-                : "Add transactions — the system will build insights.")}
+            {top?.message || tr("aiInsightFallbackBody")}
           </p>
 
           {top?.why && (
@@ -49,7 +46,7 @@ export default function AIInsightBar({ data }: { data: FinanceData }) {
                 onClick={() => setWhyOpen((v) => !v)}
                 className="text-[11px] font-semibold uppercase tracking-wider text-cyan-400/90 hover:text-cyan-300"
               >
-                {whyOpen ? (lang === "ru" ? "Скрыть" : "Hide") : "Why?"}
+                {whyOpen ? tr("hideWhy") : tr("showWhy")}
               </button>
               <AnimatePresence>
                 {whyOpen && (
@@ -86,7 +83,7 @@ export default function AIInsightBar({ data }: { data: FinanceData }) {
           href="/ai"
           className="mp-btn-ghost shrink-0 self-start px-4 py-2 text-xs font-medium"
         >
-          {lang === "ru" ? "Открыть AI" : "Open AI"}
+          {tr("openAi")}
         </Link>
       </div>
     </div>
