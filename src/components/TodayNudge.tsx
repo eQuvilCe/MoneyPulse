@@ -37,7 +37,7 @@ export default function TodayNudge({ data }: { data: FinanceData }) {
           className="overflow-hidden"
         >
           <div className="flex items-center gap-3 rounded-2xl border border-amber-500/25 bg-amber-500/10 px-4 py-3">
-            <span className="text-xl">👀</span>
+            <span className="text-xl" aria-hidden>👀</span>
             <div className="flex-1">
               <p className="text-sm font-medium text-amber-200">
                 {tr("nudgeNothingToday")}
@@ -49,7 +49,9 @@ export default function TodayNudge({ data }: { data: FinanceData }) {
             <button
               type="button"
               onClick={() => setShow(false)}
-              className="text-amber-200/50 hover:text-amber-100"
+              aria-label={tr("dismiss")}
+              title={tr("dismiss")}
+              className="rounded-lg p-1 text-amber-200/50 transition hover:bg-amber-500/10 hover:text-amber-100"
             >
               ✕
             </button>
