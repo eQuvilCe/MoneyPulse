@@ -158,7 +158,7 @@ export default function GoalsPage() {
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder={tr("goalTitleLabel")}
                 aria-label={tr("goalTitleLabel")}
-                maxLength={80}
+                maxLength={100}
                 autoFocus
                 required
                 className="rounded-xl border border-white/10 bg-slate-900 px-3 py-2.5 text-sm"
