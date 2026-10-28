@@ -143,7 +143,9 @@ export default function BudgetsPage() {
       )}
       {statuses.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-white/10 py-16 text-center text-slate-500">
-          {tr("noBudgets")}
+          <p className="text-3xl" aria-hidden>📊</p>
+          <p className="mt-2">{tr("noBudgets")}</p>
+          <p className="mx-auto mt-1 max-w-xs text-xs text-slate-600">{tr("noBudgetsHint")}</p>
         </div>
       ) : (
         <div className="grid gap-3 sm:grid-cols-2">
