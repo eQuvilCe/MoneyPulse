@@ -153,7 +153,9 @@ export default function TransactionList({
                   <p className="truncate text-sm font-medium text-white">
                     {t.description}
                     {t.recurring && (
-                      <span className="ml-1.5 text-[10px] text-cyan-400">↻</span>
+                      <span className="ml-1.5 text-[10px] text-cyan-400" title={tr("recurringBadge")} aria-label={tr("recurringBadge")}>
+                        ↻
+                      </span>
                     )}
                   </p>
                   <p className="text-xs text-slate-500">
