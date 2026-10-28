@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import { useRealtimeData } from "@/hooks/useRealtimeData";
-import { PageShell, FadeItem } from "@/components/motion/PageShell";
+import { PageShell, FadeItem, Skeleton } from "@/components/motion/PageShell";
 import { getStats } from "@/lib/storage";
 import { formatMoney } from "@/lib/types";
 import { generateAIAnalysis, getHealthScore, answerAIChat } from "@/lib/ai";
@@ -58,7 +58,21 @@ export default function ForecastPage() {
   }, [stats]);
 
   if (!data || !stats || !stats30) {
-    return <div className="py-20 text-center text-slate-500">{tr("loading")}</div>;
+    return (
+      <PageShell className="page-accent-blue">
+        <FadeItem>
+          <Skeleton className="h-16 w-full" />
+        </FadeItem>
+        <div className="grid gap-3 sm:grid-cols-3">
+          <Skeleton className="h-24" />
+          <Skeleton className="h-24" />
+          <Skeleton className="h-24" />
+        </div>
+        <FadeItem>
+          <Skeleton className="h-48 w-full" />
+        </FadeItem>
+      </PageShell>
+    );
   }
 
   const cur = data.settings.currency || "₽";
