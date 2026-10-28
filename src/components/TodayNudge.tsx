@@ -6,6 +6,9 @@ import { useState, useEffect } from "react";
 import { scheduleEveningNudge, enableBrowserNotifications } from "@/lib/notifications";
 import { useApp } from "@/components/AppProvider";
 
+/** Small delay so the banner doesn't flash in before the dashboard has painted. */
+const SHOW_DELAY_MS = 1500;
+
 export default function TodayNudge({ data }: { data: FinanceData }) {
   const [show, setShow] = useState(false);
   const { lang, tr } = useApp();
@@ -20,7 +23,7 @@ export default function TodayNudge({ data }: { data: FinanceData }) {
     }
     const cancelNudge = scheduleEveningNudge(enabled, hasToday, lang);
     if (!hasToday) {
-      const t = setTimeout(() => setShow(true), 1500);
+      const t = setTimeout(() => setShow(true), SHOW_DELAY_MS);
       return () => {
         clearTimeout(t);
         cancelNudge();
