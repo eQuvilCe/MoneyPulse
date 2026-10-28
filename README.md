@@ -11,6 +11,17 @@ npm run dev
 
 http://localhost:3000 → **Смотреть демо** или регистрация (пустой аккаунт).
 
+### Скрипты
+
+| Команда | Что делает |
+|--|--|
+| `npm run dev` | dev-сервер Next.js |
+| `npm run build` | `prisma generate` + production-сборка |
+| `npm run start` | запуск собранного приложения |
+| `npm run lint` | ESLint |
+| `npm run db:push` | синхронизировать схему Prisma с базой |
+| `npm run db:studio` | Prisma Studio для просмотра данных |
+
 ---
 
 ## PWA (мобилка без React Native)
