@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRealtimeData } from "@/hooks/useRealtimeData";
-import { PageShell, FadeItem } from "@/components/motion/PageShell";
+import { PageShell, FadeItem, Skeleton } from "@/components/motion/PageShell";
 import TiltCard from "@/components/motion/TiltCard";
 import { LetterReveal } from "@/components/motion/Reveal";
 import { formatMoney, dateKey } from "@/lib/types";
@@ -87,7 +87,18 @@ export default function CalendarPage() {
   const locale = lang === "en" ? "en-US" : "ru-RU";
   const monthLabel = cursor.toLocaleDateString(locale, { month: "long", year: "numeric" });
 
-  if (!data) return <div className="py-20 text-center text-slate-500">{tr("loading")}</div>;
+  if (!data) {
+    return (
+      <PageShell className="page-accent-teal">
+        <FadeItem>
+          <Skeleton className="h-16 w-full" />
+        </FadeItem>
+        <FadeItem>
+          <Skeleton className="h-80 w-full" />
+        </FadeItem>
+      </PageShell>
+    );
+  }
 
   return (
     <PageShell className="page-accent-teal">
