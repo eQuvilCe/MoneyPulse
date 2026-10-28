@@ -273,6 +273,7 @@ export const translations = {
     daysLeftLabel: "Осталось дней",
     cutTopByPct: "Если срезать 15% с топа",
     totalReclaimHint: "Суммарно можно вернуть ~{v} до конца месяца",
+    forecastNoExpenses: "Пока нет расходов — нечего срезать. Добавь пару трат, и здесь появятся идеи.",
     // goals page
     goalUpdated: "Цель обновлена",
     goalCreated: "Цель создана",
@@ -758,6 +759,7 @@ export const translations = {
     daysLeftLabel: "Days left",
     cutTopByPct: "If you cut 15% off the top categories",
     totalReclaimHint: "You could reclaim ~{v} before month end",
+    forecastNoExpenses: "No expenses yet, so nothing to cut. Log a few and ideas will show up here.",
     // goals page
     goalUpdated: "Goal updated",
     goalCreated: "Goal created",
