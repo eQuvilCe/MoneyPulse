@@ -149,7 +149,9 @@ export default function FamilyChat({ isOwner }: { isOwner: boolean }) {
             if (stickToBottom.current) setUnseen(false);
           }}
           className="h-80 space-y-2 overflow-y-auto overscroll-contain rounded-xl bg-black/20 p-3 ring-1 ring-white/[0.06]"
+          role="log"
           aria-live="polite"
+          aria-label={tr("familyChatTitle")}
         >
           {messages === null ? (
             <div className="space-y-2">
@@ -186,6 +188,7 @@ export default function FamilyChat({ isOwner }: { isOwner: boolean }) {
                     <div className={`group flex items-end gap-2 ${mine ? "flex-row-reverse" : ""}`}>
                       {!mine && (
                         <span
+                          aria-hidden
                           className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[11px] font-bold ${sameAuthor ? "invisible" : ""}`}
                           style={{ background: "rgba(var(--page-accent-rgb), 0.18)", color: "var(--page-accent)" }}
                         >
