@@ -202,7 +202,9 @@ export default function GoalsPage() {
       )}
       {data.goals.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-white/10 py-16 text-center text-slate-500">
-          {tr("noGoals")}
+          <p className="text-3xl" aria-hidden>🎯</p>
+          <p className="mt-2">{tr("noGoals")}</p>
+          <p className="mx-auto mt-1 max-w-xs text-xs text-slate-600">{tr("noGoalsHint")}</p>
         </div>
       ) : (
         <div className="grid gap-3 sm:grid-cols-2">
