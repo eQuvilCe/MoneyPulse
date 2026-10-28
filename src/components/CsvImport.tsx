@@ -59,6 +59,7 @@ export default function CsvImport({ onDone }: { onDone: () => void }) {
   const { tr } = useApp();
   const [busy, setBusy] = useState(false);
   const [preview, setPreview] = useState(0);
+  const [dragOver, setDragOver] = useState(false);
 
   const onFile = async (file: File) => {
     setBusy(true);
@@ -92,8 +93,24 @@ export default function CsvImport({ onDone }: { onDone: () => void }) {
     <div className="mp-card rounded-2xl p-5">
       <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-400">{tr("csvImportTitle")}</h2>
       <p className="mt-1 text-xs text-slate-500">{tr("csvImportHint")}</p>
-      <label className="mt-4 flex cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed border-white/15 bg-white/[0.02] px-4 py-8 transition hover:border-emerald-500/40 hover:bg-emerald-500/5">
-        <span className="text-2xl">📄</span>
+      <label
+        onDragOver={(e) => {
+          e.preventDefault();
+          setDragOver(true);
+        }}
+        onDragLeave={() => setDragOver(false)}
+        onDrop={(e) => {
+          e.preventDefault();
+          setDragOver(false);
+          const f = e.dataTransfer.files?.[0];
+          if (f && !busy) void onFile(f);
+        }}
+        aria-busy={busy}
+        className={`mt-4 flex cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed px-4 py-8 transition hover:border-emerald-500/40 hover:bg-emerald-500/5 ${
+          dragOver ? "border-emerald-500/60 bg-emerald-500/10" : "border-white/15 bg-white/[0.02]"
+        }`}
+      >
+        <span className="text-2xl" aria-hidden>📄</span>
         <span className="mt-2 text-sm text-slate-300">{busy ? tr("csvImporting") : tr("csvChooseFile")}</span>
         <input
           type="file"
@@ -102,6 +119,8 @@ export default function CsvImport({ onDone }: { onDone: () => void }) {
           disabled={busy}
           onChange={(e) => {
             const f = e.target.files?.[0];
+            // reset so picking the same statement again still triggers onChange
+            e.target.value = "";
             if (f) void onFile(f);
           }}
         />
