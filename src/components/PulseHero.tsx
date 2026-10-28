@@ -194,14 +194,14 @@ export default function PulseHero({
           <div className="min-w-0">
             <div className="flex items-center gap-2">
               <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
-                {tr("balance") || (ru ? "Баланс месяца" : "Month balance")}
+                {tr("balance")}
               </p>
               <button
                 type="button"
                 onClick={toggleHidden}
                 aria-pressed={hidden}
-                aria-label={ru ? (hidden ? "Показать суммы" : "Скрыть суммы") : hidden ? "Show amounts" : "Hide amounts"}
-                title={ru ? (hidden ? "Показать суммы" : "Скрыть суммы") : hidden ? "Show amounts" : "Hide amounts"}
+                aria-label={hidden ? tr("showAmounts") : tr("hideAmounts")}
+                title={`${hidden ? tr("showAmounts") : tr("hideAmounts")} (H)`}
                 className="flex h-6 w-6 items-center justify-center rounded-lg text-slate-500 transition hover:bg-white/[0.06] hover:text-cyan-300"
               >
                 {hidden ? <EyeOff size={14} /> : <Eye size={14} />}
