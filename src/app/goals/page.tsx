@@ -198,7 +198,8 @@ export default function GoalsPage() {
       ) : (
         <div className="grid gap-3 sm:grid-cols-2">
           {data.goals.map((g, i) => {
-            const progress = Math.min(100, Math.round((g.currentAmount / g.targetAmount) * 100));
+            const progress =
+              g.targetAmount > 0 ? Math.min(100, Math.round((g.currentAmount / g.targetAmount) * 100)) : 0;
             const left = g.targetAmount - g.currentAmount;
             return (
               <motion.div
@@ -248,7 +249,14 @@ export default function GoalsPage() {
                     <span style={{ color: "var(--page-accent)" }}>{formatMoney(g.currentAmount, cur)}</span>
                     <span className="text-slate-500">{formatMoney(g.targetAmount, cur)}</span>
                   </div>
-                  <div className="h-2.5 overflow-hidden rounded-full bg-slate-800">
+                  <div
+                    className="h-2.5 overflow-hidden rounded-full bg-slate-800"
+                    role="progressbar"
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    aria-valuenow={progress}
+                    aria-label={g.title}
+                  >
                     <motion.div
                       initial={{ width: 0 }}
                       animate={{ width: `${progress}%` }}
