@@ -93,6 +93,8 @@ export default function CalendarPage() {
         <div className="mb-4 flex items-center justify-between rounded-xl mp-heat-drift px-3 py-2">
           <button
             onClick={() => setCursor(new Date(year, month - 1, 1))}
+            aria-label={tr("prevMonth")}
+            title={tr("prevMonth")}
             className="rounded-lg px-3 py-1.5 text-sm ring-1 ring-white/10 hover:bg-white/5"
           >
             ←
@@ -100,6 +102,8 @@ export default function CalendarPage() {
           <h2 className="text-sm font-semibold capitalize">{monthLabel}</h2>
           <button
             onClick={() => setCursor(new Date(year, month + 1, 1))}
+            aria-label={tr("nextMonth")}
+            title={tr("nextMonth")}
             className="rounded-lg px-3 py-1.5 text-sm ring-1 ring-white/10 hover:bg-white/5"
           >
             →

@@ -250,6 +250,9 @@ export const translations = {
     calendarHeroTitle: "Финансовый календарь",
     calendarHeroSubtitle: "Дни подсвечены по уровню расходов",
     dayBalance: "Баланс дня",
+    prevMonth: "Предыдущий месяц",
+    nextMonth: "Следующий месяц",
+    backToToday: "Сегодня",
     // expenses page
     expensesHeroSubtitle: "Поиск · фильтры · AI на страже",
     operations: "Операций",
@@ -731,6 +734,9 @@ export const translations = {
     calendarHeroTitle: "Financial calendar",
     calendarHeroSubtitle: "Days are shaded by spending level",
     dayBalance: "Day balance",
+    prevMonth: "Previous month",
+    nextMonth: "Next month",
+    backToToday: "Today",
     // expenses page
     expensesHeroSubtitle: "Search · filters · AI on guard",
     operations: "Transactions",
