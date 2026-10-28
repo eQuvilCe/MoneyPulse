@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { loadDataAsync, addGoal, updateGoal, deleteGoal } from "@/lib/storage";
-import { FinanceData, Goal, formatMoney, MAX_AMOUNT, formatMoneyCompact, readAmount, formatShortDate } from "@/lib/types";
+import { FinanceData, Goal, formatMoney, MAX_AMOUNT, formatMoneyCompact, readAmount, formatShortDate, dateKey } from "@/lib/types";
 import { PageShell, FadeItem, Skeleton } from "@/components/motion/PageShell";
 import TiltCard from "@/components/motion/TiltCard";
 import { LetterReveal, MagneticButton } from "@/components/motion/Reveal";
@@ -157,6 +157,9 @@ export default function GoalsPage() {
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder={tr("goalTitleLabel")}
+                aria-label={tr("goalTitleLabel")}
+                maxLength={80}
+                autoFocus
                 required
                 className="rounded-xl border border-white/10 bg-slate-900 px-3 py-2.5 text-sm"
               />
@@ -165,6 +168,8 @@ export default function GoalsPage() {
                 value={target}
                 onChange={(e) => setTarget(e.target.value)}
                 placeholder={tr("goalAmountLabel", { cur })}
+                aria-label={tr("goalAmountLabel", { cur })}
+                inputMode="decimal"
                 required
                 min="1"
                 className="rounded-xl border border-white/10 bg-slate-900 px-3 py-2.5 text-sm"
@@ -173,12 +178,16 @@ export default function GoalsPage() {
                 value={emoji}
                 onChange={(e) => setEmoji(e.target.value)}
                 placeholder={tr("emoji")}
+                aria-label={tr("emoji")}
+                maxLength={4}
                 className="rounded-xl border border-white/10 bg-slate-900 px-3 py-2.5 text-sm"
               />
               <input
                 type="date"
                 value={deadline}
                 onChange={(e) => setDeadline(e.target.value)}
+                aria-label={tr("goalDeadlineLabel")}
+                min={editId ? undefined : dateKey()}
                 className="rounded-xl border border-white/10 bg-slate-900 px-3 py-2.5 text-sm"
               />
             </div>
