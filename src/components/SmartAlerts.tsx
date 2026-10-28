@@ -3,8 +3,10 @@
 import { motion } from "framer-motion";
 import { FinanceData } from "@/lib/types";
 import { buildSmartAlerts } from "@/lib/insights";
+import { useApp } from "@/components/AppProvider";
 
 export default function SmartAlerts({ data }: { data: FinanceData }) {
+  const { tr } = useApp();
   const alerts = buildSmartAlerts(data);
   if (!alerts.length) return null;
 
@@ -17,7 +19,7 @@ export default function SmartAlerts({ data }: { data: FinanceData }) {
 
   return (
     <div className="space-y-2">
-      <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">Smart alerts</p>
+      <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">{tr("smartAlertsTitle")}</p>
       {alerts.map((a, i) => (
         <motion.div
           key={a.id}
