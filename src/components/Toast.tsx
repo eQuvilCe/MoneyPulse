@@ -13,6 +13,12 @@ const REJECT_SUPPRESS_MS = 2000;
 /** Older toasts are dropped once this many are stacked. */
 const MAX_TOASTS = 4;
 
+const TOAST_COLORS: Record<ToastItem["type"], string> = {
+  ok: "border-emerald-500/30 bg-emerald-500/15 text-emerald-200",
+  err: "border-rose-500/30 bg-rose-500/15 text-rose-200",
+  info: "border-cyan-500/30 bg-cyan-500/15 text-cyan-200",
+};
+
 const Ctx = createContext<(text: string, type?: ToastItem["type"]) => void>(() => {});
 
 export function useToast() {
@@ -42,12 +48,6 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     [push]
   );
 
-  const colors = {
-    ok: "border-emerald-500/30 bg-emerald-500/15 text-emerald-200",
-    err: "border-rose-500/30 bg-rose-500/15 text-rose-200",
-    info: "border-cyan-500/30 bg-cyan-500/15 text-cyan-200",
-  };
-
   return (
     <Ctx.Provider value={push}>
       {children}
@@ -59,7 +59,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
               initial={{ opacity: 0, y: 16, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -8, scale: 0.95 }}
-              className={`pointer-events-auto rounded-2xl border px-4 py-3 text-sm font-medium shadow-xl backdrop-blur-xl ${colors[t.type]}`}
+              className={`pointer-events-auto rounded-2xl border px-4 py-3 text-sm font-medium shadow-xl backdrop-blur-xl ${TOAST_COLORS[t.type]}`}
             >
               {t.text}
             </motion.div>
