@@ -34,6 +34,11 @@ import MoneyFlow from "@/components/MoneyFlow";
 import { QuickActions, MonthPace, ActivityTicker } from "@/components/DashboardLive";
 import { useApp } from "@/components/AppProvider";
 
+/** Days of history drawn in the stat card sparklines. */
+const SPARK_DAYS = 14;
+/** Savings rate at or above which the card is shown as healthy. */
+const GOOD_SAVINGS_RATE = 20;
+
 export default function Dashboard() {
   const { data, refresh, live } = useRealtimeData();
   const { tr, lang } = useApp();
@@ -90,9 +95,9 @@ export default function Dashboard() {
   const health = getHealthScore(data);
 
   const spark = (type: "income" | "expense") => {
-    const arr = Array.from({ length: 14 }, (_, i) => {
+    const arr = Array.from({ length: SPARK_DAYS }, (_, i) => {
       const d = new Date();
-      d.setDate(d.getDate() - (13 - i));
+      d.setDate(d.getDate() - (SPARK_DAYS - 1 - i));
       const k = dateKey(d);
       return data.transactions
         .filter((t) => t.type === type && t.date === k)
@@ -213,7 +218,7 @@ export default function Dashboard() {
           title={tr("savings")}
           value={`${stats.savingsRate}%`}
           icon="◎"
-          color={stats.savingsRate >= 20 ? "cyan" : "amber"}
+          color={stats.savingsRate >= GOOD_SAVINGS_RATE ? "cyan" : "amber"}
           delay={0.12}
           subtitle={`${tr("goal")} ${data.settings.savingsTargetPercent}%`}
         />
