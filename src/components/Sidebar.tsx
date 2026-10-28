@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Send } from "lucide-react";
 import { useApp } from "@/components/AppProvider";
@@ -95,6 +95,15 @@ export default function Sidebar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const { tr, user, lang, setLang, logout } = useApp();
   const { data } = useRealtimeData();
+
+  useEffect(() => {
+    if (!mobileOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setMobileOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [mobileOpen]);
 
   const navItems = [
     { href: "/", label: tr("pulse"), icon: "◈" },
