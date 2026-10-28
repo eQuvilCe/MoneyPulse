@@ -68,6 +68,7 @@ export default function CalendarPage() {
     return m;
   }, [byDay, cells]);
 
+  const todayKey = dateKey();
   const dayInfo = byDay[selected] || { income: 0, expense: 0, count: 0 };
   const dayTx = data?.transactions.filter((t) => t.date === selected) || [];
   const locale = lang === "en" ? "en-US" : "ru-RU";
@@ -118,7 +119,7 @@ export default function CalendarPage() {
             const info = byDay[c.key];
             const intensity = info ? info.expense / maxExp : 0;
             const isSel = selected === c.key;
-            const isToday = c.key === dateKey();
+            const isToday = c.key === todayKey;
             return (
               <motion.button
                 key={c.key}
