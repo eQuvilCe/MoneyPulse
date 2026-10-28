@@ -14,6 +14,8 @@ interface Props {
   limit?: number;
   currency?: string;
   pageSize?: number;
+  /** Shown instead of the generic "no transactions" text, e.g. when a search matched nothing. */
+  emptyText?: React.ReactNode;
 }
 
 export default function TransactionList({
@@ -23,6 +25,7 @@ export default function TransactionList({
   limit,
   currency = "₽",
   pageSize = 15,
+  emptyText,
 }: Props) {
   const [page, setPage] = useState(0);
   const [editId, setEditId] = useState<string | null>(null);
@@ -77,7 +80,7 @@ export default function TransactionList({
   if (!filtered.length) {
     return (
       <div className="rounded-2xl border border-dashed border-white/10 py-12 text-center text-sm text-slate-500">
-        {tr("noTransactions")}
+        {emptyText ?? tr("noTransactions")}
       </div>
     );
   }
