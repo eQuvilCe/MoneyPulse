@@ -230,7 +230,6 @@ export function processRecurring(data: FinanceData): FinanceData {
       .filter((t) => t.date.startsWith(monthPrefix))
       .map((t) => `${t.type}|${t.category}|${t.amount}|${t.description}`)
   );
-  let changed = false;
   for (const tpl of templates) {
     const day = Math.min(
       parseInt(tpl.date.slice(8, 10), 10) || 1,
@@ -239,22 +238,14 @@ export function processRecurring(data: FinanceData): FinanceData {
     const date = `${monthPrefix}-${String(day).padStart(2, "0")}`;
     const key = `${tpl.type}|${tpl.category}|${tpl.amount}|${tpl.description}`;
     // only auto-add if this month doesn't already have same signature
-    const has = data.transactions.some(
-      (t) =>
-        t.date.startsWith(monthPrefix) &&
-        t.type === tpl.type &&
-        t.category === tpl.category &&
-        t.amount === tpl.amount &&
-        t.description === tpl.description
-    );
-    if (!has && tpl.date.slice(0, 7) !== monthPrefix) {
+    if (!existingKeys.has(key) && tpl.date.slice(0, 7) !== monthPrefix) {
       data.transactions.unshift({
         ...tpl,
         id: crypto.randomUUID(),
         date,
         recurring: true,
       });
-      changed = true;
+      existingKeys.add(key);
     }
   }
   return data;
