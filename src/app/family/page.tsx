@@ -7,7 +7,7 @@ import { LetterReveal, MagneticButton } from "@/components/motion/Reveal";
 import { useApp } from "@/components/AppProvider";
 import { useToast } from "@/components/Toast";
 import { useRealtimeData } from "@/hooks/useRealtimeData";
-import { CATEGORY_ICONS, formatMoney, formatMoneySmart, allExpenseCategories, MAX_AMOUNT, formatMoneyCompact, readAmount } from "@/lib/types";
+import { CATEGORY_ICONS, formatMoney, formatMoneySmart, allExpenseCategories, MAX_AMOUNT, formatMoneyCompact, readAmount, dateKey } from "@/lib/types";
 import FitText from "@/components/FitText";
 import type {
   FamilyMemberPublic,
@@ -247,6 +247,15 @@ export default function FamilyPage() {
   };
 
   const isOwner = !!(family && user && family.ownerId === user.id);
+
+  // The overview only reports spending for budgets that are already over the limit,
+  // so derive this month's per-category spend from the shared feed for the rest.
+  const monthPrefix = dateKey().slice(0, 7);
+  const monthSpentByCategory: Record<string, number> = {};
+  for (const t of transactions) {
+    if (t.type !== "expense" || !t.date.startsWith(monthPrefix)) continue;
+    monthSpentByCategory[t.category] = (monthSpentByCategory[t.category] || 0) + t.amount;
+  }
   const expenseCats = allExpenseCategories(data?.settings);
 
   return (
@@ -522,7 +531,7 @@ export default function FamilyPage() {
                           <div>
                             <p className="text-sm font-medium capitalize">{b.category}</p>
                             <p className="text-[11px] text-slate-500">
-                              {formatMoney(alert?.spent ?? 0, cur)} / {formatMoney(b.limit, cur)}
+                              {formatMoney(alert?.spent ?? monthSpentByCategory[b.category] ?? 0, cur)} / {formatMoney(b.limit, cur)}
                             </p>
                           </div>
                         </div>
