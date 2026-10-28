@@ -4,6 +4,8 @@
 
 ```bash
 npm install
+cp .env.example .env   # заполни DATABASE_URL (Postgres) и JWT_SECRET
+npm run db:push        # создать таблицы по prisma/schema.prisma
 npm run dev
 ```
 
