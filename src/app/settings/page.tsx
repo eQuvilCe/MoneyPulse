@@ -622,20 +622,18 @@ export default function SettingsPage() {
 
       {/* Danger zone — delete account */}
       <SettingsCard className="border border-rose-500/20">
-        <SectionHeading icon={Trash2}>{lang === "ru" ? "Опасная зона" : "Danger zone"}</SectionHeading>
+        <SectionHeading icon={Trash2}>{tr("dangerZoneTitle")}</SectionHeading>
         {!deleteOpen ? (
           <>
             <p className="text-xs text-slate-500">
-              {lang === "ru"
-                ? "Удаление аккаунта необратимо — все транзакции, цели, бюджеты и счета будут удалены навсегда."
-                : "Deleting your account is permanent — all transactions, goals, budgets and accounts are erased forever."}
+              {tr("deleteAccountWarning")}
             </p>
             <button
               type="button"
               onClick={() => setDeleteOpen(true)}
               className="rounded-xl bg-rose-500/15 px-6 py-2.5 text-sm font-semibold text-rose-300 ring-1 ring-rose-500/25 hover:bg-rose-500/25"
             >
-              {lang === "ru" ? "Удалить аккаунт" : "Delete account"}
+              {tr("deleteAccount")}
             </button>
           </>
         ) : (
@@ -643,16 +641,14 @@ export default function SettingsPage() {
             <div className="flex items-start gap-2 text-xs text-rose-300">
               <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
               <p>
-                {lang === "ru"
-                  ? 'Это нельзя отменить. Введи пароль и напиши "DELETE", чтобы подтвердить.'
-                  : 'This cannot be undone. Enter your password and type "DELETE" to confirm.'}
+                {tr("deleteConfirmPrompt")}
               </p>
             </div>
             <input
               type="password"
               value={deletePassword}
               onChange={(e) => setDeletePassword(e.target.value)}
-              placeholder={lang === "ru" ? "Пароль (если есть)" : "Password (if you have one)"}
+              placeholder={tr("passwordIfAny")}
               className={fieldClass}
               autoComplete="current-password"
             />
@@ -672,7 +668,7 @@ export default function SettingsPage() {
                 }}
                 className="flex-1 rounded-xl bg-white/5 px-4 py-2.5 text-sm font-medium text-slate-300 ring-1 ring-white/10 hover:bg-white/10"
               >
-                {lang === "ru" ? "Отмена" : "Cancel"}
+                {tr("cancel")}
               </button>
               <button
                 type="button"
@@ -680,13 +676,7 @@ export default function SettingsPage() {
                 onClick={() => void deleteAccount()}
                 className="flex-1 rounded-xl bg-rose-500 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-rose-500/20 hover:bg-rose-400 disabled:cursor-not-allowed disabled:opacity-40"
               >
-                {deleting
-                  ? lang === "ru"
-                    ? "Удаляю…"
-                    : "Deleting…"
-                  : lang === "ru"
-                    ? "Удалить навсегда"
-                    : "Delete forever"}
+                {deleting ? tr("deleting") : tr("deleteForever")}
               </button>
             </div>
           </div>
