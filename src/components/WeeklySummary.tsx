@@ -21,20 +21,20 @@ export default function WeeklySummary({ data }: { data: FinanceData }) {
         <div>
           <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-400">{tr("weekLabel")}</h2>
           <p className="mt-1 text-sm text-slate-300">
-            <span className="text-emerald-400">+{formatNumber(w.income, lang === "en" ? "en" : "ru")}</span>
+            <span className="text-emerald-400">+{formatNumber(w.income, l)}</span>
             {" · "}
-            <span className="text-rose-400">−{formatNumber(w.expense, lang === "en" ? "en" : "ru")}</span>
+            <span className="text-rose-400">−{formatNumber(w.expense, l)}</span>
           </p>
         </div>
         <div className="text-right">
           <p className="text-[10px] text-slate-500">{tr("weekBalance7d")}</p>
           <p className={`text-sm font-bold tabular-nums ${w.balance >= 0 ? "text-cyan-400" : "text-rose-400"}`}>
             {w.balance >= 0 ? "+" : ""}
-            {formatNumber(w.balance, lang === "en" ? "en" : "ru")} {data.settings.currency || "₽"}
+            {formatNumber(w.balance, l)} {cur}
           </p>
         </div>
       </div>
-      <div className="mt-4 flex h-16 items-end gap-1.5">
+      <div className="mt-4 flex h-16 items-end gap-1.5" aria-hidden>
         {bars.map((b, i) => (
           <div
             key={b.date}
