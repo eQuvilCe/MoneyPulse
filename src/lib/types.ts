@@ -227,3 +227,20 @@ export function dateKey(d: Date = new Date()): string {
     day: "2-digit",
   }).format(d);
 }
+
+/**
+ * Human-friendly label for a YYYY-MM-DD key: "12 окт." / "Oct 12", with the year added
+ * only when it is not the current one. Falls back to the raw string if it can't be parsed.
+ */
+export function formatShortDate(key: string, lang: "ru" | "en" = "ru"): string {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(key);
+  if (!m) return key;
+  // build from parts so the label never shifts a day because of UTC parsing
+  const d = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+  const sameYear = d.getFullYear() === new Date().getFullYear();
+  return d.toLocaleDateString(lang === "en" ? "en-US" : "ru-RU", {
+    day: "numeric",
+    month: "short",
+    ...(sameYear ? {} : { year: "numeric" }),
+  });
+}
