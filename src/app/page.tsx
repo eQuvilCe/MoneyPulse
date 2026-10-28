@@ -37,7 +37,6 @@ import { useApp } from "@/components/AppProvider";
 export default function Dashboard() {
   const { data, refresh, live } = useRealtimeData();
   const { tr, lang } = useApp();
-  const ru = lang !== "en";
   const { hidden } = useHideAmounts();
   const [selectedDay, setSelectedDay] = useState(() => dateKey());
   const [txFilter, setTxFilter] = useState<"all" | "income" | "expense">("all");
@@ -87,7 +86,7 @@ export default function Dashboard() {
   const cur = data.settings.currency;
   /** Exact while it fits the row, abbreviated from 10 million up. */
   const short = (n: number) =>
-    Math.abs(n) >= 1e7 ? compactNumber(n, ru ? "ru" : "en") : n.toLocaleString(ru ? "ru-RU" : "en-US");
+    Math.abs(n) >= 1e7 ? compactNumber(n, lang) : n.toLocaleString(lang === "en" ? "en-US" : "ru-RU");
   const health = getHealthScore(data);
 
   const spark = (type: "income" | "expense") => {
@@ -195,7 +194,7 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <StatCard
           title={tr("income")}
-          value={hidden ? HIDDEN_AMOUNT : `+${formatMoneySmart(stats.income, cur, ru ? "ru" : "en")}`}
+          value={hidden ? HIDDEN_AMOUNT : `+${formatMoneySmart(stats.income, cur, lang)}`}
           fullValue={hidden ? undefined : `+${formatMoney(stats.income, cur)}`}
           icon="↑"
           color="green"
@@ -203,7 +202,7 @@ export default function Dashboard() {
         />
         <StatCard
           title={tr("expenses")}
-          value={hidden ? HIDDEN_AMOUNT : `−${formatMoneySmart(stats.expense, cur, ru ? "ru" : "en")}`}
+          value={hidden ? HIDDEN_AMOUNT : `−${formatMoneySmart(stats.expense, cur, lang)}`}
           fullValue={hidden ? undefined : `−${formatMoney(stats.expense, cur)}`}
           icon="↓"
           color="red"
@@ -280,7 +279,7 @@ export default function Dashboard() {
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
             <div>
               <h2 className="font-display text-sm font-semibold text-white">
-                {tr("dayWord")} · {formatShortDate(selectedDay, ru ? "ru" : "en")}
+                {tr("dayWord")} · {formatShortDate(selectedDay, lang)}
               </h2>
               <p className="mt-0.5 text-xs text-slate-500">
                 <span className="text-emerald-400">+{formatMoney(dayIncome, cur)}</span>
