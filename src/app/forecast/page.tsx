@@ -15,7 +15,7 @@ import { useApp } from "@/components/AppProvider";
 
 export default function ForecastPage() {
   const { tr } = useApp();
-  const { data } = useRealtimeData(0);
+  const { data } = useRealtimeData();
 
   // All hooks MUST run before any conditional return
   const stats = useMemo(() => (data ? getStats(data) : null), [data]);

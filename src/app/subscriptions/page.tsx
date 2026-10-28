@@ -10,7 +10,7 @@ import Link from "next/link";
 import { useApp } from "@/components/AppProvider";
 
 export default function SubscriptionsPage() {
-  const { data } = useRealtimeData(0);
+  const { data } = useRealtimeData();
   const { tr, lang } = useApp();
 
   if (!data) {

@@ -21,7 +21,7 @@ import { useApp } from "@/components/AppProvider";
 
 export default function AnalyticsPage() {
   const { tr, lang } = useApp();
-  const { data, live } = useRealtimeData(0);
+  const { data, live } = useRealtimeData();
   const [period, setPeriod] = useState<number | undefined>(undefined);
   if (!data) return <div className="py-20 text-center text-slate-500">{tr("loading")}</div>;
   const stats = getStats(data, period);

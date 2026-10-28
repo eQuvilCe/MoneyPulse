@@ -19,7 +19,7 @@ const PROVIDERS = [
 ];
 
 export default function BanksPage() {
-  const { data, refresh } = useRealtimeData(0);
+  const { data, refresh } = useRealtimeData();
   const toast = useToast();
   const { tr, lang } = useApp();
   const [sms, setSms] = useState("");
