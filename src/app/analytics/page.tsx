@@ -12,7 +12,7 @@ import LiveAreaChart from "@/components/LiveAreaChart";
 import { CATEGORY_COLORS } from "@/lib/types";
 import AIInsightBar from "@/components/AIInsightBar";
 import StatCard from "@/components/StatCard";
-import { PageShell, FadeItem } from "@/components/motion/PageShell";
+import { PageShell, FadeItem, Skeleton } from "@/components/motion/PageShell";
 import TiltCard from "@/components/motion/TiltCard";
 import { LetterReveal } from "@/components/motion/Reveal";
 import { categoryComparison, periodRange, statsInRange } from "@/lib/insights";
@@ -23,7 +23,22 @@ export default function AnalyticsPage() {
   const { tr, lang } = useApp();
   const { data, live } = useRealtimeData();
   const [period, setPeriod] = useState<number | undefined>(undefined);
-  if (!data) return <div className="py-20 text-center text-slate-500">{tr("loading")}</div>;
+  if (!data) {
+    return (
+      <PageShell className="page-accent-blue">
+        <FadeItem>
+          <Skeleton className="h-16 w-full" />
+        </FadeItem>
+        <FadeItem>
+          <Skeleton className="h-40 w-full" />
+        </FadeItem>
+        <div className="grid gap-3 lg:grid-cols-2">
+          <Skeleton className="h-64" />
+          <Skeleton className="h-64" />
+        </div>
+      </PageShell>
+    );
+  }
   const stats = getStats(data, period);
   const barData = Object.entries(stats.byCategory).sort((a, b) => b[1] - a[1]).map(([name, value]) => ({
     name: name.length > 8 ? name.slice(0, 7) + "…" : name, full: name, value, fill: CATEGORY_COLORS[name] || "#64748b",
