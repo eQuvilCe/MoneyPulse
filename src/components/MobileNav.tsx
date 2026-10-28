@@ -18,7 +18,7 @@ export default function MobileNav() {
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-white/10 bg-[#05080f]/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl lg:hidden">
+    <nav aria-label={tr("mainNavigation")} className="fixed bottom-0 left-0 right-0 z-40 border-t border-white/10 bg-[#05080f]/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl lg:hidden">
       <div className="mx-auto flex max-w-lg items-stretch justify-around px-1 py-1.5">
         {items.map((item) => {
           const active = path === item.href || (item.href !== "/" && path.startsWith(item.href));
@@ -26,6 +26,7 @@ export default function MobileNav() {
             <Link
               key={item.href}
               href={item.href}
+              aria-current={active ? "page" : undefined}
               className={`relative flex min-w-0 flex-1 flex-col items-center gap-0.5 rounded-xl px-1 py-2 text-[10px] font-medium ${
                 active ? "text-emerald-400" : "text-slate-500"
               }`}
@@ -37,7 +38,9 @@ export default function MobileNav() {
                   transition={{ type: "spring", stiffness: 400, damping: 30 }}
                 />
               )}
-              <span className="relative text-base leading-none">{item.icon}</span>
+              <span className="relative text-base leading-none" aria-hidden>
+                {item.icon}
+              </span>
               <span className="relative truncate">{item.label}</span>
             </Link>
           );
