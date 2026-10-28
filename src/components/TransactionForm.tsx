@@ -45,6 +45,20 @@ export default function TransactionForm({ type, onAdded, currency = "₽", setti
   const toast = useToast();
   const { tr } = useApp();
 
+  // N opens the form from anywhere on the page (by key position, so it works on a Russian layout too)
+  useEffect(() => {
+    if (open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.code !== "KeyN" || e.metaKey || e.ctrlKey || e.altKey) return;
+      const el = e.target as HTMLElement | null;
+      if (el && (el.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(el.tagName))) return;
+      e.preventDefault();
+      setOpen(true);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open]);
+
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
@@ -97,6 +111,8 @@ export default function TransactionForm({ type, onAdded, currency = "₽", setti
         whileHover={{ scale: 1.01 }}
         whileTap={{ scale: 0.98 }}
         onClick={() => setOpen(true)}
+        title={tr("newTxHotkeyHint")}
+        aria-keyshortcuts="N"
         className="flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-white/15 bg-white/[0.02] py-4 text-sm font-medium text-slate-400 transition hover:border-emerald-500/30 hover:text-emerald-300"
       >
         + {type === "income" ? tr("addIncome") : tr("addExpense")}
