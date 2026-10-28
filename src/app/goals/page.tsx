@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { loadDataAsync, addGoal, updateGoal, deleteGoal } from "@/lib/storage";
-import { FinanceData, Goal, formatMoney, MAX_AMOUNT, formatMoneyCompact, readAmount } from "@/lib/types";
+import { FinanceData, Goal, formatMoney, MAX_AMOUNT, formatMoneyCompact, readAmount, formatShortDate } from "@/lib/types";
 import { PageShell, FadeItem, Skeleton } from "@/components/motion/PageShell";
 import TiltCard from "@/components/motion/TiltCard";
 import { LetterReveal, MagneticButton } from "@/components/motion/Reveal";
@@ -212,7 +212,7 @@ export default function GoalsPage() {
                       <h3 className="font-semibold">{g.title}</h3>
                       {g.deadline && (
                         <p className="text-[11px] text-slate-500">
-                          {tr("goalDeadlinePrefix")} {new Date(g.deadline).toLocaleDateString(lang === "en" ? "en-US" : "ru-RU")}
+                          {tr("goalDeadlinePrefix")} {formatShortDate(g.deadline, lang)}
                         </p>
                       )}
                     </div>
