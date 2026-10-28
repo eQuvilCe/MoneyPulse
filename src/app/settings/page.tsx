@@ -27,6 +27,8 @@ import {
 } from "lucide-react";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+/** Mirrors the server-side zod rule for newPassword. */
+const MIN_PASSWORD_LENGTH = 6;
 const DEFAULT_SAVINGS_PERCENT = 20;
 
 /** Parses the savings target input; keeps a deliberate 0 and clamps to 0–100. */
@@ -139,7 +141,7 @@ export default function SettingsPage() {
   };
 
   const savePassword = async () => {
-    if (newPassword.length < 6) {
+    if (newPassword.length < MIN_PASSWORD_LENGTH) {
       toast(tr("newPasswordMinLength"), "err");
       return;
     }
