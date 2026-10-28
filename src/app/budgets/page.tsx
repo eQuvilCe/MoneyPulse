@@ -45,6 +45,9 @@ export default function BudgetsPage() {
   const statuses = getBudgetStatus(data);
   const cur = data.settings.currency || "₽";
   const cats = allExpenseCategories(data.settings);
+  const now = new Date();
+  // including today, so the last day of the month still has a full allowance
+  const daysLeftInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate() - now.getDate() + 1;
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -218,6 +221,11 @@ export default function BudgetsPage() {
                     : tr("remainingAmount", { v: formatMoney(b.remaining, cur) })}{" "}
                   · {b.percent}%
                 </p>
+                {!b.over && b.remaining > 0 && (
+                  <p className="mt-0.5 text-[11px] text-slate-600">
+                    {tr("budgetPerDay", { v: formatMoney(Math.floor(b.remaining / daysLeftInMonth), cur) })}
+                  </p>
+                )}
               </div>
               </TiltCard>
             </motion.div>
