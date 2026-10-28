@@ -149,7 +149,9 @@ export default function FamilyChat({ isOwner }: { isOwner: boolean }) {
             if (stickToBottom.current) setUnseen(false);
           }}
           className="h-80 space-y-2 overflow-y-auto overscroll-contain rounded-xl bg-black/20 p-3 ring-1 ring-white/[0.06]"
+          role="log"
           aria-live="polite"
+          aria-label={tr("familyChatTitle")}
         >
           {messages === null ? (
             <div className="space-y-2">
@@ -186,6 +188,7 @@ export default function FamilyChat({ isOwner }: { isOwner: boolean }) {
                     <div className={`group flex items-end gap-2 ${mine ? "flex-row-reverse" : ""}`}>
                       {!mine && (
                         <span
+                          aria-hidden
                           className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[11px] font-bold ${sameAuthor ? "invisible" : ""}`}
                           style={{ background: "rgba(var(--page-accent-rgb), 0.18)", color: "var(--page-accent)" }}
                         >
@@ -204,9 +207,13 @@ export default function FamilyChat({ isOwner }: { isOwner: boolean }) {
                           </p>
                         )}
                         <p className="whitespace-pre-wrap text-sm leading-snug [overflow-wrap:anywhere]">{m.text}</p>
-                        <p className={`mt-0.5 text-right text-[10px] tabular-nums ${mine ? "text-white/70" : "text-slate-500"}`}>
+                        <time
+                          dateTime={m.createdAt}
+                          title={new Date(m.createdAt).toLocaleString(locale, { dateStyle: "long", timeStyle: "short" })}
+                          className={`mt-0.5 block text-right text-[10px] tabular-nums ${mine ? "text-white/70" : "text-slate-500"}`}
+                        >
                           {new Date(m.createdAt).toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" })}
-                        </p>
+                        </time>
                       </div>
                       {(mine || isOwner) && (
                         <button
