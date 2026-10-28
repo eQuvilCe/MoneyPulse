@@ -35,22 +35,24 @@ export default function StreakBadge({ data }: { data: FinanceData }) {
           🔥
         </motion.div>
       </div>
-      {badges.length > 0 && (
-        <div className="mt-4 flex flex-wrap gap-2">
-          {badges.map((b) => {
-            const m = BADGE_META[b] || { emoji: "✨", label: b };
-            return (
-              <span
-                key={b}
-                className="inline-flex items-center gap-1 rounded-full bg-white/[0.05] px-2.5 py-1 text-[11px] text-slate-300 ring-1 ring-white/10"
-                title={m.label}
-              >
-                {m.emoji} {m.label}
-              </span>
-            );
-          })}
-        </div>
-      )}
+      {/* earned badges first, then the ones still to unlock (dimmed) so there is something to aim for */}
+      <div className="mt-4 flex flex-wrap gap-2">
+        {[...badges, ...Object.keys(BADGE_META).filter((k) => !badges.includes(k))].map((b) => {
+          const m = BADGE_META[b] || { emoji: "✨", label: b };
+          const earned = badges.includes(b);
+          return (
+            <span
+              key={b}
+              className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] ring-1 ${
+                earned ? "bg-white/[0.05] text-slate-300 ring-white/10" : "text-slate-600 ring-white/[0.05] grayscale"
+              }`}
+              title={earned ? m.label : `🔒 ${m.label}`}
+            >
+              <span aria-hidden>{earned ? m.emoji : "🔒"}</span> {m.label}
+            </span>
+          );
+        })}
+      </div>
       {streak === 0 && (
         <p className="mt-3 text-xs text-slate-500">{tr("streakStartHint")}</p>
       )}
