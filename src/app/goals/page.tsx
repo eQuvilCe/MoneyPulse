@@ -13,6 +13,9 @@ import Confetti from "@/components/fx/Confetti";
 import { useApp } from "@/components/AppProvider";
 import { emitCelebrate } from "@/lib/events";
 
+/** One-tap contribution amounts shown under each unfinished goal. */
+const QUICK_CONTRIBUTIONS = [1000, 5000, 10000, 25000];
+
 export default function GoalsPage() {
   const { tr, lang } = useApp();
   const [data, setData] = useState<FinanceData | null>(null);
@@ -255,7 +258,7 @@ export default function GoalsPage() {
                 </div>
                 {left > 0 && (
                   <div className="mt-3 flex flex-wrap gap-1.5">
-                    {[1000, 5000, 10000, 25000].map((amt) => (
+                    {QUICK_CONTRIBUTIONS.map((amt) => (
                       <button
                         key={amt}
                         onClick={() => addTo(g.id, amt)}
