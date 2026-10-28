@@ -73,13 +73,14 @@ export default function Faq({ ru }: { ru: boolean }) {
                     <h3>
                       <button
                         type="button"
+                        id={`faq-q-${i}`}
                         aria-expanded={isOpen}
-                        aria-controls={`faq-${i}`}
+                        aria-controls={isOpen ? `faq-${i}` : undefined}
                         onClick={() => setOpen(isOpen ? null : i)}
                         className="flex w-full items-center justify-between gap-4 py-5 text-left text-[16px] font-medium text-white"
                       >
                         {it.q}
-                        <motion.span animate={{ rotate: isOpen ? 45 : 0 }} transition={{ duration: 0.25, ease: EASE }} className="shrink-0 text-[color:var(--rc-ash)]">
+                        <motion.span animate={{ rotate: isOpen ? 45 : 0 }} transition={{ duration: 0.25, ease: EASE }} className="shrink-0 text-[color:var(--rc-ash)]" aria-hidden>
                           <Plus size={18} />
                         </motion.span>
                       </button>
@@ -88,6 +89,8 @@ export default function Faq({ ru }: { ru: boolean }) {
                       {isOpen && (
                         <motion.div
                           id={`faq-${i}`}
+                          role="region"
+                          aria-labelledby={`faq-q-${i}`}
                           initial={{ height: 0, opacity: 0 }}
                           animate={{ height: "auto", opacity: 1 }}
                           exit={{ height: 0, opacity: 0 }}
