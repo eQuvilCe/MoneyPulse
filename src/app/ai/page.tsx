@@ -109,7 +109,7 @@ export default function AIPage() {
         <TiltCard className="mp-card rounded-2xl p-5">
         <div className="space-y-5">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <h2 className="text-sm font-bold text-white">Analyze my finances</h2>
+          <h2 className="text-sm font-bold text-white">{tr("analyzeMyFinances")}</h2>
           <button
             onClick={() => void send("Полный отчёт")}
             className="rounded-xl px-3 py-1.5 text-xs font-semibold ring-1"
