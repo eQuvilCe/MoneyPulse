@@ -93,7 +93,7 @@ export default function Sidebar() {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const { tr, user, lang, setLang, logout } = useApp();
-  const { data } = useRealtimeData(0);
+  const { data } = useRealtimeData();
 
   const navItems = [
     { href: "/", label: tr("pulse"), icon: "◈" },

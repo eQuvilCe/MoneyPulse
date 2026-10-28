@@ -15,7 +15,7 @@ const WEEKDAY_KEYS: TKey[] = ["dayMon", "dayTue", "dayWed", "dayThu", "dayFri", 
 
 export default function CalendarPage() {
   const { tr, lang } = useApp();
-  const { data, refresh } = useRealtimeData(0);
+  const { data, refresh } = useRealtimeData();
   const [cursor, setCursor] = useState(() => {
     const d = new Date();
     return new Date(d.getFullYear(), d.getMonth(), 1);

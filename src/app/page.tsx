@@ -35,7 +35,7 @@ import { QuickActions, MonthPace, ActivityTicker } from "@/components/DashboardL
 import { useApp } from "@/components/AppProvider";
 
 export default function Dashboard() {
-  const { data, refresh, live } = useRealtimeData(0);
+  const { data, refresh, live } = useRealtimeData();
   const { tr, lang } = useApp();
   const ru = lang !== "en";
   const { hidden } = useHideAmounts();

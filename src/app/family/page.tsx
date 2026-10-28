@@ -42,7 +42,7 @@ async function api<T>(url: string, init?: RequestInit): Promise<{ ok: boolean; d
 export default function FamilyPage() {
   const { tr, user, lang } = useApp();
   const toast = useToast();
-  const { data } = useRealtimeData(0);
+  const { data } = useRealtimeData();
   const cur = data?.settings.currency || "₽";
   const [loading, setLoading] = useState(true);
   const [family, setFamily] = useState<FamilyPublic | null>(null);
