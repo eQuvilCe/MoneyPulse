@@ -59,7 +59,7 @@ export default function AIPage() {
   }, [messages]);
 
   const send = async (text: string) => {
-    if (!text.trim() || !data) return;
+    if (!text.trim() || !data || loading) return;
     const history = messages;
     setMessages((m) => [...m, { role: "user", text }]);
     setInput("");
