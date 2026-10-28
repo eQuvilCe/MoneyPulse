@@ -27,6 +27,14 @@ import {
 } from "lucide-react";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const DEFAULT_SAVINGS_PERCENT = 20;
+
+/** Parses the savings target input; keeps a deliberate 0 and clamps to 0–100. */
+function clampPercent(raw: string): number {
+  const n = parseInt(raw, 10);
+  if (Number.isNaN(n)) return DEFAULT_SAVINGS_PERCENT;
+  return Math.min(100, Math.max(0, n));
+}
 
 function SectionHeading({ icon: Icon, children }: { icon: LucideIcon; children: React.ReactNode }) {
   return (
@@ -175,7 +183,7 @@ export default function SettingsPage() {
     await updateSettings({
       currency,
       monthlyIncomeGoal: goal ?? undefined,
-      savingsTargetPercent: parseInt(savings) || 20,
+      savingsTargetPercent: clampPercent(savings),
     });
     setSavingFinance(false);
     toast(tr("saved"));
