@@ -132,7 +132,7 @@ export default function AIBuddy() {
   }, [open]);
 
   const send = async (text: string) => {
-    if (!text.trim() || !data) return;
+    if (!text.trim() || !data || typing) return;
     const history = messages;
     setMessages((m) => [...m, { role: "user", text }]);
     setInput("");
@@ -360,9 +360,10 @@ export default function AIBuddy() {
                 />
                 <button
                   type="submit"
+                  disabled={typing || !input.trim()}
                   aria-label={tr("sendMessage")}
                   title={tr("sendMessage")}
-                  className="rounded-xl bg-emerald-500 px-3.5 py-2 text-sm font-semibold text-white hover:bg-emerald-400"
+                  className="rounded-xl bg-emerald-500 px-3.5 py-2 text-sm font-semibold text-white hover:bg-emerald-400 disabled:opacity-40"
                 >
                   →
                 </button>
