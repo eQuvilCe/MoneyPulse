@@ -110,8 +110,9 @@ export default function AnalyticsPage() {
                 </div>
                 <div className="rounded-xl bg-white/[0.04] p-3 col-span-2 sm:col-span-1">
                   <p className="text-[10px] text-slate-500">{tr("expenseDelta")}</p>
-                  <p className={`text-lg font-bold ${delta > 0 ? "text-rose-400" : "text-emerald-400"}`}>
-                    {delta > 0 ? "+" : ""}{delta}%
+                  <p className={`text-lg font-bold ${b.expense === 0 ? "text-slate-500" : delta > 0 ? "text-rose-400" : "text-emerald-400"}`}>
+                    {/* nothing spent last month — a percentage would be meaningless */}
+                    {b.expense === 0 ? "—" : `${delta > 0 ? "+" : ""}${delta}%`}
                   </p>
                 </div>
               </div>
