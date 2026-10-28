@@ -46,10 +46,9 @@ npm run build && npx cap add android && npx cap sync
 ## Production checklist
 
 1. **Деплой** — Vercel / Render  
-2. **Postgres** — Neon или Supabase → `DATABASE_URL`  
+2. **Postgres** — Neon или Supabase → `DATABASE_URL` (pooled-строка с `pgbouncer=true`)  
    ```bash
-   # schema.prisma provider = "postgresql"
-   npx prisma db push
+   npm run db:push
    ```
 3. **JWT_SECRET** — длинная случайная строка  
 4. **AI_API_KEY** — для чата и OCR vision  
@@ -58,7 +57,7 @@ npm run build && npx cap add android && npx cap sync
    - BotFather → токен → `TELEGRAM_BOT_TOKEN`  
    - Webhook: `…/setWebhook?url=https://DOMAIN/api/telegram`  
    - Menu Button WebApp: `https://DOMAIN/tg`  
-7. **Ежедневный nudge** — cron (Vercel Cron / GitHub Action) в 20:00 → Telegram `sendMessage`  
+7. **Ежедневный nudge** — Vercel Cron из `vercel.json` дёргает `/api/cron/daily` (15:00 UTC = 20:00 Ташкент), нужен `CRON_SECRET`  
 8. **Upstash Redis** — distributed rate limit (опционально)  
 9. **Clerk / Auth.js** — Google/Apple one-tap (upgrade с текущего JWT)
 
@@ -75,6 +74,6 @@ npm run build && npx cap add android && npx cap sync
 | PWA install | ✅ |
 | Telegram webhook + `/tg` WebApp | ✅ skeleton |
 | Bank connect UI | roadmap `/banks` |
-| Prisma schema | ✅ SQLite/Postgres |
+| Prisma schema | ✅ Postgres |
 
 См. `.env.example`.
