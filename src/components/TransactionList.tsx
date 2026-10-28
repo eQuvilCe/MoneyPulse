@@ -109,7 +109,13 @@ export default function TransactionList({
             className="mp-card rounded-xl p-3"
           >
             {editId === t.id ? (
-              <div className="space-y-2">
+              <div
+                className="space-y-2"
+                onKeyDown={(e) => {
+                  if (e.key === "Escape") setEditId(null);
+                  if (e.key === "Enter" && (e.target as HTMLElement).tagName === "INPUT") void saveEdit();
+                }}
+              >
                 <div className="grid gap-2 sm:grid-cols-2">
                   <input
                     type="number"
