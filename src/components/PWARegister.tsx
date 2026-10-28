@@ -3,9 +3,27 @@
 import { useEffect, useState } from "react";
 import { useApp } from "@/components/AppProvider";
 
+/** Chromium's install prompt event — not part of the standard DOM typings. */
+interface BeforeInstallPromptEvent extends Event {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: "accepted" | "dismissed"; platform: string }>;
+}
+
+const SNOOZE_KEY = "mp-install-snoozed-until";
+/** After "Later", don't offer the install banner again for a week. */
+const SNOOZE_MS = 7 * 24 * 60 * 60 * 1000;
+
+function isSnoozed(): boolean {
+  try {
+    return Number(localStorage.getItem(SNOOZE_KEY) || 0) > Date.now();
+  } catch {
+    return false;
+  }
+}
+
 export default function PWARegister() {
   const { tr } = useApp();
-  const [deferred, setDeferred] = useState<Event | null>(null);
+  const [deferred, setDeferred] = useState<BeforeInstallPromptEvent | null>(null);
   const [show, setShow] = useState(false);
 
   useEffect(() => {
@@ -30,8 +48,8 @@ export default function PWARegister() {
 
     const onBip = (e: Event) => {
       e.preventDefault();
-      setDeferred(e);
-      setShow(true);
+      setDeferred(e as BeforeInstallPromptEvent);
+      if (!isSnoozed()) setShow(true);
     };
     window.addEventListener("beforeinstallprompt", onBip);
     return () => window.removeEventListener("beforeinstallprompt", onBip);
@@ -48,8 +66,7 @@ export default function PWARegister() {
           type="button"
           className="flex-1 rounded-xl bg-emerald-500 py-2 text-sm font-semibold text-white"
           onClick={async () => {
-            // @ts-expect-error beforeinstallprompt
-            await deferred.prompt?.();
+            await deferred.prompt();
             setShow(false);
             setDeferred(null);
           }}
@@ -59,7 +76,12 @@ export default function PWARegister() {
         <button
           type="button"
           className="rounded-xl bg-white/5 px-4 py-2 text-sm text-slate-400"
-          onClick={() => setShow(false)}
+          onClick={() => {
+            setShow(false);
+            try {
+              localStorage.setItem(SNOOZE_KEY, String(Date.now() + SNOOZE_MS));
+            } catch {}
+          }}
         >
           {tr("installLater")}
         </button>
