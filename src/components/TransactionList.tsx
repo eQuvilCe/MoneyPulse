@@ -84,6 +84,7 @@ export default function TransactionList({
     }
     setConfirmId(null);
     await deleteTransaction(id);
+    toast(tr("transactionDeleted"), "info");
     onChange();
   };
 
