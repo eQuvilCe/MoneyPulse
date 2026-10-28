@@ -9,7 +9,7 @@ import {
 import { getStats } from "@/lib/storage";
 import { useRealtimeData } from "@/hooks/useRealtimeData";
 import LiveAreaChart from "@/components/LiveAreaChart";
-import { FinanceData, CATEGORY_COLORS } from "@/lib/types";
+import { CATEGORY_COLORS } from "@/lib/types";
 import AIInsightBar from "@/components/AIInsightBar";
 import StatCard from "@/components/StatCard";
 import { PageShell, FadeItem } from "@/components/motion/PageShell";
