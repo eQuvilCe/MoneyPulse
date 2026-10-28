@@ -4,7 +4,7 @@ import { useRealtimeData } from "@/hooks/useRealtimeData";
 import { PageShell, FadeItem, Skeleton } from "@/components/motion/PageShell";
 import TiltCard from "@/components/motion/TiltCard";
 import { LetterReveal } from "@/components/motion/Reveal";
-import { formatMoney } from "@/lib/types";
+import { formatMoney, CATEGORY_ICONS } from "@/lib/types";
 import { getSubscriptions } from "@/lib/insights";
 import Link from "next/link";
 import { useApp } from "@/components/AppProvider";
@@ -84,9 +84,12 @@ export default function SubscriptionsPage() {
         <FadeItem>
           <TiltCard className="mp-card divide-y divide-white/5 rounded-2xl">
             {list.map((s) => (
-              <div key={s.name + s.amount} className="flex items-center justify-between px-5 py-3.5">
-                <div>
-                  <p className="text-sm font-medium text-white">{s.name || "—"}</p>
+              <div key={s.name + s.amount} className="flex items-center justify-between gap-3 px-5 py-3.5">
+                <span className="text-lg" aria-hidden>
+                  {CATEGORY_ICONS[s.category] || "📦"}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium text-white">{s.name || "—"}</p>
                   <p className="text-xs text-slate-500">
                     {s.category} · {tr("monthly")}
                   </p>
