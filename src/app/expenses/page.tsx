@@ -98,12 +98,30 @@ export default function ExpensesPage() {
         </TiltCard>
       </div>
       <FadeItem>
-        <input
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-          placeholder={tr("searchExpensesPlaceholder")}
-          className="w-full rounded-xl border border-white/10 bg-slate-900/60 px-4 py-3 text-sm text-white outline-none transition focus:border-[var(--page-accent)]/50"
-        />
+        <div className="relative">
+          <input
+            enterKeyHint="search"
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Escape") setQ("");
+            }}
+            placeholder={tr("searchExpensesPlaceholder")}
+            aria-label={tr("searchExpensesPlaceholder")}
+            className="w-full rounded-xl border border-white/10 bg-slate-900/60 px-4 py-3 pr-10 text-sm text-white outline-none transition focus:border-[var(--page-accent)]/50"
+          />
+          {q && (
+            <button
+              type="button"
+              onClick={() => setQ("")}
+              aria-label={tr("clearSearch")}
+              title={tr("clearSearch")}
+              className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg px-2 py-1 text-slate-500 transition hover:bg-white/5 hover:text-white"
+            >
+              ×
+            </button>
+          )}
+        </div>
       </FadeItem>
       <FadeItem>
         <div className="flex flex-wrap gap-1.5">
