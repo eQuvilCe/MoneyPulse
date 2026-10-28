@@ -41,6 +41,8 @@ async function api<T>(url: string, init?: RequestInit): Promise<{ ok: boolean; d
 
 /** One-tap contribution amounts for shared family goals. */
 const FAMILY_QUICK_CONTRIBUTIONS = [1000, 5000, 10000];
+/** How many of the most recent shared transactions the feed renders. */
+const FAMILY_FEED_LIMIT = 40;
 
 export default function FamilyPage() {
   const { tr, user, lang } = useApp();
@@ -65,6 +67,8 @@ export default function FamilyPage() {
   const [showBudgetForm, setShowBudgetForm] = useState(false);
   const [budgetCat, setBudgetCat] = useState("еда");
   const [budgetLimit, setBudgetLimit] = useState("");
+
+  const [feedMember, setFeedMember] = useState<string | null>(null);
 
   const [showGoalForm, setShowGoalForm] = useState(false);
   const [goalTitle, setGoalTitle] = useState("");
@@ -247,6 +251,7 @@ export default function FamilyPage() {
   };
 
   const isOwner = !!(family && user && family.ownerId === user.id);
+  const feed = feedMember ? transactions.filter((t) => t.userId === feedMember) : transactions;
 
   // The overview only reports spending for budgets that are already over the limit,
   // so derive this month's per-category spend from the shared feed for the rest.
@@ -684,11 +689,28 @@ export default function FamilyPage() {
               <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-400">
                 {tr("familyFeed")}
               </h2>
-              {transactions.length === 0 ? (
+              {family.members.length > 1 && transactions.length > 0 && (
+                <div className="mb-3 flex flex-wrap gap-1.5">
+                  {[{ userId: null as string | null, name: tr("all") }, ...family.members].map((m) => (
+                    <button
+                      key={m.userId ?? "all"}
+                      type="button"
+                      onClick={() => setFeedMember(m.userId)}
+                      aria-pressed={feedMember === m.userId}
+                      className={`rounded-full px-3 py-1 text-xs transition ${
+                        feedMember === m.userId ? "bg-white/10 text-white ring-1 ring-white/20" : "text-slate-500 hover:text-slate-300"
+                      }`}
+                    >
+                      {m.name}
+                    </button>
+                  ))}
+                </div>
+              )}
+              {feed.length === 0 ? (
                 <p className="py-6 text-center text-sm text-slate-500">{tr("familyNoTx")}</p>
               ) : (
                 <div className="space-y-1">
-                  {transactions.slice(0, 40).map((t: FamilyTransactionRow) => (
+                  {feed.slice(0, FAMILY_FEED_LIMIT).map((t: FamilyTransactionRow) => (
                     <div key={t.id} className="flex items-center justify-between gap-3 rounded-xl px-2 py-2 text-sm hover:bg-white/[0.03]">
                       <div className="flex min-w-0 items-center gap-2.5">
                         <span className="text-lg">{CATEGORY_ICONS[t.category] || "📦"}</span>
