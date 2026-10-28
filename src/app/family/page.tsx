@@ -7,7 +7,7 @@ import { LetterReveal, MagneticButton } from "@/components/motion/Reveal";
 import { useApp } from "@/components/AppProvider";
 import { useToast } from "@/components/Toast";
 import { useRealtimeData } from "@/hooks/useRealtimeData";
-import { CATEGORY_ICONS, formatMoney, formatMoneySmart, allExpenseCategories, MAX_AMOUNT, formatMoneyCompact, readAmount, dateKey } from "@/lib/types";
+import { CATEGORY_ICONS, formatMoney, formatMoneySmart, allExpenseCategories, MAX_AMOUNT, formatMoneyCompact, readAmount, dateKey, formatShortDate } from "@/lib/types";
 import FitText from "@/components/FitText";
 import type {
   FamilyMemberPublic,
@@ -695,7 +695,7 @@ export default function FamilyPage() {
                         <div className="min-w-0">
                           <p className="truncate font-medium">{t.description || t.category}</p>
                           <p className="truncate text-[11px] text-slate-500">
-                            {t.memberName} · {t.date}
+                            {t.memberName} · <time dateTime={t.date}>{formatShortDate(t.date, lang)}</time>
                           </p>
                         </div>
                       </div>
