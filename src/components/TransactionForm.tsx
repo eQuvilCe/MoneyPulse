@@ -126,6 +126,9 @@ export default function TransactionForm({ type, onAdded, currency = "₽", setti
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
                 placeholder={`${tr("amount")} ${currency}`}
+                aria-label={`${tr("amount")} ${currency}`}
+                inputMode="decimal"
+                autoFocus
                 required
                 min="1"
                 step="any"
@@ -134,6 +137,7 @@ export default function TransactionForm({ type, onAdded, currency = "₽", setti
               <select
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
+                aria-label={tr("category")}
                 className="w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-sm"
               >
                 {categories.map((c) => (
@@ -151,12 +155,15 @@ export default function TransactionForm({ type, onAdded, currency = "₽", setti
                   if (sug) setCategory(sug);
                 }}
                 placeholder={tr("txDescriptionPlaceholder")}
+                aria-label={tr("txDescriptionPlaceholder")}
+                maxLength={500}
                 className="w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-sm outline-none focus:border-emerald-500/40"
               />
               <input
                 type="date"
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
+                aria-label={tr("dateLabel")}
                 className="w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-sm"
               />
               <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-400">
