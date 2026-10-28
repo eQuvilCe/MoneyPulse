@@ -274,6 +274,7 @@ export const translations = {
     descriptionOrStore: "Описание / магазин",
     saveExpense: "Сохранить расход",
     scanNeedsApiKey: "Нужен AI_API_KEY (vision) в .env для авто-распознавания. Без ключа — заполни поля вручную после фото.",
+    receiptPreviewAlt: "Фото чека",
     // settings page
     somUzs: "сум",
     somUzsFull: "сум (UZS)",
@@ -707,6 +708,7 @@ export const translations = {
     descriptionOrStore: "Description / store",
     saveExpense: "Save expense",
     scanNeedsApiKey: "Needs AI_API_KEY (vision) in .env for auto-recognition. Without a key — fill in the fields manually after the photo.",
+    receiptPreviewAlt: "Receipt photo",
     // settings page
     somUzs: "som",
     somUzsFull: "som (UZS)",

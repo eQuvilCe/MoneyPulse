@@ -101,7 +101,7 @@ export default function ScanPage() {
           >
             {preview ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={preview} alt="receipt" className="relative max-h-48 rounded-xl object-contain shadow-lg" />
+              <img src={preview} alt={tr("receiptPreviewAlt")} className="relative max-h-48 rounded-xl object-contain shadow-lg" />
             ) : (
               <>
                 <motion.span
