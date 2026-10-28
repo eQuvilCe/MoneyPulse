@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { FinanceData, dateKey } from "@/lib/types";
+import { FinanceData, dateKey, formatMoney } from "@/lib/types";
 import { useApp } from "@/components/AppProvider";
 
 /** How many days, ending today, the strip shows. */
@@ -26,6 +26,7 @@ interface Props {
 
 export default function DayStrip({ data, selected, onSelect }: Props) {
   const { lang } = useApp();
+  const cur = data.settings.currency || "₽";
   const locale = lang === "en" ? "en-US" : "ru-RU";
   const days = Array.from({ length: STRIP_DAYS }, (_, i) => dayKey(STRIP_DAYS - 1 - i, locale));
 
@@ -51,6 +52,9 @@ export default function DayStrip({ data, selected, onSelect }: Props) {
             key={d.key}
             whileTap={{ scale: 0.95 }}
             onClick={() => onSelect(d.key)}
+            aria-pressed={active}
+            aria-current={d.isToday ? "date" : undefined}
+            title={has ? `+${formatMoney(inc, cur)} · −${formatMoney(ex, cur)}` : undefined}
             className={`relative flex min-w-[52px] flex-col items-center rounded-2xl px-2.5 py-2.5 transition ${
               active
                 ? "bg-emerald-500/20 ring-1 ring-emerald-500/40"
