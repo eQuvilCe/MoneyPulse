@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { loadDataAsync, addBudget, deleteBudget, getBudgetStatus } from "@/lib/storage";
 import { FinanceData, CATEGORY_ICONS, formatMoney, allExpenseCategories, MAX_AMOUNT, formatMoneyCompact, readAmount } from "@/lib/types";
-import { PageShell, FadeItem } from "@/components/motion/PageShell";
+import { PageShell, FadeItem, Skeleton } from "@/components/motion/PageShell";
 import TiltCard from "@/components/motion/TiltCard";
 import { LetterReveal } from "@/components/motion/Reveal";
 import AIInsightBar from "@/components/AIInsightBar";
@@ -24,7 +24,19 @@ export default function BudgetsPage() {
     refresh();
   }, []);
 
-  if (!data) return <div className="py-20 text-center text-slate-500">{tr("loading")}</div>;
+  if (!data) {
+    return (
+      <PageShell className="page-accent-amber">
+        <FadeItem>
+          <Skeleton className="h-16 w-full" />
+        </FadeItem>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <Skeleton className="h-36" />
+          <Skeleton className="h-36" />
+        </div>
+      </PageShell>
+    );
+  }
   const statuses = getBudgetStatus(data);
   const cur = data.settings.currency || "₽";
   const cats = allExpenseCategories(data.settings);
