@@ -33,7 +33,7 @@ export default function BanksPage() {
   const tryParse = () => {
     const p = parseBankSms(sms);
     setParsed(p);
-    if (!p) toast(lang === "ru" ? "Не удалось разобрать SMS" : "Could not parse SMS", "err");
+    if (!p) toast(tr("smsParseFail"), "err");
   };
 
   const confirmSms = async () => {
@@ -61,20 +61,12 @@ export default function BanksPage() {
       const text = new TextDecoder("utf-8", { fatal: false }).decode(buf);
       const matches = text.match(/\d[\d\s.,]{2,12}\s*(?:UZS|USD|RUB|EUR|сум)?/gi) || [];
       if (matches.length < 2) {
-        setPdfNote(
-          lang === "ru"
-            ? "PDF похож на скан. Лучше: CSV из банка → Настройки → Импорт, или вставь SMS выше."
-            : "PDF looks scanned. Better: bank CSV → Settings → Import, or paste SMS above."
-        );
+        setPdfNote(tr("pdfLooksScan"));
       } else {
-        setPdfNote(
-          lang === "ru"
-            ? `Нашли ~${matches.length} сумм в тексте. Полный разбор — с AI. Пока: CSV или SMS по одной.`
-            : `Found ~${matches.length} amounts. Full parse needs AI. For now: CSV or one SMS at a time.`
-        );
+        setPdfNote(tr("foundSumsInText", { n: matches.length }));
       }
     } catch {
-      setPdfNote(lang === "ru" ? "Не удалось прочитать файл." : "Could not read file.");
+      setPdfNote(tr("fileReadFail"));
     }
     setBusy(false);
   };
@@ -230,7 +222,7 @@ export default function BanksPage() {
               const f = e.target.files?.[0];
               if (!f) return;
               if (f.name.endsWith(".csv")) {
-                toast(lang === "ru" ? "CSV → Настройки → Импорт" : "CSV → Settings → Import");
+                toast(tr("csvGoToImport"));
                 return;
               }
               void onPdf(f);
