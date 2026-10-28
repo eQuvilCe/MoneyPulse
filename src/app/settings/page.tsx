@@ -221,10 +221,7 @@ export default function SettingsPage() {
     );
   }
 
-  const planLabel =
-    lang === "ru"
-      ? { free: "Бесплатный", pro: "Pro", demo: "Демо" }[user?.plan || "free"]
-      : { free: "Free plan", pro: "Pro", demo: "Demo" }[user?.plan || "free"];
+  const planLabel = { free: tr("freePlan"), pro: "Pro", demo: tr("demoPlan") }[user?.plan || "free"];
 
   return (
     <PageShell className="page-accent-cyan">
@@ -236,9 +233,7 @@ export default function SettingsPage() {
           <LetterReveal text={tr("settings")} />
         </h1>
         <p className="mt-1 text-sm text-slate-400">
-          {lang === "ru"
-            ? "Аккаунт, финансы, оформление и данные — всё в одном месте"
-            : "Account, finances, appearance and data — all in one place"}
+          {tr("settingsHeroSubtitle")}
         </p>
       </FadeItem>
 
@@ -308,7 +303,7 @@ export default function SettingsPage() {
               className="rounded-xl px-6 py-2.5 text-sm font-semibold text-slate-950 shadow-lg disabled:opacity-60"
               style={{ background: "var(--page-accent)" }}
             >
-              {savingProfile ? (lang === "ru" ? "Сохраняю…" : "Saving…") : tr("save")}
+              {savingProfile ? tr("saving") : tr("save")}
             </button>
           </div>
         </TiltCard>
@@ -437,7 +432,7 @@ export default function SettingsPage() {
           className="rounded-xl px-6 py-2.5 text-sm font-semibold text-slate-950 shadow-lg disabled:opacity-60"
           style={{ background: "var(--page-accent)" }}
         >
-          {savingFinance ? (lang === "ru" ? "Сохраняю…" : "Saving…") : tr("save")}
+          {savingFinance ? tr("saving") : tr("save")}
         </button>
       </SettingsCard>
 
