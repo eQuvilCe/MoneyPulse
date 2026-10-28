@@ -291,15 +291,16 @@ export default function Dashboard() {
             <div className="flex gap-1 rounded-full border border-white/10 bg-white/[0.03] p-0.5">
               {(
                 [
-                  { id: "all" as const, label: ru ? "Все" : "All" },
-                  { id: "income" as const, label: ru ? "Доход" : "In" },
-                  { id: "expense" as const, label: ru ? "Расход" : "Out" },
+                  { id: "all" as const, label: tr("all") },
+                  { id: "income" as const, label: tr("incomeLabel") },
+                  { id: "expense" as const, label: tr("expense") },
                 ]
               ).map((f) => (
                 <button
                   key={f.id}
                   type="button"
                   onClick={() => setTxFilter(f.id)}
+                  aria-pressed={txFilter === f.id}
                   className={`rounded-full px-3 py-1 text-[11px] font-medium transition ${
                     txFilter === f.id ? "bg-cyan-400/20 text-cyan-300" : "text-slate-500 hover:text-slate-300"
                   }`}
@@ -321,7 +322,7 @@ export default function Dashboard() {
             </div>
           ) : (
             <p className="mt-6 text-center text-sm text-slate-600">
-              {tr("noData") || (ru ? "Нет операций в этот день" : "No transactions this day")}
+              {tr("noTxToday")}
             </p>
           )}
         </div>
