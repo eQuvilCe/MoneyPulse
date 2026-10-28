@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { EXPENSE_CATEGORIES, INCOME_CATEGORIES, CATEGORY_ICONS, TransactionType, formatMoney, allExpenseCategories, allIncomeCategories, Settings, MAX_AMOUNT, formatMoneyCompact, readAmount, dateKey } from "@/lib/types";
+import { CATEGORY_ICONS, TransactionType, formatMoney, allExpenseCategories, allIncomeCategories, Settings, MAX_AMOUNT, formatMoneyCompact, readAmount, dateKey } from "@/lib/types";
 import { addTransaction } from "@/lib/storage";
 import { useToast } from "@/components/Toast";
 import { useApp } from "@/components/AppProvider";
