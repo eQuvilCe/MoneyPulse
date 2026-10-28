@@ -8,6 +8,8 @@ type ToastItem = { id: number; text: string; type: "ok" | "err" | "info" };
 
 /** How long a toast stays on screen. */
 const TOAST_DURATION_MS = 2800;
+/** Errors usually carry a reason worth reading, so they stay up longer. */
+const ERROR_TOAST_DURATION_MS = 5000;
 /** Window after a server rejection during which success toasts are swallowed. */
 const REJECT_SUPPRESS_MS = 2000;
 /** Older toasts are dropped once this many are stacked. */
@@ -36,7 +38,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     if (type === "ok" && Date.now() - rejectedAt.current < REJECT_SUPPRESS_MS) return;
     const id = Date.now() + Math.random();
     setItems((prev) => [...prev.slice(-(MAX_TOASTS - 1)), { id, text, type }]);
-    setTimeout(() => setItems((prev) => prev.filter((t) => t.id !== id)), TOAST_DURATION_MS);
+    setTimeout(() => setItems((prev) => prev.filter((t) => t.id !== id)), type === "err" ? ERROR_TOAST_DURATION_MS : TOAST_DURATION_MS);
   }, []);
 
   useEffect(
