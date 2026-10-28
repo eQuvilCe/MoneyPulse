@@ -194,7 +194,7 @@ export default function Dashboard() {
       {/* Stats row */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <StatCard
-          title={tr("income") || (ru ? "Доход" : "Income")}
+          title={tr("income")}
           value={hidden ? HIDDEN_AMOUNT : `+${formatMoneySmart(stats.income, cur, ru ? "ru" : "en")}`}
           fullValue={hidden ? undefined : `+${formatMoney(stats.income, cur)}`}
           icon="↑"
@@ -202,7 +202,7 @@ export default function Dashboard() {
           spark={spark("income")}
         />
         <StatCard
-          title={tr("expenses") || (ru ? "Расход" : "Expense")}
+          title={tr("expenses")}
           value={hidden ? HIDDEN_AMOUNT : `−${formatMoneySmart(stats.expense, cur, ru ? "ru" : "en")}`}
           fullValue={hidden ? undefined : `−${formatMoney(stats.expense, cur)}`}
           icon="↓"
@@ -211,12 +211,12 @@ export default function Dashboard() {
           spark={spark("expense")}
         />
         <StatCard
-          title={tr("savings") || (ru ? "Сбережения" : "Savings")}
+          title={tr("savings")}
           value={`${stats.savingsRate}%`}
           icon="◎"
           color={stats.savingsRate >= 20 ? "cyan" : "amber"}
           delay={0.12}
-          subtitle={`${tr("goal") || (ru ? "Цель" : "Goal")} ${data.settings.savingsTargetPercent}%`}
+          subtitle={`${tr("goal")} ${data.settings.savingsTargetPercent}%`}
         />
       </div>
 
@@ -229,10 +229,10 @@ export default function Dashboard() {
         <FadeItem className="rounded-3xl border border-white/[0.08] bg-[#0a0e17]/75 p-5 shadow-[0_20px_60px_-24px_rgba(0,0,0,0.65)] backdrop-blur-xl lg:col-span-7">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="font-display text-sm font-semibold text-white">
-              {tr("dynamics") || (ru ? "Динамика 14 дней" : "14-day trend")}
+              {tr("dynamics")}
             </h2>
             <Link href="/analytics" className="text-xs text-cyan-400/80 hover:text-cyan-300">
-              {ru ? "Аналитика →" : "Analytics →"}
+              {tr("analytics")} →
             </Link>
           </div>
           <div className="h-52">
@@ -242,17 +242,17 @@ export default function Dashboard() {
         <FadeItem className="rounded-3xl border border-white/[0.08] bg-[#0a0e17]/75 p-5 shadow-[0_20px_60px_-24px_rgba(0,0,0,0.65)] backdrop-blur-xl lg:col-span-5">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="font-display text-sm font-semibold text-white">
-              {ru ? "Структура расходов" : "Expense structure"}
+              {tr("expenseStructure")}
             </h2>
             <Link href="/expenses" className="text-xs text-cyan-400/80 hover:text-cyan-300">
-              {ru ? "Все →" : "All →"}
+              {tr("allLink")}
             </Link>
           </div>
           {pieData.length === 0 ? (
             <div className="flex h-52 flex-col items-center justify-center gap-2 text-center">
-              <p className="text-sm text-slate-500">{tr("noData") || (ru ? "Нет данных" : "No data")}</p>
+              <p className="text-sm text-slate-500">{tr("noData")}</p>
               <Link href="/expenses" className="text-xs text-cyan-400 hover:underline">
-                {ru ? "Добавить расход" : "Add expense"}
+                {tr("addExpenseAction")}
               </Link>
             </div>
           ) : (
