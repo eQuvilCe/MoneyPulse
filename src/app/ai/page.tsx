@@ -232,7 +232,7 @@ export default function AIPage() {
             {tr("chatTitle")}
           </h2>
         </div>
-        <div className="flex-1 space-y-3 overflow-y-auto p-4">
+        <div className="flex-1 space-y-3 overflow-y-auto p-4" role="log" aria-live="polite" aria-busy={loading}>
           <AnimatePresence initial={false}>
             {messages.map((m, i) => (
               <motion.div
