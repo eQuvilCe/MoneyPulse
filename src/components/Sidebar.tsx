@@ -178,6 +178,8 @@ export default function Sidebar() {
               key={l}
               type="button"
               onClick={() => setLang(l)}
+              aria-pressed={lang === l}
+              title={l === "ru" ? "Русский" : "English"}
               className={`rounded-lg px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider transition ${
                 lang === l
                   ? "bg-cyan-400/10 text-cyan-300 ring-1 ring-cyan-400/25"
