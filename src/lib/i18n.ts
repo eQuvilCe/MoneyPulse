@@ -541,7 +541,7 @@ export const translations = {
     familyRotateCode: "Rotate invite code",
     familyRotateHint: "The old code will stop working",
     familyLeave: "Leave family",
-    familyLeaveConfirm: "Leave the family for sure?",
+    familyLeaveConfirm: "Are you sure you want to leave the family?",
     familyRemoveMember: "Remove",
     familyRemoveConfirm: "Remove this member from the family?",
     familyYou: "(you)",
@@ -741,7 +741,7 @@ export const translations = {
     passwordIfAny: "Password (if set)",
     deleting: "Deleting…",
     deleteForever: "Delete forever",
-    questionsLeft: "Questions left?",
+    questionsLeft: "Still have questions?",
     writeOnTelegram: "Message us directly on Telegram",
     writeWord: "Message",
     // subscriptions page
