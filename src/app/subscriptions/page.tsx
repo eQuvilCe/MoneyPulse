@@ -61,8 +61,10 @@ export default function SubscriptionsPage() {
           <p className="mt-1 text-2xl font-bold text-amber-300">{formatMoney(yearly, cur)}</p>
         </TiltCard>
         <TiltCard className="mp-card rounded-2xl p-5">
-          <p className="text-[11px] uppercase text-slate-500">{tr("pctOfIncome")}</p>
-          <p className="mt-1 text-2xl font-bold text-cyan-300">{avgMonthlyIncome > 0 ? `${pctOfIncome}%` : "—"}</p>
+          <div title={avgMonthlyIncome > 0 ? tr("pctOfIncomeHint", { income: formatMoney(avgMonthlyIncome, cur) }) : undefined}>
+            <p className="text-[11px] uppercase text-slate-500">{tr("pctOfIncome")}</p>
+            <p className="mt-1 text-2xl font-bold text-cyan-300">{avgMonthlyIncome > 0 ? `${pctOfIncome}%` : "—"}</p>
+          </div>
         </TiltCard>
       </FadeItem>
 

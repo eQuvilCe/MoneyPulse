@@ -356,6 +356,7 @@ export const translations = {
     writeWord: "Написать",
     // subscriptions page
     pctOfIncome: "% от дохода",
+    pctOfIncomeHint: "От среднего месячного дохода: {income}",
     openExpensesAdd: "Открой Расходы → Добавить",
     checkRepeatMonthly: "Поставь галочку «Повторять каждый месяц» или категорию «подписки»",
     theyAppearHere: "Они появятся здесь автоматически",
@@ -849,6 +850,7 @@ export const translations = {
     writeWord: "Message",
     // subscriptions page
     pctOfIncome: "% of income",
+    pctOfIncomeHint: "Of average monthly income: {income}",
     openExpensesAdd: "Open Expenses → Add",
     checkRepeatMonthly: "Check “Repeat monthly” or use the “subscriptions” category",
     theyAppearHere: "They'll appear here automatically",
