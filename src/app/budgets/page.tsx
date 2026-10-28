@@ -166,16 +166,21 @@ export default function BudgetsPage() {
                 <div className="flex gap-1">
                   <button
                     onClick={() => openEdit(b)}
-                    className="rounded-lg p-1 text-slate-500 hover:text-cyan-400"
+                    title={tr("editLimit")}
+                    aria-label={tr("editLimit")}
+                    className="rounded-lg p-1 text-slate-500 hover:bg-white/5 hover:text-cyan-400"
                   >
                     ✎
                   </button>
                   <button
                     onClick={async () => {
+                      if (!window.confirm(tr("deleteLimitConfirm", { category: b.category }))) return;
                       await deleteBudget(b.id);
                       refresh();
                     }}
-                    className="rounded-lg p-1 text-slate-600 hover:text-rose-400"
+                    title={tr("deleteLimit")}
+                    aria-label={tr("deleteLimit")}
+                    className="rounded-lg p-1 text-slate-600 hover:bg-white/5 hover:text-rose-400"
                   >
                     ✕
                   </button>
