@@ -1,6 +1,6 @@
 "use client";
 
-import { readAmount, dateKey } from "@/lib/types";
+import { readAmount, dateKey, formatMoneyCompact, MAX_AMOUNT } from "@/lib/types";
 import { useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { PageShell, FadeItem } from "@/components/motion/PageShell";
@@ -14,7 +14,7 @@ export default function ScanPage() {
   const inputRef = useRef<HTMLInputElement>(null);
   const toast = useToast();
   const router = useRouter();
-  const { lang } = useApp();
+  const { lang, tr } = useApp();
   const [preview, setPreview] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [amount, setAmount] = useState("");
@@ -46,18 +46,10 @@ export default function ScanPage() {
           if (json.category) setCategory(json.category);
           if (json.date) setDate(json.date);
           if (json.note) setNote(json.note);
-          toast(
-            json.source === "vision"
-              ? lang === "ru"
-                ? "Чек распознан AI ✦"
-                : "Receipt read by AI ✦"
-              : lang === "ru"
-                ? "Заполни сумму вручную"
-                : "Fill amount manually"
-          );
+          toast(json.source === "vision" ? tr("receiptRecognized") : tr("fillAmountManually"));
         }
       } catch {
-        toast(lang === "ru" ? "Ошибка сети" : "Network error", "err");
+        toast(tr("networkError"), "err");
       }
       setBusy(false);
     };
@@ -67,21 +59,21 @@ export default function ScanPage() {
   const save = async () => {
     const num = readAmount(amount);
     if (num === "too-big") {
-      toast(lang === "ru" ? "Слишком большая сумма" : "That amount is too large", "err");
+      toast(tr("amountTooBig", { max: formatMoneyCompact(MAX_AMOUNT) }), "err");
       return;
     }
     if (!num) {
-      toast(lang === "ru" ? "Укажи сумму" : "Enter amount", "err");
+      toast(tr("specifyAmount"), "err");
       return;
     }
     await addTransaction({
       type: "expense",
       amount: num,
       category,
-      description: desc || (lang === "ru" ? "Чек" : "Receipt"),
+      description: desc || tr("receiptWord"),
       date,
     });
-    toast(lang === "ru" ? "Расход из чека сохранён" : "Receipt expense saved");
+    toast(tr("expenseFromReceiptSaved"));
     router.push("/expenses");
   };
 
