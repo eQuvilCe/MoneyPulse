@@ -204,9 +204,13 @@ export default function FamilyChat({ isOwner }: { isOwner: boolean }) {
                           </p>
                         )}
                         <p className="whitespace-pre-wrap text-sm leading-snug [overflow-wrap:anywhere]">{m.text}</p>
-                        <p className={`mt-0.5 text-right text-[10px] tabular-nums ${mine ? "text-white/70" : "text-slate-500"}`}>
+                        <time
+                          dateTime={m.createdAt}
+                          title={new Date(m.createdAt).toLocaleString(locale, { dateStyle: "long", timeStyle: "short" })}
+                          className={`mt-0.5 block text-right text-[10px] tabular-nums ${mine ? "text-white/70" : "text-slate-500"}`}
+                        >
                           {new Date(m.createdAt).toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" })}
-                        </p>
+                        </time>
                       </div>
                       {(mine || isOwner) && (
                         <button
