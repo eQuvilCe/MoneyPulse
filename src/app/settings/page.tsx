@@ -542,7 +542,10 @@ export default function SettingsPage() {
           <button
             type="button"
             onClick={addCategory}
-            className="rounded-xl bg-white/10 px-4 py-2.5 text-sm font-medium hover:bg-white/15"
+            disabled={!newCat.trim()}
+            aria-label={tr("addCategory")}
+            title={tr("addCategory")}
+            className="rounded-xl bg-white/10 px-4 py-2.5 text-sm font-medium hover:bg-white/15 disabled:opacity-40"
           >
             +
           </button>
@@ -556,6 +559,8 @@ export default function SettingsPage() {
               {c}
               <button
                 type="button"
+                aria-label={tr("removeCategory", { name: c })}
+                title={tr("remove")}
                 className="text-slate-500 hover:text-rose-400"
                 onClick={() => {
                   const list = (data.settings.customCategories || []).filter((x) => x !== c);
