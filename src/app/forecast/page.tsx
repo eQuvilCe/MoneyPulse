@@ -61,6 +61,8 @@ export default function ForecastPage() {
     return <div className="py-20 text-center text-slate-500">{tr("loading")}</div>;
   }
 
+  const cur = data.settings.currency || "₽";
+
   return (
     <PageShell className="page-accent-blue">
       <FadeItem>
@@ -81,7 +83,7 @@ export default function ForecastPage() {
         <TiltCard>
           <StatCard
             title={tr("expenseForecast")}
-            value={`~${formatMoney(projectedExpense, data.settings.currency)}`}
+            value={`~${formatMoney(projectedExpense, cur)}`}
             icon="↓"
             color="red"
           />
@@ -89,7 +91,7 @@ export default function ForecastPage() {
         <TiltCard>
           <StatCard
             title={tr("balanceForecast")}
-            value={formatMoney(projectedBalance, data.settings.currency)}
+            value={formatMoney(projectedBalance, cur)}
             icon="◈"
             color={projectedBalance >= 0 ? "green" : "red"}
           />
@@ -117,7 +119,7 @@ export default function ForecastPage() {
           </div>
           <div className="rounded-xl bg-white/[0.04] p-3">
             <p className="text-[10px] text-slate-500">{tr("dailyPaceLabel")}</p>
-            <p className="font-bold">~{formatMoney(Math.round(dailyBurn), data.settings.currency)}</p>
+            <p className="font-bold">~{formatMoney(Math.round(dailyBurn), cur)}</p>
           </div>
           <div className="rounded-xl bg-white/[0.04] p-3">
             <p className="text-[10px] text-slate-500">{tr("daysLeftLabel")}</p>
@@ -136,13 +138,13 @@ export default function ForecastPage() {
           {cuts.map((c) => (
             <div key={c.cat} className="flex items-center justify-between text-sm">
               <span className="text-slate-300">{c.cat}</span>
-              <span className="text-slate-500">{formatMoney(c.amt, data.settings.currency)}</span>
-              <span className="font-semibold" style={{ color: "var(--page-accent)" }}>+{formatMoney(c.save, data.settings.currency)}</span>
+              <span className="text-slate-500">{formatMoney(c.amt, cur)}</span>
+              <span className="font-semibold" style={{ color: "var(--page-accent)" }}>+{formatMoney(c.save, cur)}</span>
             </div>
           ))}
         </div>
         <p className="mt-4 text-xs text-slate-500">
-          {tr("totalReclaimHint", { v: `~${formatMoney(cuts.reduce((s, c) => s + c.save, 0), data.settings.currency)}` })}
+          {tr("totalReclaimHint", { v: `~${formatMoney(cuts.reduce((s, c) => s + c.save, 0), cur)}` })}
         </p>
         </TiltCard>
       </FadeItem>
