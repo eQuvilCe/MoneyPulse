@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import { loadDataAsync, getStats } from "@/lib/storage";
 import { FinanceData, CATEGORY_ICONS, formatMoney } from "@/lib/types";
 import TransactionForm from "@/components/TransactionForm";
@@ -17,9 +17,23 @@ export default function ExpensesPage() {
   const [filter, setFilter] = useState("all");
   const [q, setQ] = useState("");
   const { tr } = useApp();
+  const searchRef = useRef<HTMLInputElement>(null);
   const refresh = () => loadDataAsync().then(setData);
   useEffect(() => {
     refresh();
+  }, []);
+
+  // "/" jumps to search, like most list UIs
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "/" || e.metaKey || e.ctrlKey || e.altKey) return;
+      const el = e.target as HTMLElement | null;
+      if (el && (el.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(el.tagName))) return;
+      e.preventDefault();
+      searchRef.current?.focus();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
   }, []);
 
   const filtered = useMemo(() => {
@@ -103,6 +117,7 @@ export default function ExpensesPage() {
       <FadeItem>
         <div className="relative">
           <input
+            ref={searchRef}
             enterKeyHint="search"
             value={q}
             onChange={(e) => setQ(e.target.value)}
