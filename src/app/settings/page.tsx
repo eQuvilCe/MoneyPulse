@@ -116,7 +116,7 @@ export default function SettingsPage() {
 
   const saveAccount = async () => {
     if (!EMAIL_RE.test(email.trim())) {
-      setEmailError(lang === "ru" ? "Неверный формат email" : "Invalid email format");
+      setEmailError(tr("invalidEmailFormat"));
       return;
     }
     setEmailError("");
@@ -124,7 +124,7 @@ export default function SettingsPage() {
     const res = await updateProfile({ name, email });
     setSavingProfile(false);
     if (!res.ok) {
-      toast(res.error || (lang === "ru" ? "Не удалось сохранить профиль" : "Could not save profile"), "err");
+      toast(res.error || tr("profileSaveFailed"), "err");
       return;
     }
     toast(tr("saved"));
@@ -132,15 +132,15 @@ export default function SettingsPage() {
 
   const savePassword = async () => {
     if (newPassword.length < 6) {
-      toast(lang === "ru" ? "Новый пароль — минимум 6 символов" : "New password needs at least 6 characters", "err");
+      toast(tr("newPasswordMinLength"), "err");
       return;
     }
     if (newPassword !== confirmPassword) {
-      toast(lang === "ru" ? "Пароли не совпадают" : "Passwords don't match", "err");
+      toast(tr("passwordsDontMatch"), "err");
       return;
     }
     if (!currentPassword) {
-      toast(lang === "ru" ? "Введи текущий пароль" : "Enter your current password", "err");
+      toast(tr("enterCurrentPassword"), "err");
       return;
     }
     setSavingPassword(true);
@@ -153,13 +153,13 @@ export default function SettingsPage() {
       });
       const resData = await res.json();
       if (!res.ok) {
-        toast(resData.issues?.[0] || resData.error || (lang === "ru" ? "Не удалось сменить пароль" : "Could not change password"), "err");
+        toast(resData.issues?.[0] || resData.error || tr("passwordChangeFailed"), "err");
         return;
       }
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
-      toast(lang === "ru" ? "Пароль обновлён" : "Password updated");
+      toast(tr("passwordUpdated"));
     } finally {
       setSavingPassword(false);
     }
@@ -193,7 +193,7 @@ export default function SettingsPage() {
       });
       const resData = await res.json().catch(() => ({}));
       if (!res.ok) {
-        toast(resData.error || (lang === "ru" ? "Не удалось удалить аккаунт" : "Could not delete account"), "err");
+        toast(resData.error || tr("accountDeleteFailed"), "err");
         return;
       }
       await logout();
@@ -570,7 +570,7 @@ export default function SettingsPage() {
                 const { enableBrowserNotifications } = await import("@/lib/notifications");
                 const ok = await enableBrowserNotifications();
                 if (!ok) {
-                  toast(lang === "ru" ? "Разреши уведомления в браузере" : "Allow browser notifications", "err");
+                  toast(tr("allowBrowserNotifications"), "err");
                   return;
                 }
               }
