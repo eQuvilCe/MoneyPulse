@@ -698,9 +698,9 @@ export default function SettingsPage() {
               <MessageCircle className="h-5 w-5" strokeWidth={2.2} />
             </span>
             <div>
-              <p className="text-sm font-semibold text-white">{lang === "ru" ? "Остались вопросы?" : "Have questions?"}</p>
+              <p className="text-sm font-semibold text-white">{tr("questionsLeft")}</p>
               <p className="text-xs text-slate-500">
-                {lang === "ru" ? "Напиши напрямую в Telegram" : "Message us directly on Telegram"}
+                {tr("writeOnTelegram")}
               </p>
             </div>
           </div>
@@ -715,7 +715,7 @@ export default function SettingsPage() {
               boxShadow: "inset 0 0 0 1px rgba(var(--page-accent-rgb),0.25)",
             }}
           >
-            {lang === "ru" ? "Написать" : "Message"}
+            {tr("writeWord")}
           </a>
         </TiltCard>
       </FadeItem>
