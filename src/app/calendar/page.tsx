@@ -99,7 +99,23 @@ export default function CalendarPage() {
           >
             ←
           </button>
-          <h2 className="text-sm font-semibold capitalize">{monthLabel}</h2>
+          <div className="flex items-center gap-2">
+            <h2 className="text-sm font-semibold capitalize" aria-live="polite">{monthLabel}</h2>
+            {(year !== new Date().getFullYear() || month !== new Date().getMonth() || selected !== todayKey) && (
+              <button
+                type="button"
+                onClick={() => {
+                  const d = new Date();
+                  setCursor(new Date(d.getFullYear(), d.getMonth(), 1));
+                  setSelected(todayKey);
+                }}
+                className="rounded-md px-2 py-0.5 text-[11px] ring-1 ring-white/10 transition hover:bg-white/5"
+                style={{ color: "var(--page-accent)" }}
+              >
+                {tr("backToToday")}
+              </button>
+            )}
+          </div>
           <button
             onClick={() => setCursor(new Date(year, month + 1, 1))}
             aria-label={tr("nextMonth")}
