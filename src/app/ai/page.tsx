@@ -269,7 +269,8 @@ export default function AIPage() {
             <button
               key={q.labelKey}
               onClick={() => void send(q.query)}
-              className="rounded-full bg-white/5 px-2.5 py-1 text-[11px] text-slate-400 ring-1 ring-white/10 hover:text-white"
+              disabled={loading}
+              className="rounded-full disabled:opacity-50 bg-white/5 px-2.5 py-1 text-[11px] text-slate-400 ring-1 ring-white/10 hover:text-white"
             >
               {tr(q.labelKey)}
             </button>
@@ -286,11 +287,15 @@ export default function AIPage() {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder={tr("askAboutMoney")}
+            aria-label={tr("askAboutMoney")}
             className="flex-1 rounded-xl border border-white/10 bg-slate-900/80 px-3 py-2.5 text-sm outline-none focus:border-sky-400/40"
           />
           <button
             type="submit"
-            className="rounded-xl px-4 py-2.5 text-sm font-semibold"
+            disabled={loading || !input.trim()}
+            aria-label={tr("sendMessage")}
+            title={tr("sendMessage")}
+            className="rounded-xl px-4 py-2.5 text-sm font-semibold transition disabled:opacity-40"
             style={{ background: "var(--page-accent)", color: "#042f2e" }}
           >
             →
