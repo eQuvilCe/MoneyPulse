@@ -107,6 +107,18 @@ export default function PulseHero({
   const ru = lang !== "en";
   const { hidden, toggle: toggleHidden } = useHideAmounts();
   const [showHow, setShowHow] = useState(false);
+
+  // H toggles the privacy blur (by key position, so it works on any layout)
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.code !== "KeyH" || e.metaKey || e.ctrlKey || e.altKey) return;
+      const el = e.target as HTMLElement | null;
+      if (el && (el.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(el.tagName))) return;
+      toggleHidden();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [toggleHidden]);
   const good = balance >= 0;
   const isEmpty = income === 0 && expense === 0;
   const label = healthLabel(health, ru, isEmpty);
@@ -200,6 +212,7 @@ export default function PulseHero({
                 type="button"
                 onClick={toggleHidden}
                 aria-pressed={hidden}
+                aria-keyshortcuts="H"
                 aria-label={hidden ? tr("showAmounts") : tr("hideAmounts")}
                 title={`${hidden ? tr("showAmounts") : tr("hideAmounts")} (H)`}
                 className="flex h-6 w-6 items-center justify-center rounded-lg text-slate-500 transition hover:bg-white/[0.06] hover:text-cyan-300"
