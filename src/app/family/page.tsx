@@ -39,6 +39,9 @@ async function api<T>(url: string, init?: RequestInit): Promise<{ ok: boolean; d
   }
 }
 
+/** One-tap contribution amounts for shared family goals. */
+const FAMILY_QUICK_CONTRIBUTIONS = [1000, 5000, 10000];
+
 export default function FamilyPage() {
   const { tr, user, lang } = useApp();
   const toast = useToast();
@@ -636,7 +639,7 @@ export default function FamilyPage() {
                         </div>
                         {left > 0 ? (
                           <div className="mt-2 flex flex-wrap gap-1.5">
-                            {[1000, 5000, 10000].map((amt) => (
+                            {FAMILY_QUICK_CONTRIBUTIONS.map((amt) => (
                               <button
                                 key={amt}
                                 type="button"
