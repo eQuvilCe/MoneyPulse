@@ -14,7 +14,7 @@ export default function ScanPage() {
   const inputRef = useRef<HTMLInputElement>(null);
   const toast = useToast();
   const router = useRouter();
-  const { lang, tr } = useApp();
+  const { tr } = useApp();
   const [preview, setPreview] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [amount, setAmount] = useState("");
@@ -135,27 +135,27 @@ export default function ScanPage() {
       {(preview || amount) && (
         <FadeItem className="mp-card space-y-3 rounded-2xl p-5">
           <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-            {lang === "ru" ? "Результат" : "Result"}
+            {tr("resultWord")}
           </h2>
           {note && <p className="text-xs text-amber-200/90">{note}</p>}
           <input
             type="number"
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
-            placeholder={lang === "ru" ? "Сумма" : "Amount"}
+            placeholder={tr("amount")}
             className="w-full rounded-xl border border-white/10 bg-slate-900/70 px-3 py-2.5 text-sm outline-none focus:border-[var(--page-accent)]/50"
           />
           <input
             value={desc}
             onChange={(e) => setDesc(e.target.value)}
-            placeholder={lang === "ru" ? "Описание / магазин" : "Description / store"}
+            placeholder={tr("descriptionOrStore")}
             className="w-full rounded-xl border border-white/10 bg-slate-900/70 px-3 py-2.5 text-sm outline-none focus:border-[var(--page-accent)]/50"
           />
           <div className="grid gap-2 sm:grid-cols-2">
             <input
               value={category}
               onChange={(e) => setCategory(e.target.value)}
-              placeholder={lang === "ru" ? "Категория" : "Category"}
+              placeholder={tr("category")}
               className="rounded-xl border border-white/10 bg-slate-900/70 px-3 py-2.5 text-sm outline-none focus:border-[var(--page-accent)]/50"
             />
             <input
@@ -170,7 +170,7 @@ export default function ScanPage() {
             onClick={() => void save()}
             className="mp-btn-primary w-full rounded-xl py-3 text-sm font-bold"
           >
-            {lang === "ru" ? "Сохранить расход" : "Save expense"}
+            {tr("saveExpense")}
           </button>
         </FadeItem>
       )}
