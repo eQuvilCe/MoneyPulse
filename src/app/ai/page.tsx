@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { loadDataAsync, getStats } from "@/lib/storage";
+import { loadDataAsync } from "@/lib/storage";
 import { FinanceData, formatMoney } from "@/lib/types";
 import {
   generateAIAnalysis,
@@ -13,7 +13,7 @@ import {
   getHealthScore,
 } from "@/lib/ai";
 import { fullAnalysis } from "@/lib/insights";
-import { PageShell, FadeItem } from "@/components/motion/PageShell";
+import { PageShell, FadeItem, Skeleton } from "@/components/motion/PageShell";
 import TiltCard from "@/components/motion/TiltCard";
 import { LetterReveal } from "@/components/motion/Reveal";
 import { useApp } from "@/components/AppProvider";
@@ -59,7 +59,7 @@ export default function AIPage() {
   }, [messages]);
 
   const send = async (text: string) => {
-    if (!text.trim() || !data) return;
+    if (!text.trim() || !data || loading) return;
     const history = messages;
     setMessages((m) => [...m, { role: "user", text }]);
     setInput("");
@@ -83,7 +83,21 @@ export default function AIPage() {
     setLoading(false);
   };
 
-  if (!data) return <div className="py-20 text-center text-slate-500">{tr("loading")}</div>;
+  if (!data) {
+    return (
+      <PageShell className="page-accent-sky">
+        <FadeItem>
+          <Skeleton className="h-16 w-full" />
+        </FadeItem>
+        <FadeItem>
+          <Skeleton className="h-64 w-full" />
+        </FadeItem>
+        <FadeItem>
+          <Skeleton className="h-80 w-full" />
+        </FadeItem>
+      </PageShell>
+    );
+  }
 
   const advice = generateAIAnalysis(data);
   const health = getHealthScore(data);
@@ -109,7 +123,7 @@ export default function AIPage() {
         <TiltCard className="mp-card rounded-2xl p-5">
         <div className="space-y-5">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <h2 className="text-sm font-bold text-white">Analyze my finances</h2>
+          <h2 className="text-sm font-bold text-white">{tr("analyzeMyFinances")}</h2>
           <button
             onClick={() => void send("Полный отчёт")}
             className="rounded-xl px-3 py-1.5 text-xs font-semibold ring-1"
@@ -213,7 +227,7 @@ export default function AIPage() {
                     className="mt-2 text-[11px] font-semibold"
                     style={{ color: "var(--page-accent)" }}
                   >
-                    {whyId === a.id ? tr("hideWhy") : "Why?"}
+                    {whyId === a.id ? tr("hideWhy") : tr("showWhy")}
                   </button>
                   {whyId === a.id && (
                     <p className="mt-1 text-[11px] leading-relaxed text-slate-500">{a.why}</p>
@@ -232,7 +246,7 @@ export default function AIPage() {
             {tr("chatTitle")}
           </h2>
         </div>
-        <div className="flex-1 space-y-3 overflow-y-auto p-4">
+        <div className="flex-1 space-y-3 overflow-y-auto p-4" role="log" aria-live="polite" aria-busy={loading}>
           <AnimatePresence initial={false}>
             {messages.map((m, i) => (
               <motion.div
@@ -269,7 +283,8 @@ export default function AIPage() {
             <button
               key={q.labelKey}
               onClick={() => void send(q.query)}
-              className="rounded-full bg-white/5 px-2.5 py-1 text-[11px] text-slate-400 ring-1 ring-white/10 hover:text-white"
+              disabled={loading}
+              className="rounded-full disabled:opacity-50 bg-white/5 px-2.5 py-1 text-[11px] text-slate-400 ring-1 ring-white/10 hover:text-white"
             >
               {tr(q.labelKey)}
             </button>
@@ -286,11 +301,15 @@ export default function AIPage() {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder={tr("askAboutMoney")}
+            aria-label={tr("askAboutMoney")}
             className="flex-1 rounded-xl border border-white/10 bg-slate-900/80 px-3 py-2.5 text-sm outline-none focus:border-sky-400/40"
           />
           <button
             type="submit"
-            className="rounded-xl px-4 py-2.5 text-sm font-semibold"
+            disabled={loading || !input.trim()}
+            aria-label={tr("sendMessage")}
+            title={tr("sendMessage")}
+            className="rounded-xl px-4 py-2.5 text-sm font-semibold transition disabled:opacity-40"
             style={{ background: "var(--page-accent)", color: "#042f2e" }}
           >
             →

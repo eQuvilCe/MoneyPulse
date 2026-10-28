@@ -6,9 +6,12 @@ import { useState, useEffect } from "react";
 import { scheduleEveningNudge, enableBrowserNotifications } from "@/lib/notifications";
 import { useApp } from "@/components/AppProvider";
 
+/** Small delay so the banner doesn't flash in before the dashboard has painted. */
+const SHOW_DELAY_MS = 1500;
+
 export default function TodayNudge({ data }: { data: FinanceData }) {
   const [show, setShow] = useState(false);
-  const { lang } = useApp();
+  const { lang, tr } = useApp();
   const today = dateKey();
   const hasToday = data.transactions.some((t) => t.date === today);
   const enabled = data.settings.notifications !== false; // default on
@@ -18,13 +21,17 @@ export default function TodayNudge({ data }: { data: FinanceData }) {
     if (enabled) {
       void enableBrowserNotifications();
     }
-    scheduleEveningNudge(enabled, hasToday, lang);
+    const cancelNudge = scheduleEveningNudge(enabled, hasToday, lang);
     if (!hasToday) {
-      const t = setTimeout(() => setShow(true), 1500);
-      return () => clearTimeout(t);
+      const t = setTimeout(() => setShow(true), SHOW_DELAY_MS);
+      return () => {
+        clearTimeout(t);
+        cancelNudge();
+      };
     }
     // eslint-disable-next-line react-hooks/set-state-in-effect -- visibility follows a timer; hiding it when today's entry appears is the same sync
     setShow(false);
+    return cancelNudge;
   }, [hasToday, data.transactions.length, enabled, lang]);
 
   return (
@@ -37,21 +44,21 @@ export default function TodayNudge({ data }: { data: FinanceData }) {
           className="overflow-hidden"
         >
           <div className="flex items-center gap-3 rounded-2xl border border-amber-500/25 bg-amber-500/10 px-4 py-3">
-            <span className="text-xl">👀</span>
+            <span className="text-xl" aria-hidden>👀</span>
             <div className="flex-1">
               <p className="text-sm font-medium text-amber-200">
-                {lang === "ru" ? "Сегодня ещё ничего не записано" : "Nothing logged today yet"}
+                {tr("nudgeNothingToday")}
               </p>
               <p className="text-xs text-amber-200/60">
-                {lang === "ru"
-                  ? "Кинь кофе, обед или доход — 20 секунд. После 20:00 придёт напоминание."
-                  : "Log coffee, lunch or income in 20 sec. After 8 PM you’ll get a reminder."}
+                {tr("nudgeNothingTodayHint")}
               </p>
             </div>
             <button
               type="button"
               onClick={() => setShow(false)}
-              className="text-amber-200/50 hover:text-amber-100"
+              aria-label={tr("dismiss")}
+              title={tr("dismiss")}
+              className="rounded-lg p-1 text-amber-200/50 transition hover:bg-amber-500/10 hover:text-amber-100"
             >
               ✕
             </button>

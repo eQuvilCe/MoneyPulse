@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { loadDataAsync, addGoal, updateGoal, deleteGoal } from "@/lib/storage";
-import { FinanceData, Goal, formatMoney, MAX_AMOUNT, formatMoneyCompact, readAmount } from "@/lib/types";
+import { FinanceData, Goal, formatMoney, MAX_AMOUNT, formatMoneyCompact, readAmount, formatShortDate, dateKey } from "@/lib/types";
 import { PageShell, FadeItem, Skeleton } from "@/components/motion/PageShell";
 import TiltCard from "@/components/motion/TiltCard";
 import { LetterReveal, MagneticButton } from "@/components/motion/Reveal";
@@ -12,6 +12,18 @@ import AIInsightBar from "@/components/AIInsightBar";
 import Confetti from "@/components/fx/Confetti";
 import { useApp } from "@/components/AppProvider";
 import { emitCelebrate } from "@/lib/events";
+
+/** One-tap contribution amounts shown under each unfinished goal. */
+const QUICK_CONTRIBUTIONS = [1000, 5000, 10000, 25000];
+
+/** Whole days from today until a YYYY-MM-DD deadline; negative once it has passed. */
+function daysUntil(deadline: string): number {
+  const [y, m, d] = deadline.split("-").map(Number);
+  const end = new Date(y, m - 1, d);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return Math.round((end.getTime() - today.getTime()) / 86_400_000);
+}
 
 export default function GoalsPage() {
   const { tr, lang } = useApp();
@@ -145,6 +157,9 @@ export default function GoalsPage() {
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder={tr("goalTitleLabel")}
+                aria-label={tr("goalTitleLabel")}
+                maxLength={100}
+                autoFocus
                 required
                 className="rounded-xl border border-white/10 bg-slate-900 px-3 py-2.5 text-sm"
               />
@@ -153,6 +168,8 @@ export default function GoalsPage() {
                 value={target}
                 onChange={(e) => setTarget(e.target.value)}
                 placeholder={tr("goalAmountLabel", { cur })}
+                aria-label={tr("goalAmountLabel", { cur })}
+                inputMode="decimal"
                 required
                 min="1"
                 className="rounded-xl border border-white/10 bg-slate-900 px-3 py-2.5 text-sm"
@@ -161,12 +178,16 @@ export default function GoalsPage() {
                 value={emoji}
                 onChange={(e) => setEmoji(e.target.value)}
                 placeholder={tr("emoji")}
+                aria-label={tr("emoji")}
+                maxLength={4}
                 className="rounded-xl border border-white/10 bg-slate-900 px-3 py-2.5 text-sm"
               />
               <input
                 type="date"
                 value={deadline}
                 onChange={(e) => setDeadline(e.target.value)}
+                aria-label={tr("goalDeadlineLabel")}
+                min={editId ? undefined : dateKey()}
                 className="rounded-xl border border-white/10 bg-slate-900 px-3 py-2.5 text-sm"
               />
             </div>
@@ -190,12 +211,15 @@ export default function GoalsPage() {
       )}
       {data.goals.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-white/10 py-16 text-center text-slate-500">
-          {tr("noGoals")}
+          <p className="text-3xl" aria-hidden>🎯</p>
+          <p className="mt-2">{tr("noGoals")}</p>
+          <p className="mx-auto mt-1 max-w-xs text-xs text-slate-600">{tr("noGoalsHint")}</p>
         </div>
       ) : (
         <div className="grid gap-3 sm:grid-cols-2">
           {data.goals.map((g, i) => {
-            const progress = Math.min(100, Math.round((g.currentAmount / g.targetAmount) * 100));
+            const progress =
+              g.targetAmount > 0 ? Math.min(100, Math.round((g.currentAmount / g.targetAmount) * 100)) : 0;
             const left = g.targetAmount - g.currentAmount;
             return (
               <motion.div
@@ -212,7 +236,15 @@ export default function GoalsPage() {
                       <h3 className="font-semibold">{g.title}</h3>
                       {g.deadline && (
                         <p className="text-[11px] text-slate-500">
-                          {tr("goalDeadlinePrefix")} {new Date(g.deadline).toLocaleDateString(lang === "en" ? "en-US" : "ru-RU")}
+                          {tr("goalDeadlinePrefix")} {formatShortDate(g.deadline, lang)}
+                          {progress < 100 && (() => {
+                            const days = daysUntil(g.deadline);
+                            return days < 0 ? (
+                              <span className="text-rose-400"> · {tr("goalOverdue")}</span>
+                            ) : (
+                              <span> · {tr("goalDaysLeft", { n: days })}</span>
+                            );
+                          })()}
                         </p>
                       )}
                     </div>
@@ -220,16 +252,21 @@ export default function GoalsPage() {
                   <div className="flex gap-1">
                     <button
                       onClick={() => openEdit(g)}
-                      className="rounded-lg p-1 text-slate-500 hover:text-cyan-400"
+                      title={tr("editGoal")}
+                      aria-label={tr("editGoal")}
+                      className="rounded-lg p-1 text-slate-500 hover:bg-white/5 hover:text-cyan-400"
                     >
                       ✎
                     </button>
                     <button
                       onClick={async () => {
+                        if (!window.confirm(tr("deleteGoalConfirm", { title: g.title }))) return;
                         await deleteGoal(g.id);
                         refresh();
                       }}
-                      className="rounded-lg p-1 text-slate-600 hover:text-rose-400"
+                      title={tr("deleteGoal")}
+                      aria-label={tr("deleteGoal")}
+                      className="rounded-lg p-1 text-slate-600 hover:bg-white/5 hover:text-rose-400"
                     >
                       ✕
                     </button>
@@ -240,7 +277,14 @@ export default function GoalsPage() {
                     <span style={{ color: "var(--page-accent)" }}>{formatMoney(g.currentAmount, cur)}</span>
                     <span className="text-slate-500">{formatMoney(g.targetAmount, cur)}</span>
                   </div>
-                  <div className="h-2.5 overflow-hidden rounded-full bg-slate-800">
+                  <div
+                    className="h-2.5 overflow-hidden rounded-full bg-slate-800"
+                    role="progressbar"
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    aria-valuenow={progress}
+                    aria-label={g.title}
+                  >
                     <motion.div
                       initial={{ width: 0 }}
                       animate={{ width: `${progress}%` }}
@@ -249,13 +293,16 @@ export default function GoalsPage() {
                       style={{ background: "linear-gradient(90deg, var(--page-accent), var(--page-accent-2))" }}
                     />
                   </div>
-                  <p className="mt-1 text-right text-xs" style={{ color: "var(--page-accent)" }}>
-                    {progress}%
-                  </p>
+                  <div className="mt-1 flex justify-between text-xs">
+                    <span className="text-slate-500">
+                      {left > 0 ? tr("remainingAmount", { v: formatMoney(left, cur) }) : ""}
+                    </span>
+                    <span style={{ color: "var(--page-accent)" }}>{progress}%</span>
+                  </div>
                 </div>
                 {left > 0 && (
                   <div className="mt-3 flex flex-wrap gap-1.5">
-                    {[1000, 5000, 10000, 25000].map((amt) => (
+                    {QUICK_CONTRIBUTIONS.map((amt) => (
                       <button
                         key={amt}
                         onClick={() => addTo(g.id, amt)}

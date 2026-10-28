@@ -12,7 +12,7 @@ import { useWebglAllowed } from "@/components/three/useWebglAllowed";
 import { useApp } from "@/components/AppProvider";
 import { emitCelebrate } from "@/lib/events";
 import FitText from "@/components/FitText";
-import { compactNumber, formatMoney } from "@/lib/types";
+import { compactNumber, formatMoney, dateKey } from "@/lib/types";
 import { useHideAmounts, HIDDEN_AMOUNT } from "@/hooks/useHideAmounts";
 
 /**
@@ -107,6 +107,18 @@ export default function PulseHero({
   const ru = lang !== "en";
   const { hidden, toggle: toggleHidden } = useHideAmounts();
   const [showHow, setShowHow] = useState(false);
+
+  // H toggles the privacy blur (by key position, so it works on any layout)
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.code !== "KeyH" || e.metaKey || e.ctrlKey || e.altKey) return;
+      const el = e.target as HTMLElement | null;
+      if (el && (el.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(el.tagName))) return;
+      toggleHidden();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [toggleHidden]);
   const good = balance >= 0;
   const isEmpty = income === 0 && expense === 0;
   const label = healthLabel(health, ru, isEmpty);
@@ -114,7 +126,8 @@ export default function PulseHero({
   const [confettiFire, setConfettiFire] = useState(0);
   useEffect(() => {
     if (isEmpty || health < 75) return;
-    const key = `mp-celebrated-${new Date().toISOString().slice(0, 7)}`;
+    // local month, not UTC: east of Greenwich the first hours of the 1st would still count as last month
+    const key = `mp-celebrated-${dateKey().slice(0, 7)}`;
     try {
       if (localStorage.getItem(key)) return;
       localStorage.setItem(key, "1");
@@ -194,14 +207,15 @@ export default function PulseHero({
           <div className="min-w-0">
             <div className="flex items-center gap-2">
               <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
-                {tr("balance") || (ru ? "Баланс месяца" : "Month balance")}
+                {tr("balance")}
               </p>
               <button
                 type="button"
                 onClick={toggleHidden}
                 aria-pressed={hidden}
-                aria-label={ru ? (hidden ? "Показать суммы" : "Скрыть суммы") : hidden ? "Show amounts" : "Hide amounts"}
-                title={ru ? (hidden ? "Показать суммы" : "Скрыть суммы") : hidden ? "Show amounts" : "Hide amounts"}
+                aria-keyshortcuts="H"
+                aria-label={hidden ? tr("showAmounts") : tr("hideAmounts")}
+                title={`${hidden ? tr("showAmounts") : tr("hideAmounts")} (H)`}
                 className="flex h-6 w-6 items-center justify-center rounded-lg text-slate-500 transition hover:bg-white/[0.06] hover:text-cyan-300"
               >
                 {hidden ? <EyeOff size={14} /> : <Eye size={14} />}

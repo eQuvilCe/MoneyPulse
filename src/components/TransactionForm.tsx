@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { EXPENSE_CATEGORIES, INCOME_CATEGORIES, CATEGORY_ICONS, TransactionType, formatMoney, allExpenseCategories, allIncomeCategories, Settings, MAX_AMOUNT, formatMoneyCompact, readAmount, dateKey } from "@/lib/types";
+import { CATEGORY_ICONS, TransactionType, formatMoney, allExpenseCategories, allIncomeCategories, Settings, MAX_AMOUNT, formatMoneyCompact, readAmount, dateKey } from "@/lib/types";
 import { addTransaction } from "@/lib/storage";
 import { useToast } from "@/components/Toast";
 import { useApp } from "@/components/AppProvider";
@@ -41,8 +41,32 @@ export default function TransactionForm({ type, onAdded, currency = "₽", setti
   const [date, setDate] = useState(dateKey());
   const [recurring, setRecurring] = useState(false);
   const [open, setOpen] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const toast = useToast();
   const { tr } = useApp();
+
+  // N opens the form from anywhere on the page (by key position, so it works on a Russian layout too)
+  useEffect(() => {
+    if (open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.code !== "KeyN" || e.metaKey || e.ctrlKey || e.altKey) return;
+      const el = e.target as HTMLElement | null;
+      if (el && (el.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(el.tagName))) return;
+      e.preventDefault();
+      setOpen(true);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open]);
 
   const categories =
     type === "income"
@@ -56,7 +80,8 @@ export default function TransactionForm({ type, onAdded, currency = "₽", setti
       toast(tr("amountTooBig", { max: formatMoneyCompact(MAX_AMOUNT, currency) }), "err");
       return;
     }
-    if (!num) return;
+    if (!num || submitting) return;
+    setSubmitting(true);
     void addTransaction({
       type,
       amount: num,
@@ -75,7 +100,9 @@ export default function TransactionForm({ type, onAdded, currency = "₽", setti
           : `−${formatMoney(num, currency)} ${tr("addExpense").toLowerCase()}${recurring ? " ↻" : ""}`
       );
       onAdded();
-    });
+    })
+      .catch(() => toast(tr("quickAddSaveError"), "err"))
+      .finally(() => setSubmitting(false));
   };
 
   return (
@@ -84,6 +111,8 @@ export default function TransactionForm({ type, onAdded, currency = "₽", setti
         whileHover={{ scale: 1.01 }}
         whileTap={{ scale: 0.98 }}
         onClick={() => setOpen(true)}
+        title={tr("newTxHotkeyHint")}
+        aria-keyshortcuts="N"
         className="flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-white/15 bg-white/[0.02] py-4 text-sm font-medium text-slate-400 transition hover:border-emerald-500/30 hover:text-emerald-300"
       >
         + {type === "income" ? tr("addIncome") : tr("addExpense")}
@@ -104,9 +133,12 @@ export default function TransactionForm({ type, onAdded, currency = "₽", setti
               exit={{ y: 20, opacity: 0 }}
               onClick={(e) => e.stopPropagation()}
               onSubmit={handleSubmit}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby={`tx-form-title-${type}`}
               className="w-full max-w-md space-y-3 rounded-3xl border border-white/10 bg-[#0a0f1a] p-5 shadow-2xl"
             >
-              <h3 className="text-lg font-bold">
+              <h3 id={`tx-form-title-${type}`} className="text-lg font-bold">
                 {type === "income" ? tr("newIncomeTitle") : tr("newExpenseTitle")}
               </h3>
               <input
@@ -114,6 +146,9 @@ export default function TransactionForm({ type, onAdded, currency = "₽", setti
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
                 placeholder={`${tr("amount")} ${currency}`}
+                aria-label={`${tr("amount")} ${currency}`}
+                inputMode="decimal"
+                autoFocus
                 required
                 min="1"
                 step="any"
@@ -122,6 +157,7 @@ export default function TransactionForm({ type, onAdded, currency = "₽", setti
               <select
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
+                aria-label={tr("category")}
                 className="w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-sm"
               >
                 {categories.map((c) => (
@@ -139,12 +175,15 @@ export default function TransactionForm({ type, onAdded, currency = "₽", setti
                   if (sug) setCategory(sug);
                 }}
                 placeholder={tr("txDescriptionPlaceholder")}
+                aria-label={tr("txDescriptionPlaceholder")}
+                maxLength={500}
                 className="w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-sm outline-none focus:border-emerald-500/40"
               />
               <input
                 type="date"
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
+                aria-label={tr("dateLabel")}
                 className="w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-sm"
               />
               <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-400">
@@ -166,9 +205,10 @@ export default function TransactionForm({ type, onAdded, currency = "₽", setti
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 rounded-xl bg-emerald-500 py-3 text-sm font-semibold text-white hover:bg-emerald-400"
+                  disabled={submitting}
+                  className="flex-1 rounded-xl bg-emerald-500 py-3 text-sm font-semibold text-white hover:bg-emerald-400 disabled:opacity-60"
                 >
-                  {tr("add")}
+                  {submitting ? tr("saving") : tr("add")}
                 </button>
               </div>
             </motion.form>

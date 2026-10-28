@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { loadDataAsync, updateSettings, exportJSON, exportCSV } from "@/lib/storage";
-import { FinanceData, MAX_AMOUNT, formatMoneyCompact, readAmount } from "@/lib/types";
+import { FinanceData, MAX_AMOUNT, formatMoneyCompact, readAmount, allExpenseCategories, allIncomeCategories } from "@/lib/types";
 import { PageShell, FadeItem, Skeleton } from "@/components/motion/PageShell";
 import TiltCard from "@/components/motion/TiltCard";
 import TelegramCard from "@/components/TelegramCard";
@@ -27,6 +27,16 @@ import {
 } from "lucide-react";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+/** Mirrors the server-side zod rule for newPassword. */
+const MIN_PASSWORD_LENGTH = 6;
+const DEFAULT_SAVINGS_PERCENT = 20;
+
+/** Parses the savings target input; keeps a deliberate 0 and clamps to 0–100. */
+function clampPercent(raw: string): number {
+  const n = parseInt(raw, 10);
+  if (Number.isNaN(n)) return DEFAULT_SAVINGS_PERCENT;
+  return Math.min(100, Math.max(0, n));
+}
 
 function SectionHeading({ icon: Icon, children }: { icon: LucideIcon; children: React.ReactNode }) {
   return (
@@ -116,7 +126,7 @@ export default function SettingsPage() {
 
   const saveAccount = async () => {
     if (!EMAIL_RE.test(email.trim())) {
-      setEmailError(lang === "ru" ? "Неверный формат email" : "Invalid email format");
+      setEmailError(tr("invalidEmailFormat"));
       return;
     }
     setEmailError("");
@@ -124,23 +134,23 @@ export default function SettingsPage() {
     const res = await updateProfile({ name, email });
     setSavingProfile(false);
     if (!res.ok) {
-      toast(res.error || (lang === "ru" ? "Не удалось сохранить профиль" : "Could not save profile"), "err");
+      toast(res.error || tr("profileSaveFailed"), "err");
       return;
     }
     toast(tr("saved"));
   };
 
   const savePassword = async () => {
-    if (newPassword.length < 6) {
-      toast(lang === "ru" ? "Новый пароль — минимум 6 символов" : "New password needs at least 6 characters", "err");
+    if (newPassword.length < MIN_PASSWORD_LENGTH) {
+      toast(tr("newPasswordMinLength"), "err");
       return;
     }
     if (newPassword !== confirmPassword) {
-      toast(lang === "ru" ? "Пароли не совпадают" : "Passwords don't match", "err");
+      toast(tr("passwordsDontMatch"), "err");
       return;
     }
     if (!currentPassword) {
-      toast(lang === "ru" ? "Введи текущий пароль" : "Enter your current password", "err");
+      toast(tr("enterCurrentPassword"), "err");
       return;
     }
     setSavingPassword(true);
@@ -153,13 +163,13 @@ export default function SettingsPage() {
       });
       const resData = await res.json();
       if (!res.ok) {
-        toast(resData.issues?.[0] || resData.error || (lang === "ru" ? "Не удалось сменить пароль" : "Could not change password"), "err");
+        toast(resData.issues?.[0] || resData.error || tr("passwordChangeFailed"), "err");
         return;
       }
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
-      toast(lang === "ru" ? "Пароль обновлён" : "Password updated");
+      toast(tr("passwordUpdated"));
     } finally {
       setSavingPassword(false);
     }
@@ -175,7 +185,7 @@ export default function SettingsPage() {
     await updateSettings({
       currency,
       monthlyIncomeGoal: goal ?? undefined,
-      savingsTargetPercent: parseInt(savings) || 20,
+      savingsTargetPercent: clampPercent(savings),
     });
     setSavingFinance(false);
     toast(tr("saved"));
@@ -193,7 +203,7 @@ export default function SettingsPage() {
       });
       const resData = await res.json().catch(() => ({}));
       if (!res.ok) {
-        toast(resData.error || (lang === "ru" ? "Не удалось удалить аккаунт" : "Could not delete account"), "err");
+        toast(resData.error || tr("accountDeleteFailed"), "err");
         return;
       }
       await logout();
@@ -221,10 +231,23 @@ export default function SettingsPage() {
     );
   }
 
-  const planLabel =
-    lang === "ru"
-      ? { free: "Бесплатный", pro: "Pro", demo: "Демо" }[user?.plan || "free"]
-      : { free: "Free plan", pro: "Pro", demo: "Demo" }[user?.plan || "free"];
+  const addCategory = () => {
+    const n = newCat.trim();
+    if (!n) return;
+    const existing = [...allExpenseCategories(data.settings), ...allIncomeCategories(data.settings)];
+    if (existing.some((c) => c.toLowerCase() === n.toLowerCase())) {
+      toast(tr("categoryExists"), "err");
+      return;
+    }
+    const list = Array.from(new Set([...(data.settings.customCategories || []), n]));
+    updateSettings({ customCategories: list }).then(() => {
+      setNewCat("");
+      toast(tr("saved"));
+      refresh();
+    });
+  };
+
+  const planLabel = { free: tr("freePlan"), pro: "Pro", demo: tr("demoPlan") }[user?.plan || "free"];
 
   return (
     <PageShell className="page-accent-cyan">
@@ -236,9 +259,7 @@ export default function SettingsPage() {
           <LetterReveal text={tr("settings")} />
         </h1>
         <p className="mt-1 text-sm text-slate-400">
-          {lang === "ru"
-            ? "Аккаунт, финансы, оформление и данные — всё в одном месте"
-            : "Account, finances, appearance and data — all in one place"}
+          {tr("settingsHeroSubtitle")}
         </p>
       </FadeItem>
 
@@ -280,16 +301,17 @@ export default function SettingsPage() {
             <SectionHeading icon={User}>{tr("profile")}</SectionHeading>
             <div className="grid gap-3 sm:grid-cols-2">
               <div>
-                <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-slate-500">
+                <label htmlFor="set-name" className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-slate-500">
                   {tr("name")}
                 </label>
-                <input value={name} onChange={(e) => setName(e.target.value)} className={fieldClass} />
+                <input id="set-name" value={name} onChange={(e) => setName(e.target.value)} className={fieldClass} />
               </div>
               <div>
-                <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-slate-500">
+                <label htmlFor="set-email" className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-slate-500">
                   {tr("email")}
                 </label>
                 <input
+                  id="set-email"
                   type="email"
                   value={email}
                   onChange={(e) => {
@@ -308,7 +330,7 @@ export default function SettingsPage() {
               className="rounded-xl px-6 py-2.5 text-sm font-semibold text-slate-950 shadow-lg disabled:opacity-60"
               style={{ background: "var(--page-accent)" }}
             >
-              {savingProfile ? (lang === "ru" ? "Сохраняю…" : "Saving…") : tr("save")}
+              {savingProfile ? tr("saving") : tr("save")}
             </button>
           </div>
         </TiltCard>
@@ -320,13 +342,14 @@ export default function SettingsPage() {
 
       {/* Password */}
       <SettingsCard>
-        <SectionHeading icon={Lock}>{lang === "ru" ? "Смена пароля" : "Change password"}</SectionHeading>
+        <SectionHeading icon={Lock}>{tr("changePasswordTitle")}</SectionHeading>
         <div className="grid gap-3 sm:grid-cols-3">
           <div>
-            <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-slate-500">
-              {lang === "ru" ? "Текущий пароль" : "Current password"}
+            <label htmlFor="set-current-password" className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-slate-500">
+              {tr("currentPassword")}
             </label>
             <input
+              id="set-current-password"
               type="password"
               value={currentPassword}
               onChange={(e) => setCurrentPassword(e.target.value)}
@@ -335,10 +358,11 @@ export default function SettingsPage() {
             />
           </div>
           <div>
-            <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-slate-500">
-              {lang === "ru" ? "Новый пароль" : "New password"}
+            <label htmlFor="set-new-password" className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-slate-500">
+              {tr("newPassword")}
             </label>
             <input
+              id="set-new-password"
               type="password"
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
@@ -347,10 +371,11 @@ export default function SettingsPage() {
             />
           </div>
           <div>
-            <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-slate-500">
-              {lang === "ru" ? "Повтори пароль" : "Confirm password"}
+            <label htmlFor="set-repeat-password" className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-slate-500">
+              {tr("repeatPassword")}
             </label>
             <input
+              id="set-repeat-password"
               type="password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
@@ -366,19 +391,20 @@ export default function SettingsPage() {
           className="rounded-xl px-6 py-2.5 text-sm font-semibold text-slate-950 shadow-lg disabled:opacity-50"
           style={{ background: "var(--page-accent)" }}
         >
-          {savingPassword ? (lang === "ru" ? "Сохраняю…" : "Saving…") : lang === "ru" ? "Обновить пароль" : "Update password"}
+          {savingPassword ? tr("saving") : tr("updatePassword")}
         </button>
       </SettingsCard>
 
       {/* Finance */}
       <SettingsCard>
-        <SectionHeading icon={Target}>{lang === "ru" ? "Финансовые цели" : "Financial goals"}</SectionHeading>
+        <SectionHeading icon={Target}>{tr("financialGoalsTitle")}</SectionHeading>
         <div className="grid gap-3 sm:grid-cols-2">
           <div>
-            <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-slate-500">
+            <label htmlFor="set-income-goal" className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-slate-500">
               {tr("incomeGoal")}
             </label>
             <input
+              id="set-income-goal"
               type="number"
               value={incomeGoal}
               onChange={(e) => setIncomeGoal(e.target.value)}
@@ -386,10 +412,11 @@ export default function SettingsPage() {
             />
           </div>
           <div>
-            <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-slate-500">
+            <label htmlFor="set-savings-target" className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-slate-500">
               {tr("savingsTarget")}
             </label>
             <input
+              id="set-savings-target"
               type="number"
               value={savings}
               onChange={(e) => setSavings(e.target.value)}
@@ -407,6 +434,7 @@ export default function SettingsPage() {
                 key={c.code}
                 type="button"
                 onClick={() => setCurrency(c.code)}
+                aria-pressed={currency === c.code}
                 className={
                   currency === c.code
                     ? "rounded-xl px-3 py-2 text-sm font-semibold transition"
@@ -427,7 +455,7 @@ export default function SettingsPage() {
             ))}
           </div>
           <p className="mt-1.5 text-[11px] text-slate-500">
-            {lang === "ru" ? "Нажми «Сохранить», чтобы применить валюту и цели вместе" : "Hit Save to apply the currency and goals together"}
+            {tr("saveToApplyHint")}
           </p>
         </div>
         <button
@@ -437,7 +465,7 @@ export default function SettingsPage() {
           className="rounded-xl px-6 py-2.5 text-sm font-semibold text-slate-950 shadow-lg disabled:opacity-60"
           style={{ background: "var(--page-accent)" }}
         >
-          {savingFinance ? (lang === "ru" ? "Сохраняю…" : "Saving…") : tr("save")}
+          {savingFinance ? tr("saving") : tr("save")}
         </button>
       </SettingsCard>
 
@@ -450,7 +478,7 @@ export default function SettingsPage() {
           <div className="flex gap-2">
             {(
               [
-                { id: "ru" as const, label: "Русский" },
+                { id: "ru" as const, label: tr("russianLang") },
                 { id: "en" as const, label: "English" },
               ] as const
             ).map((l) => (
@@ -458,6 +486,7 @@ export default function SettingsPage() {
                 key={l.id}
                 type="button"
                 onClick={() => setLang(l.id)}
+                aria-pressed={lang === l.id}
                 className="rounded-xl px-5 py-2.5 text-sm font-semibold transition"
                 style={
                   lang === l.id
@@ -482,6 +511,7 @@ export default function SettingsPage() {
               <button
                 key={th}
                 type="button"
+                aria-pressed={theme === th}
                 onClick={() => {
                   setTheme(th);
                   void updateSettings({ theme: th });
@@ -508,28 +538,28 @@ export default function SettingsPage() {
       <SettingsCard>
         <SectionHeading icon={Tags}>{tr("customCategories")}</SectionHeading>
         <p className="text-xs text-slate-500">
-          {lang === "ru" ? "Например «Питомцы», «Спорт» — появятся в формах расходов" : "e.g. Pets, Sports — show up in expense forms"}
+          {tr("customCategoryHint")}
         </p>
         <div className="flex gap-2">
           <input
             value={newCat}
             onChange={(e) => setNewCat(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                addCategory();
+              }
+            }}
             placeholder={tr("name")}
             className={`flex-1 ${fieldClass}`}
           />
           <button
             type="button"
-            onClick={() => {
-              const n = newCat.trim();
-              if (!n) return;
-              const list = Array.from(new Set([...(data.settings.customCategories || []), n]));
-              updateSettings({ customCategories: list }).then(() => {
-                setNewCat("");
-                toast(tr("saved"));
-                refresh();
-              });
-            }}
-            className="rounded-xl bg-white/10 px-4 py-2.5 text-sm font-medium hover:bg-white/15"
+            onClick={addCategory}
+            disabled={!newCat.trim()}
+            aria-label={tr("addCategory")}
+            title={tr("addCategory")}
+            className="rounded-xl bg-white/10 px-4 py-2.5 text-sm font-medium hover:bg-white/15 disabled:opacity-40"
           >
             +
           </button>
@@ -543,6 +573,8 @@ export default function SettingsPage() {
               {c}
               <button
                 type="button"
+                aria-label={tr("removeCategory", { name: c })}
+                title={tr("remove")}
                 className="text-slate-500 hover:text-rose-400"
                 onClick={() => {
                   const list = (data.settings.customCategories || []).filter((x) => x !== c);
@@ -570,7 +602,7 @@ export default function SettingsPage() {
                 const { enableBrowserNotifications } = await import("@/lib/notifications");
                 const ok = await enableBrowserNotifications();
                 if (!ok) {
-                  toast(lang === "ru" ? "Разреши уведомления в браузере" : "Allow browser notifications", "err");
+                  toast(tr("allowBrowserNotifications"), "err");
                   return;
                 }
               }
@@ -612,9 +644,9 @@ export default function SettingsPage() {
       <SettingsCard>
         <SectionHeading icon={ShieldCheck}>{tr("security")}</SectionHeading>
         <ul className="space-y-1.5 text-xs leading-relaxed text-slate-500">
-          <li>• {lang === "ru" ? "Пароли: scrypt, в cookie только JWT" : "Passwords: scrypt, JWT cookie only"}</li>
-          <li>• {lang === "ru" ? "Данные изолированы по user_id" : "Data isolated by user_id"}</li>
-          <li>• {lang === "ru" ? "Сессия до 1 года при «Запомнить»" : "Session up to 1 year with Remember"}</li>
+          <li>• {tr("securityScrypt")}</li>
+          <li>• {tr("securityIsolation")}</li>
+          <li>• {tr("securitySession")}</li>
         </ul>
         <button
           type="button"
@@ -627,20 +659,18 @@ export default function SettingsPage() {
 
       {/* Danger zone — delete account */}
       <SettingsCard className="border border-rose-500/20">
-        <SectionHeading icon={Trash2}>{lang === "ru" ? "Опасная зона" : "Danger zone"}</SectionHeading>
+        <SectionHeading icon={Trash2}>{tr("dangerZoneTitle")}</SectionHeading>
         {!deleteOpen ? (
           <>
             <p className="text-xs text-slate-500">
-              {lang === "ru"
-                ? "Удаление аккаунта необратимо — все транзакции, цели, бюджеты и счета будут удалены навсегда."
-                : "Deleting your account is permanent — all transactions, goals, budgets and accounts are erased forever."}
+              {tr("deleteAccountWarning")}
             </p>
             <button
               type="button"
               onClick={() => setDeleteOpen(true)}
               className="rounded-xl bg-rose-500/15 px-6 py-2.5 text-sm font-semibold text-rose-300 ring-1 ring-rose-500/25 hover:bg-rose-500/25"
             >
-              {lang === "ru" ? "Удалить аккаунт" : "Delete account"}
+              {tr("deleteAccount")}
             </button>
           </>
         ) : (
@@ -648,16 +678,15 @@ export default function SettingsPage() {
             <div className="flex items-start gap-2 text-xs text-rose-300">
               <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
               <p>
-                {lang === "ru"
-                  ? 'Это нельзя отменить. Введи пароль и напиши "DELETE", чтобы подтвердить.'
-                  : 'This cannot be undone. Enter your password and type "DELETE" to confirm.'}
+                {tr("deleteConfirmPrompt")}
               </p>
             </div>
             <input
               type="password"
               value={deletePassword}
               onChange={(e) => setDeletePassword(e.target.value)}
-              placeholder={lang === "ru" ? "Пароль (если есть)" : "Password (if you have one)"}
+              placeholder={tr("passwordIfAny")}
+              aria-label={tr("passwordIfAny")}
               className={fieldClass}
               autoComplete="current-password"
             />
@@ -665,6 +694,9 @@ export default function SettingsPage() {
               value={deleteConfirmText}
               onChange={(e) => setDeleteConfirmText(e.target.value)}
               placeholder="DELETE"
+              aria-label={tr("deleteConfirmPrompt")}
+              autoCapitalize="characters"
+              autoComplete="off"
               className={fieldClass}
             />
             <div className="flex gap-2">
@@ -677,7 +709,7 @@ export default function SettingsPage() {
                 }}
                 className="flex-1 rounded-xl bg-white/5 px-4 py-2.5 text-sm font-medium text-slate-300 ring-1 ring-white/10 hover:bg-white/10"
               >
-                {lang === "ru" ? "Отмена" : "Cancel"}
+                {tr("cancel")}
               </button>
               <button
                 type="button"
@@ -685,13 +717,7 @@ export default function SettingsPage() {
                 onClick={() => void deleteAccount()}
                 className="flex-1 rounded-xl bg-rose-500 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-rose-500/20 hover:bg-rose-400 disabled:cursor-not-allowed disabled:opacity-40"
               >
-                {deleting
-                  ? lang === "ru"
-                    ? "Удаляю…"
-                    : "Deleting…"
-                  : lang === "ru"
-                    ? "Удалить навсегда"
-                    : "Delete forever"}
+                {deleting ? tr("deleting") : tr("deleteForever")}
               </button>
             </div>
           </div>
@@ -713,9 +739,9 @@ export default function SettingsPage() {
               <MessageCircle className="h-5 w-5" strokeWidth={2.2} />
             </span>
             <div>
-              <p className="text-sm font-semibold text-white">{lang === "ru" ? "Остались вопросы?" : "Have questions?"}</p>
+              <p className="text-sm font-semibold text-white">{tr("questionsLeft")}</p>
               <p className="text-xs text-slate-500">
-                {lang === "ru" ? "Напиши напрямую в Telegram" : "Message us directly on Telegram"}
+                {tr("writeOnTelegram")}
               </p>
             </div>
           </div>
@@ -730,7 +756,7 @@ export default function SettingsPage() {
               boxShadow: "inset 0 0 0 1px rgba(var(--page-accent-rgb),0.25)",
             }}
           >
-            {lang === "ru" ? "Написать" : "Message"}
+            {tr("writeWord")}
           </a>
         </TiltCard>
       </FadeItem>

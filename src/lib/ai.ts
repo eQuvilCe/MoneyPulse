@@ -511,8 +511,6 @@ export function answerAIChat(question: string, data: FinanceData): string {
 }
 
 export function getQuickInsights(data: FinanceData): string[] {
-  const C = data.settings?.currency || "₽";
-  const m = (n: number) => formatMoney(n, C);
   const stats = calcStats(data);
   const budgets = budgetStatus(data);
   const out: string[] = [];

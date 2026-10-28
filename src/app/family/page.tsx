@@ -7,7 +7,7 @@ import { LetterReveal, MagneticButton } from "@/components/motion/Reveal";
 import { useApp } from "@/components/AppProvider";
 import { useToast } from "@/components/Toast";
 import { useRealtimeData } from "@/hooks/useRealtimeData";
-import { CATEGORY_ICONS, formatMoney, formatMoneySmart, allExpenseCategories, MAX_AMOUNT, formatMoneyCompact, readAmount } from "@/lib/types";
+import { CATEGORY_ICONS, formatMoney, formatMoneySmart, allExpenseCategories, MAX_AMOUNT, formatMoneyCompact, readAmount, dateKey, formatShortDate } from "@/lib/types";
 import FitText from "@/components/FitText";
 import type {
   FamilyMemberPublic,
@@ -39,10 +39,15 @@ async function api<T>(url: string, init?: RequestInit): Promise<{ ok: boolean; d
   }
 }
 
+/** One-tap contribution amounts for shared family goals. */
+const FAMILY_QUICK_CONTRIBUTIONS = [1000, 5000, 10000];
+/** How many of the most recent shared transactions the feed renders. */
+const FAMILY_FEED_LIMIT = 40;
+
 export default function FamilyPage() {
   const { tr, user, lang } = useApp();
   const toast = useToast();
-  const { data } = useRealtimeData(0);
+  const { data } = useRealtimeData();
   const cur = data?.settings.currency || "₽";
   const [loading, setLoading] = useState(true);
   const [family, setFamily] = useState<FamilyPublic | null>(null);
@@ -62,6 +67,8 @@ export default function FamilyPage() {
   const [showBudgetForm, setShowBudgetForm] = useState(false);
   const [budgetCat, setBudgetCat] = useState("еда");
   const [budgetLimit, setBudgetLimit] = useState("");
+
+  const [feedMember, setFeedMember] = useState<string | null>(null);
 
   const [showGoalForm, setShowGoalForm] = useState(false);
   const [goalTitle, setGoalTitle] = useState("");
@@ -244,6 +251,16 @@ export default function FamilyPage() {
   };
 
   const isOwner = !!(family && user && family.ownerId === user.id);
+  const feed = feedMember ? transactions.filter((t) => t.userId === feedMember) : transactions;
+
+  // The overview only reports spending for budgets that are already over the limit,
+  // so derive this month's per-category spend from the shared feed for the rest.
+  const monthPrefix = dateKey().slice(0, 7);
+  const monthSpentByCategory: Record<string, number> = {};
+  for (const t of transactions) {
+    if (t.type !== "expense" || !t.date.startsWith(monthPrefix)) continue;
+    monthSpentByCategory[t.category] = (monthSpentByCategory[t.category] || 0) + t.amount;
+  }
   const expenseCats = allExpenseCategories(data?.settings);
 
   return (
@@ -293,6 +310,10 @@ export default function FamilyPage() {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder={tr("familyNamePlaceholder")}
+                aria-label={tr("familyNamePlaceholder")}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") void create();
+                }}
                 className="w-full rounded-xl border border-white/10 bg-slate-900 px-3 py-2.5 text-sm"
               />
               <MagneticButton onClick={() => void create()} primary className="w-full">
@@ -309,6 +330,13 @@ export default function FamilyPage() {
                 value={code}
                 onChange={(e) => setCode(e.target.value.toUpperCase())}
                 placeholder={tr("familyCodePlaceholder")}
+                aria-label={tr("familyInviteCode")}
+                autoComplete="off"
+                autoCapitalize="characters"
+                spellCheck={false}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") void join();
+                }}
                 className="w-full rounded-xl border border-white/10 bg-slate-900 px-3 py-2.5 text-sm uppercase tracking-widest"
                 maxLength={8}
               />
@@ -475,6 +503,8 @@ export default function FamilyPage() {
                     value={budgetLimit}
                     onChange={(e) => setBudgetLimit(e.target.value)}
                     placeholder={tr("familyNewBudget")}
+                    aria-label={tr("familyNewBudget")}
+                    inputMode="decimal"
                     min="1"
                     className="rounded-xl border border-white/10 bg-slate-900 px-3 py-2.5 text-sm"
                   />
@@ -506,7 +536,7 @@ export default function FamilyPage() {
                           <div>
                             <p className="text-sm font-medium capitalize">{b.category}</p>
                             <p className="text-[11px] text-slate-500">
-                              {formatMoney(alert?.spent ?? 0, cur)} / {formatMoney(b.limit, cur)}
+                              {formatMoney(alert?.spent ?? monthSpentByCategory[b.category] ?? 0, cur)} / {formatMoney(b.limit, cur)}
                             </p>
                           </div>
                         </div>
@@ -543,6 +573,8 @@ export default function FamilyPage() {
                     value={goalTitle}
                     onChange={(e) => setGoalTitle(e.target.value)}
                     placeholder={tr("goalTitleLabel")}
+                    aria-label={tr("goalTitleLabel")}
+                    maxLength={100}
                     className="rounded-xl border border-white/10 bg-slate-900 px-3 py-2.5 text-sm sm:col-span-2"
                   />
                   <input
@@ -550,6 +582,8 @@ export default function FamilyPage() {
                     value={goalTarget}
                     onChange={(e) => setGoalTarget(e.target.value)}
                     placeholder={tr("goalAmountLabel", { cur })}
+                    aria-label={tr("goalAmountLabel", { cur })}
+                    inputMode="decimal"
                     min="1"
                     className="rounded-xl border border-white/10 bg-slate-900 px-3 py-2.5 text-sm"
                   />
@@ -557,6 +591,8 @@ export default function FamilyPage() {
                     value={goalEmoji}
                     onChange={(e) => setGoalEmoji(e.target.value)}
                     placeholder={tr("emoji")}
+                    aria-label={tr("emoji")}
+                    maxLength={4}
                     className="rounded-xl border border-white/10 bg-slate-900 px-3 py-2.5 text-sm"
                   />
                   <button
@@ -574,7 +610,8 @@ export default function FamilyPage() {
               ) : (
                 <div className="mt-3 grid gap-3 sm:grid-cols-2">
                   {familyGoals.map((g) => {
-                    const progress = Math.min(100, Math.round((g.currentAmount / g.targetAmount) * 100));
+                    const progress =
+                      g.targetAmount > 0 ? Math.min(100, Math.round((g.currentAmount / g.targetAmount) * 100)) : 0;
                     const left = g.targetAmount - g.currentAmount;
                     const creator = family.members.find((m) => m.userId === g.createdBy)?.name;
                     return (
@@ -593,8 +630,11 @@ export default function FamilyPage() {
                           </div>
                           <button
                             type="button"
-                            onClick={() => void removeGoal(g.id)}
-                            className="rounded-lg p-1 text-slate-600 hover:text-rose-400"
+                            onClick={() => {
+                              if (window.confirm(tr("deleteGoalConfirm", { title: g.title }))) void removeGoal(g.id);
+                            }}
+                            title={tr("deleteGoal")}
+                            className="rounded-lg p-1 text-slate-600 hover:bg-white/5 hover:text-rose-400"
                             aria-label={tr("remove")}
                           >
                             ✕
@@ -617,7 +657,7 @@ export default function FamilyPage() {
                         </div>
                         {left > 0 ? (
                           <div className="mt-2 flex flex-wrap gap-1.5">
-                            {[1000, 5000, 10000].map((amt) => (
+                            {FAMILY_QUICK_CONTRIBUTIONS.map((amt) => (
                               <button
                                 key={amt}
                                 type="button"
@@ -649,18 +689,35 @@ export default function FamilyPage() {
               <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-400">
                 {tr("familyFeed")}
               </h2>
-              {transactions.length === 0 ? (
+              {family.members.length > 1 && transactions.length > 0 && (
+                <div className="mb-3 flex flex-wrap gap-1.5">
+                  {[{ userId: null as string | null, name: tr("all") }, ...family.members].map((m) => (
+                    <button
+                      key={m.userId ?? "all"}
+                      type="button"
+                      onClick={() => setFeedMember(m.userId)}
+                      aria-pressed={feedMember === m.userId}
+                      className={`rounded-full px-3 py-1 text-xs transition ${
+                        feedMember === m.userId ? "bg-white/10 text-white ring-1 ring-white/20" : "text-slate-500 hover:text-slate-300"
+                      }`}
+                    >
+                      {m.name}
+                    </button>
+                  ))}
+                </div>
+              )}
+              {feed.length === 0 ? (
                 <p className="py-6 text-center text-sm text-slate-500">{tr("familyNoTx")}</p>
               ) : (
                 <div className="space-y-1">
-                  {transactions.slice(0, 40).map((t: FamilyTransactionRow) => (
+                  {feed.slice(0, FAMILY_FEED_LIMIT).map((t: FamilyTransactionRow) => (
                     <div key={t.id} className="flex items-center justify-between gap-3 rounded-xl px-2 py-2 text-sm hover:bg-white/[0.03]">
                       <div className="flex min-w-0 items-center gap-2.5">
                         <span className="text-lg">{CATEGORY_ICONS[t.category] || "📦"}</span>
                         <div className="min-w-0">
                           <p className="truncate font-medium">{t.description || t.category}</p>
                           <p className="truncate text-[11px] text-slate-500">
-                            {t.memberName} · {t.date}
+                            {t.memberName} · <time dateTime={t.date}>{formatShortDate(t.date, lang)}</time>
                           </p>
                         </div>
                       </div>

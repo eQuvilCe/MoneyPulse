@@ -4,17 +4,22 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { loadDataAsync, addBudget, deleteBudget, getBudgetStatus } from "@/lib/storage";
 import { FinanceData, CATEGORY_ICONS, formatMoney, allExpenseCategories, MAX_AMOUNT, formatMoneyCompact, readAmount } from "@/lib/types";
-import { PageShell, FadeItem } from "@/components/motion/PageShell";
+import { PageShell, FadeItem, Skeleton } from "@/components/motion/PageShell";
 import TiltCard from "@/components/motion/TiltCard";
 import { LetterReveal } from "@/components/motion/Reveal";
 import AIInsightBar from "@/components/AIInsightBar";
 import { useToast } from "@/components/Toast";
 import { useApp } from "@/components/AppProvider";
 
+/** Category preselected when creating a new limit. */
+const DEFAULT_BUDGET_CATEGORY = "еда";
+/** From this share of the limit the bar turns amber. */
+const BUDGET_WARN_PERCENT = 80;
+
 export default function BudgetsPage() {
   const { tr } = useApp();
   const [data, setData] = useState<FinanceData | null>(null);
-  const [cat, setCat] = useState("еда");
+  const [cat, setCat] = useState(DEFAULT_BUDGET_CATEGORY);
   const [limit, setLimit] = useState("");
   const [show, setShow] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
@@ -24,10 +29,26 @@ export default function BudgetsPage() {
     refresh();
   }, []);
 
-  if (!data) return <div className="py-20 text-center text-slate-500">{tr("loading")}</div>;
-  const statuses = getBudgetStatus(data);
+  if (!data) {
+    return (
+      <PageShell className="page-accent-amber">
+        <FadeItem>
+          <Skeleton className="h-16 w-full" />
+        </FadeItem>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <Skeleton className="h-36" />
+          <Skeleton className="h-36" />
+        </div>
+      </PageShell>
+    );
+  }
+  // most stretched limits first — that's what needs attention
+  const statuses = [...getBudgetStatus(data)].sort((a, b) => b.percent - a.percent);
   const cur = data.settings.currency || "₽";
   const cats = allExpenseCategories(data.settings);
+  const now = new Date();
+  // including today, so the last day of the month still has a full allowance
+  const daysLeftInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate() - now.getDate() + 1;
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -69,10 +90,11 @@ export default function BudgetsPage() {
             onClick={() => {
               setEditId(null);
               setLimit("");
-              setCat("еда");
+              setCat(DEFAULT_BUDGET_CATEGORY);
               setShow(!show);
             }}
-            className="rounded-xl px-4 py-2.5 text-sm font-semibold text-white shadow-lg"
+            aria-expanded={show}
+            className="rounded-xl px-4 py-2.5 text-sm font-semibold text-white shadow-lg transition hover:brightness-110"
             style={{
               background: "linear-gradient(135deg, var(--page-accent), var(--page-accent-2))",
               boxShadow: "0 8px 24px rgba(var(--page-accent-rgb), 0.25)",
@@ -95,6 +117,7 @@ export default function BudgetsPage() {
                 value={cat}
                 onChange={(e) => setCat(e.target.value)}
                 disabled={!!editId}
+                aria-label={tr("category")}
                 className="rounded-xl border border-white/10 bg-slate-900 px-3 py-2.5 text-sm"
               >
                 {cats.map((c) => (
@@ -108,6 +131,9 @@ export default function BudgetsPage() {
                 value={limit}
                 onChange={(e) => setLimit(e.target.value)}
                 placeholder={tr("limitFor", { cur })}
+                aria-label={tr("limitFor", { cur })}
+                inputMode="decimal"
+                autoFocus
                 required
                 min="1"
                 className="rounded-xl border border-white/10 bg-slate-900 px-3 py-2.5 text-sm"
@@ -126,7 +152,9 @@ export default function BudgetsPage() {
       )}
       {statuses.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-white/10 py-16 text-center text-slate-500">
-          {tr("noBudgets")}
+          <p className="text-3xl" aria-hidden>📊</p>
+          <p className="mt-2">{tr("noBudgets")}</p>
+          <p className="mx-auto mt-1 max-w-xs text-xs text-slate-600">{tr("noBudgetsHint")}</p>
         </div>
       ) : (
         <div className="grid gap-3 sm:grid-cols-2">
@@ -149,16 +177,21 @@ export default function BudgetsPage() {
                 <div className="flex gap-1">
                   <button
                     onClick={() => openEdit(b)}
-                    className="rounded-lg p-1 text-slate-500 hover:text-cyan-400"
+                    title={tr("editLimit")}
+                    aria-label={tr("editLimit")}
+                    className="rounded-lg p-1 text-slate-500 hover:bg-white/5 hover:text-cyan-400"
                   >
                     ✎
                   </button>
                   <button
                     onClick={async () => {
+                      if (!window.confirm(tr("deleteLimitConfirm", { category: b.category }))) return;
                       await deleteBudget(b.id);
                       refresh();
                     }}
-                    className="rounded-lg p-1 text-slate-600 hover:text-rose-400"
+                    title={tr("deleteLimit")}
+                    aria-label={tr("deleteLimit")}
+                    className="rounded-lg p-1 text-slate-600 hover:bg-white/5 hover:text-rose-400"
                   >
                     ✕
                   </button>
@@ -171,13 +204,20 @@ export default function BudgetsPage() {
                   </span>
                   <span className="text-slate-500">{formatMoney(b.limit, cur)}</span>
                 </div>
-                <div className="h-2 overflow-hidden rounded-full bg-slate-800">
+                <div
+                  className="h-2 overflow-hidden rounded-full bg-slate-800"
+                  role="progressbar"
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-valuenow={Math.min(100, b.percent)}
+                  aria-label={b.category}
+                >
                   <motion.div
                     initial={{ width: 0 }}
                     animate={{ width: `${Math.min(100, b.percent)}%` }}
                     transition={{ duration: 0.8 }}
                     className={`h-full rounded-full ${
-                      b.over ? "bg-rose-500" : b.percent >= 80 ? "bg-amber-500" : "bg-emerald-500"
+                      b.over ? "bg-rose-500" : b.percent >= BUDGET_WARN_PERCENT ? "bg-amber-500" : "bg-emerald-500"
                     }`}
                   />
                 </div>
@@ -187,6 +227,11 @@ export default function BudgetsPage() {
                     : tr("remainingAmount", { v: formatMoney(b.remaining, cur) })}{" "}
                   · {b.percent}%
                 </p>
+                {!b.over && b.remaining > 0 && (
+                  <p className="mt-0.5 text-[11px] text-slate-600">
+                    {tr("budgetPerDay", { v: formatMoney(Math.floor(b.remaining / daysLeftInMonth), cur) })}
+                  </p>
+                )}
               </div>
               </TiltCard>
             </motion.div>

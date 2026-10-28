@@ -16,7 +16,7 @@ const LivePieChart = dynamic(() => import("@/components/LivePieChart"), {
 
 import { getStats, getBudgetStatus } from "@/lib/storage";
 import { useRealtimeData } from "@/hooks/useRealtimeData";
-import { CATEGORY_ICONS, CATEGORY_COLORS, formatMoney, formatMoneySmart, compactNumber, dateKey } from "@/lib/types";
+import { CATEGORY_ICONS, CATEGORY_COLORS, formatMoney, formatMoneySmart, compactNumber, dateKey, formatShortDate } from "@/lib/types";
 import { useHideAmounts, HIDDEN_AMOUNT } from "@/hooks/useHideAmounts";
 import StatCard from "@/components/StatCard";
 import AIInsightBar from "@/components/AIInsightBar";
@@ -34,10 +34,14 @@ import MoneyFlow from "@/components/MoneyFlow";
 import { QuickActions, MonthPace, ActivityTicker } from "@/components/DashboardLive";
 import { useApp } from "@/components/AppProvider";
 
+/** Days of history drawn in the stat card sparklines. */
+const SPARK_DAYS = 14;
+/** Savings rate at or above which the card is shown as healthy. */
+const GOOD_SAVINGS_RATE = 20;
+
 export default function Dashboard() {
-  const { data, refresh, live } = useRealtimeData(0);
+  const { data, refresh, live } = useRealtimeData();
   const { tr, lang } = useApp();
-  const ru = lang !== "en";
   const { hidden } = useHideAmounts();
   const [selectedDay, setSelectedDay] = useState(() => dateKey());
   const [txFilter, setTxFilter] = useState<"all" | "income" | "expense">("all");
@@ -60,7 +64,7 @@ export default function Dashboard() {
           animate={{ rotate: 360 }}
           transition={{ duration: 0.9, repeat: Infinity, ease: "linear" }}
         />
-        <p className="text-sm text-slate-500">{ru ? "Загрузка…" : "Loading…"}</p>
+        <p className="text-sm text-slate-500">{tr("loading")}</p>
       </div>
     );
   }
@@ -87,13 +91,13 @@ export default function Dashboard() {
   const cur = data.settings.currency;
   /** Exact while it fits the row, abbreviated from 10 million up. */
   const short = (n: number) =>
-    Math.abs(n) >= 1e7 ? compactNumber(n, ru ? "ru" : "en") : n.toLocaleString(ru ? "ru-RU" : "en-US");
+    Math.abs(n) >= 1e7 ? compactNumber(n, lang) : n.toLocaleString(lang === "en" ? "en-US" : "ru-RU");
   const health = getHealthScore(data);
 
   const spark = (type: "income" | "expense") => {
-    const arr = Array.from({ length: 14 }, (_, i) => {
+    const arr = Array.from({ length: SPARK_DAYS }, (_, i) => {
       const d = new Date();
-      d.setDate(d.getDate() - (13 - i));
+      d.setDate(d.getDate() - (SPARK_DAYS - 1 - i));
       const k = dateKey(d);
       return data.transactions
         .filter((t) => t.type === type && t.date === k)
@@ -104,16 +108,10 @@ export default function Dashboard() {
 
   const greeting = () => {
     const h = new Date().getHours();
-    if (ru) {
-      if (h < 6) return "Доброй ночи";
-      if (h < 12) return "Доброе утро";
-      if (h < 18) return "Добрый день";
-      return "Добрый вечер";
-    }
-    if (h < 6) return "Good night";
-    if (h < 12) return "Good morning";
-    if (h < 18) return "Good afternoon";
-    return "Good evening";
+    if (h < 6) return tr("goodNight");
+    if (h < 12) return tr("goodMorning");
+    if (h < 18) return tr("goodAfternoon");
+    return tr("goodEvening");
   };
 
   return (
@@ -127,12 +125,10 @@ export default function Dashboard() {
               {data.settings.name ? ` · ${data.settings.name.split(" ")[0]}` : ""}
             </p>
             <h1 className="mt-1 font-display text-2xl font-semibold tracking-tight sm:text-3xl">
-              <span className="mp-gradient-text">{ru ? "Финансовый пульс" : "Financial pulse"}</span>
+              <span className="mp-gradient-text">{tr("healthTitle")}</span>
             </h1>
             <p className="mt-1 text-sm text-slate-500">
-              {ru
-                ? "Баланс, AI-совет и быстрый ввод — на одном экране"
-                : "Balance, AI tip and quick add — one screen"}
+              {tr("dashboardHeroSubtitle")}
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -202,16 +198,16 @@ export default function Dashboard() {
       {/* Stats row */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <StatCard
-          title={tr("income") || (ru ? "Доход" : "Income")}
-          value={hidden ? HIDDEN_AMOUNT : `+${formatMoneySmart(stats.income, cur, ru ? "ru" : "en")}`}
+          title={tr("income")}
+          value={hidden ? HIDDEN_AMOUNT : `+${formatMoneySmart(stats.income, cur, lang)}`}
           fullValue={hidden ? undefined : `+${formatMoney(stats.income, cur)}`}
           icon="↑"
           color="green"
           spark={spark("income")}
         />
         <StatCard
-          title={tr("expenses") || (ru ? "Расход" : "Expense")}
-          value={hidden ? HIDDEN_AMOUNT : `−${formatMoneySmart(stats.expense, cur, ru ? "ru" : "en")}`}
+          title={tr("expenses")}
+          value={hidden ? HIDDEN_AMOUNT : `−${formatMoneySmart(stats.expense, cur, lang)}`}
           fullValue={hidden ? undefined : `−${formatMoney(stats.expense, cur)}`}
           icon="↓"
           color="red"
@@ -219,12 +215,12 @@ export default function Dashboard() {
           spark={spark("expense")}
         />
         <StatCard
-          title={tr("savings") || (ru ? "Сбережения" : "Savings")}
+          title={tr("savings")}
           value={`${stats.savingsRate}%`}
           icon="◎"
-          color={stats.savingsRate >= 20 ? "cyan" : "amber"}
+          color={stats.savingsRate >= GOOD_SAVINGS_RATE ? "cyan" : "amber"}
           delay={0.12}
-          subtitle={`${tr("goal") || (ru ? "Цель" : "Goal")} ${data.settings.savingsTargetPercent}%`}
+          subtitle={`${tr("goal")} ${data.settings.savingsTargetPercent}%`}
         />
       </div>
 
@@ -237,10 +233,10 @@ export default function Dashboard() {
         <FadeItem className="rounded-3xl border border-white/[0.08] bg-[#0a0e17]/75 p-5 shadow-[0_20px_60px_-24px_rgba(0,0,0,0.65)] backdrop-blur-xl lg:col-span-7">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="font-display text-sm font-semibold text-white">
-              {tr("dynamics") || (ru ? "Динамика 14 дней" : "14-day trend")}
+              {tr("dynamics")}
             </h2>
             <Link href="/analytics" className="text-xs text-cyan-400/80 hover:text-cyan-300">
-              {ru ? "Аналитика →" : "Analytics →"}
+              {tr("analytics")} →
             </Link>
           </div>
           <div className="h-52">
@@ -250,17 +246,17 @@ export default function Dashboard() {
         <FadeItem className="rounded-3xl border border-white/[0.08] bg-[#0a0e17]/75 p-5 shadow-[0_20px_60px_-24px_rgba(0,0,0,0.65)] backdrop-blur-xl lg:col-span-5">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="font-display text-sm font-semibold text-white">
-              {ru ? "Структура расходов" : "Expense structure"}
+              {tr("expenseStructure")}
             </h2>
             <Link href="/expenses" className="text-xs text-cyan-400/80 hover:text-cyan-300">
-              {ru ? "Все →" : "All →"}
+              {tr("allLink")}
             </Link>
           </div>
           {pieData.length === 0 ? (
             <div className="flex h-52 flex-col items-center justify-center gap-2 text-center">
-              <p className="text-sm text-slate-500">{tr("noData") || (ru ? "Нет данных" : "No data")}</p>
+              <p className="text-sm text-slate-500">{tr("noData")}</p>
               <Link href="/expenses" className="text-xs text-cyan-400 hover:underline">
-                {ru ? "Добавить расход" : "Add expense"}
+                {tr("addExpenseAction")}
               </Link>
             </div>
           ) : (
@@ -288,11 +284,7 @@ export default function Dashboard() {
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
             <div>
               <h2 className="font-display text-sm font-semibold text-white">
-                {ru ? "День" : "Day"} ·{" "}
-                {new Date(selectedDay).toLocaleDateString(ru ? "ru-RU" : "en-US", {
-                  day: "numeric",
-                  month: "long",
-                })}
+                {tr("dayWord")} · {formatShortDate(selectedDay, lang)}
               </h2>
               <p className="mt-0.5 text-xs text-slate-500">
                 <span className="text-emerald-400">+{formatMoney(dayIncome, cur)}</span>
@@ -303,15 +295,16 @@ export default function Dashboard() {
             <div className="flex gap-1 rounded-full border border-white/10 bg-white/[0.03] p-0.5">
               {(
                 [
-                  { id: "all" as const, label: ru ? "Все" : "All" },
-                  { id: "income" as const, label: ru ? "Доход" : "In" },
-                  { id: "expense" as const, label: ru ? "Расход" : "Out" },
+                  { id: "all" as const, label: tr("all") },
+                  { id: "income" as const, label: tr("incomeLabel") },
+                  { id: "expense" as const, label: tr("expense") },
                 ]
               ).map((f) => (
                 <button
                   key={f.id}
                   type="button"
                   onClick={() => setTxFilter(f.id)}
+                  aria-pressed={txFilter === f.id}
                   className={`rounded-full px-3 py-1 text-[11px] font-medium transition ${
                     txFilter === f.id ? "bg-cyan-400/20 text-cyan-300" : "text-slate-500 hover:text-slate-300"
                   }`}
@@ -333,7 +326,7 @@ export default function Dashboard() {
             </div>
           ) : (
             <p className="mt-6 text-center text-sm text-slate-600">
-              {tr("noData") || (ru ? "Нет операций в этот день" : "No transactions this day")}
+              {tr("noTxToday")}
             </p>
           )}
         </div>
@@ -344,17 +337,17 @@ export default function Dashboard() {
         <FadeItem className="rounded-3xl border border-white/[0.08] bg-[#0a0e17]/75 p-5 shadow-[0_20px_60px_-24px_rgba(0,0,0,0.65)] backdrop-blur-xl">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="font-display text-sm font-semibold text-white">
-              {tr("budgets") || (ru ? "Бюджеты" : "Budgets")}
+              {tr("budgets")}
             </h2>
             <Link href="/budgets" className="text-xs text-cyan-400/80 hover:text-cyan-300">
-              {ru ? "все →" : "all →"}
+              {tr("allBudgetsLink")}
             </Link>
           </div>
           {budgets.length === 0 ? (
             <div className="py-6 text-center">
-              <p className="text-sm text-slate-600">{ru ? "Нет бюджетов" : "No budgets"}</p>
+              <p className="text-sm text-slate-600">{tr("noBudgets")}</p>
               <Link href="/budgets" className="mt-2 inline-block text-xs text-cyan-400 hover:underline">
-                {ru ? "Создать бюджет" : "Create budget"}
+                {tr("createBudget")}
               </Link>
             </div>
           ) : (
@@ -388,17 +381,17 @@ export default function Dashboard() {
         <FadeItem className="rounded-3xl border border-white/[0.08] bg-[#0a0e17]/75 p-5 shadow-[0_20px_60px_-24px_rgba(0,0,0,0.65)] backdrop-blur-xl">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="font-display text-sm font-semibold text-white">
-              {tr("goals") || (ru ? "Цели" : "Goals")}
+              {tr("goals")}
             </h2>
             <Link href="/goals" className="text-xs text-cyan-400/80 hover:text-cyan-300">
-              {ru ? "все →" : "all →"}
+              {tr("allGoalsLink")}
             </Link>
           </div>
           {data.goals.length === 0 ? (
             <div className="py-6 text-center">
-              <p className="text-sm text-slate-600">{ru ? "Нет целей" : "No goals"}</p>
+              <p className="text-sm text-slate-600">{tr("noGoals")}</p>
               <Link href="/goals" className="mt-2 inline-block text-xs text-cyan-400 hover:underline">
-                {ru ? "Добавить цель" : "Add goal"}
+                {tr("addGoal")}
               </Link>
             </div>
           ) : (
@@ -456,7 +449,7 @@ export default function Dashboard() {
             <div>
               <h3 className="font-display font-semibold text-cyan-200">AI Pulse</h3>
               <p className="text-sm text-slate-400">
-                {ru ? "Разбор месяца, советы и прогноз" : "Month review, tips and forecast"}
+                {tr("monthBreakdownHint")}
               </p>
             </div>
           </div>

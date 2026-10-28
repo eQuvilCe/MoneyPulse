@@ -1,6 +1,6 @@
 "use client";
 
-import { readAmount, dateKey } from "@/lib/types";
+import { readAmount, dateKey, formatMoneyCompact, MAX_AMOUNT } from "@/lib/types";
 import { useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { PageShell, FadeItem } from "@/components/motion/PageShell";
@@ -14,9 +14,10 @@ export default function ScanPage() {
   const inputRef = useRef<HTMLInputElement>(null);
   const toast = useToast();
   const router = useRouter();
-  const { lang } = useApp();
+  const { tr } = useApp();
   const [preview, setPreview] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [amount, setAmount] = useState("");
   const [desc, setDesc] = useState("");
   const [category, setCategory] = useState("еда");
@@ -46,43 +47,42 @@ export default function ScanPage() {
           if (json.category) setCategory(json.category);
           if (json.date) setDate(json.date);
           if (json.note) setNote(json.note);
-          toast(
-            json.source === "vision"
-              ? lang === "ru"
-                ? "Чек распознан AI ✦"
-                : "Receipt read by AI ✦"
-              : lang === "ru"
-                ? "Заполни сумму вручную"
-                : "Fill amount manually"
-          );
+          toast(json.source === "vision" ? tr("receiptRecognized") : tr("fillAmountManually"));
         }
       } catch {
-        toast(lang === "ru" ? "Ошибка сети" : "Network error", "err");
+        toast(tr("networkError"), "err");
       }
       setBusy(false);
     };
+    reader.onerror = () => toast(tr("fileReadFail"), "err");
     reader.readAsDataURL(file);
   };
 
   const save = async () => {
     const num = readAmount(amount);
     if (num === "too-big") {
-      toast(lang === "ru" ? "Слишком большая сумма" : "That amount is too large", "err");
+      toast(tr("amountTooBig", { max: formatMoneyCompact(MAX_AMOUNT) }), "err");
       return;
     }
     if (!num) {
-      toast(lang === "ru" ? "Укажи сумму" : "Enter amount", "err");
+      toast(tr("specifyAmount"), "err");
       return;
     }
-    await addTransaction({
-      type: "expense",
-      amount: num,
-      category,
-      description: desc || (lang === "ru" ? "Чек" : "Receipt"),
-      date,
-    });
-    toast(lang === "ru" ? "Расход из чека сохранён" : "Receipt expense saved");
-    router.push("/expenses");
+    if (saving) return;
+    setSaving(true);
+    try {
+      await addTransaction({
+        type: "expense",
+        amount: num,
+        category,
+        description: desc || tr("receiptWord"),
+        date,
+      });
+      toast(tr("expenseFromReceiptSaved"));
+      router.push("/expenses");
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -92,10 +92,10 @@ export default function ScanPage() {
           MoneyPulse
         </p>
         <h1 className="mt-1 text-3xl font-bold">
-          <LetterReveal text={lang === "ru" ? "Сканер чеков" : "Receipt scanner"} />
+          <LetterReveal text={tr("scannerHeroTitle")} />
         </h1>
         <p className="mt-1 text-sm text-slate-400">
-          {lang === "ru" ? "Фото → AI Vision → транзакция за секунды" : "Photo → AI Vision → transaction in seconds"}
+          {tr("scannerHeroSubtitle")}
         </p>
       </FadeItem>
 
@@ -109,7 +109,7 @@ export default function ScanPage() {
           >
             {preview ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={preview} alt="receipt" className="relative max-h-48 rounded-xl object-contain shadow-lg" />
+              <img src={preview} alt={tr("receiptPreviewAlt")} className="relative max-h-48 rounded-xl object-contain shadow-lg" />
             ) : (
               <>
                 <motion.span
@@ -120,13 +120,7 @@ export default function ScanPage() {
                   📷
                 </motion.span>
                 <p className="mt-4 text-sm font-semibold text-white">
-                  {busy
-                    ? lang === "ru"
-                      ? "AI читает чек…"
-                      : "AI reading…"
-                    : lang === "ru"
-                      ? "Нажми или перетащи фото чека"
-                      : "Tap or drop receipt photo"}
+                  {busy ? tr("aiReadingReceipt") : tr("tapOrDropPhoto")}
                 </p>
                 <p className="mt-1 text-xs text-slate-500">JPG · PNG · HEIC</p>
               </>
@@ -140,6 +134,8 @@ export default function ScanPage() {
               onChange={(e) => {
                 const f = e.target.files?.[0];
                 if (f) void onFile(f);
+                // allow re-selecting the same photo after a failed read
+                e.target.value = "";
               }}
             />
           </label>
@@ -149,27 +145,31 @@ export default function ScanPage() {
       {(preview || amount) && (
         <FadeItem className="mp-card space-y-3 rounded-2xl p-5">
           <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-            {lang === "ru" ? "Результат" : "Result"}
+            {tr("resultWord")}
           </h2>
           {note && <p className="text-xs text-amber-200/90">{note}</p>}
           <input
             type="number"
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
-            placeholder={lang === "ru" ? "Сумма" : "Amount"}
+            placeholder={tr("amount")}
+            aria-label={tr("amount")}
+            inputMode="decimal"
             className="w-full rounded-xl border border-white/10 bg-slate-900/70 px-3 py-2.5 text-sm outline-none focus:border-[var(--page-accent)]/50"
           />
           <input
             value={desc}
             onChange={(e) => setDesc(e.target.value)}
-            placeholder={lang === "ru" ? "Описание / магазин" : "Description / store"}
+            placeholder={tr("descriptionOrStore")}
+            aria-label={tr("descriptionOrStore")}
             className="w-full rounded-xl border border-white/10 bg-slate-900/70 px-3 py-2.5 text-sm outline-none focus:border-[var(--page-accent)]/50"
           />
           <div className="grid gap-2 sm:grid-cols-2">
             <input
               value={category}
               onChange={(e) => setCategory(e.target.value)}
-              placeholder={lang === "ru" ? "Категория" : "Category"}
+              placeholder={tr("category")}
+              aria-label={tr("category")}
               className="rounded-xl border border-white/10 bg-slate-900/70 px-3 py-2.5 text-sm outline-none focus:border-[var(--page-accent)]/50"
             />
             <input
@@ -182,17 +182,16 @@ export default function ScanPage() {
           <button
             type="button"
             onClick={() => void save()}
-            className="mp-btn-primary w-full rounded-xl py-3 text-sm font-bold"
+            disabled={saving || busy}
+            className="mp-btn-primary w-full rounded-xl py-3 text-sm font-bold disabled:opacity-50"
           >
-            {lang === "ru" ? "Сохранить расход" : "Save expense"}
+            {saving ? tr("saving") : tr("saveExpense")}
           </button>
         </FadeItem>
       )}
 
       <FadeItem className="rounded-2xl border border-white/5 bg-white/[0.02] px-4 py-3 text-xs text-slate-500">
-        {lang === "ru"
-          ? "Нужен AI_API_KEY (vision) в .env для авто-распознавания. Без ключа — заполни поля вручную после фото."
-          : "Set AI_API_KEY (vision) in .env for auto-OCR. Without key — fill fields manually after photo."}
+        {tr("scanNeedsApiKey")}
       </FadeItem>
     </PageShell>
   );
