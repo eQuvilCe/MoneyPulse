@@ -11,6 +11,8 @@ export default function WeeklySummary({ data }: { data: FinanceData }) {
   const w = getStats(data, 7);
   const bars = w.dailySeries.slice(-7);
 
+  const l = lang === "en" ? "en" : "ru";
+  const cur = data.settings.currency || "₽";
   const max = Math.max(...bars.map((b) => b.income + b.expense), 1);
 
   return (
@@ -34,7 +36,11 @@ export default function WeeklySummary({ data }: { data: FinanceData }) {
       </div>
       <div className="mt-4 flex h-16 items-end gap-1.5">
         {bars.map((b, i) => (
-          <div key={i} className="flex flex-1 flex-col items-center gap-1">
+          <div
+            key={b.date}
+            className="flex flex-1 flex-col items-center gap-1"
+            title={`${b.date.slice(3)}.${b.date.slice(0, 2)}: +${formatNumber(b.income, l)} · −${formatNumber(b.expense, l)} ${cur}`}
+          >
             <div className="flex h-12 w-full items-end justify-center gap-0.5">
               <motion.div
                 initial={{ height: 0 }}
