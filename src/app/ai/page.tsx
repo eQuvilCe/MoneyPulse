@@ -213,7 +213,7 @@ export default function AIPage() {
                     className="mt-2 text-[11px] font-semibold"
                     style={{ color: "var(--page-accent)" }}
                   >
-                    {whyId === a.id ? tr("hideWhy") : "Why?"}
+                    {whyId === a.id ? tr("hideWhy") : tr("showWhy")}
                   </button>
                   {whyId === a.id && (
                     <p className="mt-1 text-[11px] leading-relaxed text-slate-500">{a.why}</p>
