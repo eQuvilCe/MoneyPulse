@@ -486,6 +486,8 @@ export default function FamilyPage() {
                     value={budgetLimit}
                     onChange={(e) => setBudgetLimit(e.target.value)}
                     placeholder={tr("familyNewBudget")}
+                    aria-label={tr("familyNewBudget")}
+                    inputMode="decimal"
                     min="1"
                     className="rounded-xl border border-white/10 bg-slate-900 px-3 py-2.5 text-sm"
                   />
@@ -554,6 +556,8 @@ export default function FamilyPage() {
                     value={goalTitle}
                     onChange={(e) => setGoalTitle(e.target.value)}
                     placeholder={tr("goalTitleLabel")}
+                    aria-label={tr("goalTitleLabel")}
+                    maxLength={100}
                     className="rounded-xl border border-white/10 bg-slate-900 px-3 py-2.5 text-sm sm:col-span-2"
                   />
                   <input
@@ -561,6 +565,8 @@ export default function FamilyPage() {
                     value={goalTarget}
                     onChange={(e) => setGoalTarget(e.target.value)}
                     placeholder={tr("goalAmountLabel", { cur })}
+                    aria-label={tr("goalAmountLabel", { cur })}
+                    inputMode="decimal"
                     min="1"
                     className="rounded-xl border border-white/10 bg-slate-900 px-3 py-2.5 text-sm"
                   />
@@ -568,6 +574,8 @@ export default function FamilyPage() {
                     value={goalEmoji}
                     onChange={(e) => setGoalEmoji(e.target.value)}
                     placeholder={tr("emoji")}
+                    aria-label={tr("emoji")}
+                    maxLength={4}
                     className="rounded-xl border border-white/10 bg-slate-900 px-3 py-2.5 text-sm"
                   />
                   <button
