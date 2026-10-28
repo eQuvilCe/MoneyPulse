@@ -293,6 +293,10 @@ export default function FamilyPage() {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder={tr("familyNamePlaceholder")}
+                aria-label={tr("familyNamePlaceholder")}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") void create();
+                }}
                 className="w-full rounded-xl border border-white/10 bg-slate-900 px-3 py-2.5 text-sm"
               />
               <MagneticButton onClick={() => void create()} primary className="w-full">
@@ -309,6 +313,13 @@ export default function FamilyPage() {
                 value={code}
                 onChange={(e) => setCode(e.target.value.toUpperCase())}
                 placeholder={tr("familyCodePlaceholder")}
+                aria-label={tr("familyInviteCode")}
+                autoComplete="off"
+                autoCapitalize="characters"
+                spellCheck={false}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") void join();
+                }}
                 className="w-full rounded-xl border border-white/10 bg-slate-900 px-3 py-2.5 text-sm uppercase tracking-widest"
                 maxLength={8}
               />
