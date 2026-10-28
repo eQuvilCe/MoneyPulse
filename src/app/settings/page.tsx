@@ -231,6 +231,17 @@ export default function SettingsPage() {
     );
   }
 
+  const addCategory = () => {
+    const n = newCat.trim();
+    if (!n) return;
+    const list = Array.from(new Set([...(data.settings.customCategories || []), n]));
+    updateSettings({ customCategories: list }).then(() => {
+      setNewCat("");
+      toast(tr("saved"));
+      refresh();
+    });
+  };
+
   const planLabel = { free: tr("freePlan"), pro: "Pro", demo: tr("demoPlan") }[user?.plan || "free"];
 
   return (
@@ -519,21 +530,18 @@ export default function SettingsPage() {
           <input
             value={newCat}
             onChange={(e) => setNewCat(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                addCategory();
+              }
+            }}
             placeholder={tr("name")}
             className={`flex-1 ${fieldClass}`}
           />
           <button
             type="button"
-            onClick={() => {
-              const n = newCat.trim();
-              if (!n) return;
-              const list = Array.from(new Set([...(data.settings.customCategories || []), n]));
-              updateSettings({ customCategories: list }).then(() => {
-                setNewCat("");
-                toast(tr("saved"));
-                refresh();
-              });
-            }}
+            onClick={addCategory}
             className="rounded-xl bg-white/10 px-4 py-2.5 text-sm font-medium hover:bg-white/15"
           >
             +
