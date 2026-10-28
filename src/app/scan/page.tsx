@@ -53,6 +53,7 @@ export default function ScanPage() {
       }
       setBusy(false);
     };
+    reader.onerror = () => toast(tr("fileReadFail"), "err");
     reader.readAsDataURL(file);
   };
 
@@ -126,6 +127,8 @@ export default function ScanPage() {
               onChange={(e) => {
                 const f = e.target.files?.[0];
                 if (f) void onFile(f);
+                // allow re-selecting the same photo after a failed read
+                e.target.value = "";
               }}
             />
           </label>
