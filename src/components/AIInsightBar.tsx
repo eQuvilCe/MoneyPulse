@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { FinanceData } from "@/lib/types";
@@ -9,6 +9,7 @@ import { useApp } from "@/components/AppProvider";
 
 export default function AIInsightBar({ data }: { data: FinanceData }) {
   const [whyOpen, setWhyOpen] = useState(false);
+  const whyId = useId();
   const { tr } = useApp();
   const insights = getQuickInsights(data);
   const top = generateAIAnalysis(data)[0];
@@ -28,7 +29,7 @@ export default function AIInsightBar({ data }: { data: FinanceData }) {
               {health}/100
             </span>
             <span className="flex items-center gap-1.5 text-[10px] text-slate-500">
-              <span className="h-1.5 w-1.5 rounded-full bg-cyan-400 shadow-[0_0_6px_rgba(34,211,238,0.9)]" />
+              <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-cyan-400 shadow-[0_0_6px_rgba(34,211,238,0.9)]" />
               {tr("aiAnalysisActive")}
             </span>
           </div>
@@ -45,6 +46,7 @@ export default function AIInsightBar({ data }: { data: FinanceData }) {
                 type="button"
                 onClick={() => setWhyOpen((v) => !v)}
                 aria-expanded={whyOpen}
+                aria-controls={whyOpen ? whyId : undefined}
                 className="rounded text-[11px] font-semibold uppercase tracking-wider text-cyan-400/90 hover:text-cyan-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/50"
               >
                 {whyOpen ? tr("hideWhy") : tr("showWhy")}
@@ -52,6 +54,7 @@ export default function AIInsightBar({ data }: { data: FinanceData }) {
               <AnimatePresence>
                 {whyOpen && (
                   <motion.div
+                    id={whyId}
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: "auto" }}
                     exit={{ opacity: 0, height: 0 }}
