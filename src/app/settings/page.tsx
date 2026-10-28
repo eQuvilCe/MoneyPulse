@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { loadDataAsync, updateSettings, exportJSON, exportCSV } from "@/lib/storage";
-import { FinanceData, MAX_AMOUNT, formatMoneyCompact, readAmount } from "@/lib/types";
+import { FinanceData, MAX_AMOUNT, formatMoneyCompact, readAmount, allExpenseCategories, allIncomeCategories } from "@/lib/types";
 import { PageShell, FadeItem, Skeleton } from "@/components/motion/PageShell";
 import TiltCard from "@/components/motion/TiltCard";
 import TelegramCard from "@/components/TelegramCard";
@@ -234,6 +234,11 @@ export default function SettingsPage() {
   const addCategory = () => {
     const n = newCat.trim();
     if (!n) return;
+    const existing = [...allExpenseCategories(data.settings), ...allIncomeCategories(data.settings)];
+    if (existing.some((c) => c.toLowerCase() === n.toLowerCase())) {
+      toast(tr("categoryExists"), "err");
+      return;
+    }
     const list = Array.from(new Set([...(data.settings.customCategories || []), n]));
     updateSettings({ customCategories: list }).then(() => {
       setNewCat("");
