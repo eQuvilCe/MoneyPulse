@@ -16,7 +16,7 @@ export default function ExpensesPage() {
   const [data, setData] = useState<FinanceData | null>(null);
   const [filter, setFilter] = useState("all");
   const [q, setQ] = useState("");
-  const { tr, lang } = useApp();
+  const { tr } = useApp();
   const refresh = () => loadDataAsync().then(setData);
   useEffect(() => {
     refresh();
@@ -70,7 +70,7 @@ export default function ExpensesPage() {
           <LetterReveal text={tr("expenses")} />
         </h1>
         <p className="mt-1 text-sm text-slate-400">
-          {lang === "ru" ? "Поиск · фильтры · AI на страже" : "Search · filters · AI on watch"}
+          {tr("expensesHeroSubtitle")}
         </p>
       </FadeItem>
       <FadeItem>
@@ -82,7 +82,7 @@ export default function ExpensesPage() {
         </TiltCard>
         <TiltCard>
           <StatCard
-            title={lang === "ru" ? "Операций" : "Ops"}
+            title={tr("operations")}
             value={`${expenseTx.length}`}
             icon="◈"
             color="amber"
@@ -90,7 +90,7 @@ export default function ExpensesPage() {
         </TiltCard>
         <TiltCard>
           <StatCard
-            title={lang === "ru" ? "Категорий" : "Categories"}
+            title={tr("categoriesCount")}
             value={`${Object.keys(stats.byCategory).length}`}
             icon="▣"
             color="purple"
@@ -101,7 +101,7 @@ export default function ExpensesPage() {
         <input
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          placeholder={lang === "ru" ? "Поиск: кофе, такси, сумма..." : "Search: coffee, taxi, amount..."}
+          placeholder={tr("searchExpensesPlaceholder")}
           className="w-full rounded-xl border border-white/10 bg-slate-900/60 px-4 py-3 text-sm text-white outline-none transition focus:border-[var(--page-accent)]/50"
         />
       </FadeItem>
@@ -117,7 +117,7 @@ export default function ExpensesPage() {
                 : { color: "#64748b" }
             }
           >
-            {lang === "ru" ? "Все" : "All"}
+            {tr("all")}
           </button>
           {topCats.map(([cat, amount]) => (
             <button
@@ -142,7 +142,7 @@ export default function ExpensesPage() {
       </FadeItem>
       <FadeItem>
         <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-400">
-          {lang === "ru" ? "История" : "History"}{" "}
+          {tr("history")}{" "}
           {filtered.length !== expenseTx.length ? `(${filtered.length})` : ""}
         </h2>
         <TransactionList transactions={filtered} type="expense" onChange={refresh} currency={cur} />
