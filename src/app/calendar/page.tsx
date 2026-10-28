@@ -82,6 +82,17 @@ export default function CalendarPage() {
   }, [byDay, cells]);
 
   const todayKey = dateKey();
+  const monthTotals = cells.reduce(
+    (acc, c) => {
+      const v = c && byDay[c.key];
+      if (v) {
+        acc.income += v.income;
+        acc.expense += v.expense;
+      }
+      return acc;
+    },
+    { income: 0, expense: 0 }
+  );
   const dayInfo = byDay[selected] || { income: 0, expense: 0, count: 0 };
   const dayTx = data?.transactions.filter((t) => t.date === selected) || [];
   const locale = lang === "en" ? "en-US" : "ru-RU";
@@ -150,6 +161,10 @@ export default function CalendarPage() {
           </button>
         </div>
 
+        <p className="mb-3 text-center text-[11px] text-slate-500">
+          {tr("monthTotals")}: <span className="text-emerald-400">+{formatMoney(monthTotals.income, cur)}</span> ·{" "}
+          <span className="text-rose-400">−{formatMoney(monthTotals.expense, cur)}</span>
+        </p>
         <div className="grid grid-cols-7 gap-1 text-center text-[10px] text-slate-500">
           {WEEKDAY_KEYS.map((w) => (
             <div key={w} className="py-1 font-medium">
