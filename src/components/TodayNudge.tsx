@@ -8,7 +8,7 @@ import { useApp } from "@/components/AppProvider";
 
 export default function TodayNudge({ data }: { data: FinanceData }) {
   const [show, setShow] = useState(false);
-  const { lang } = useApp();
+  const { lang, tr } = useApp();
   const today = dateKey();
   const hasToday = data.transactions.some((t) => t.date === today);
   const enabled = data.settings.notifications !== false; // default on
@@ -40,12 +40,10 @@ export default function TodayNudge({ data }: { data: FinanceData }) {
             <span className="text-xl">👀</span>
             <div className="flex-1">
               <p className="text-sm font-medium text-amber-200">
-                {lang === "ru" ? "Сегодня ещё ничего не записано" : "Nothing logged today yet"}
+                {tr("nudgeNothingToday")}
               </p>
               <p className="text-xs text-amber-200/60">
-                {lang === "ru"
-                  ? "Кинь кофе, обед или доход — 20 секунд. После 20:00 придёт напоминание."
-                  : "Log coffee, lunch or income in 20 sec. After 8 PM you’ll get a reminder."}
+                {tr("nudgeNothingTodayHint")}
               </p>
             </div>
             <button
