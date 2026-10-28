@@ -29,6 +29,13 @@ interface Props {
 }
 
 const NOTE_MAX = 80;
+/** How many "repeat last entry" chips to offer. */
+const REPEAT_CHIPS = 3;
+/** Duration of the green "saved" flash on the card. */
+const SAVED_FLASH_MS = 1400;
+/** Step buttons sized for the currency: so'm amounts run in the tens of thousands. */
+const SOM_STEPS = [10_000, 50_000, 100_000, 500_000];
+const DEFAULT_STEPS = [100, 500, 1000, 5000];
 
 /** "1234567,5" → "1 234 567,5": digits grouped while typing, at most 2 decimals. */
 function prettyAmount(raw: string): string {
@@ -66,8 +73,7 @@ export default function DailyQuickAdd({ onAdded, todayIncome, todayExpense, curr
   const tooBig = num > MAX_AMOUNT;
   const valid = num > 0 && !tooBig;
 
-  // Step buttons sized for the currency: so'm amounts run in the tens of thousands.
-  const steps = ["UZS", "сум", "so'm"].includes(currency) ? [10_000, 50_000, 100_000, 500_000] : [100, 500, 1000, 5000];
+  const steps = ["UZS", "сум", "so'm"].includes(currency) ? SOM_STEPS : DEFAULT_STEPS;
 
   // The last few distinct entries of this type — one tap refills the form.
   const repeats = useMemo(() => {
@@ -79,7 +85,7 @@ export default function DailyQuickAdd({ onAdded, todayIncome, todayExpense, curr
       if (seen.has(key)) continue;
       seen.add(key);
       out.push(t);
-      if (out.length === 3) break;
+      if (out.length === REPEAT_CHIPS) break;
     }
     return out;
   }, [recent, mode]);
@@ -108,7 +114,7 @@ export default function DailyQuickAdd({ onAdded, todayIncome, todayExpense, curr
     setNote("");
     setSaving(false);
     setFlash(true);
-    setTimeout(() => setFlash(false), 1400);
+    setTimeout(() => setFlash(false), SAVED_FLASH_MS);
     toast(
       tr(mode === "income" ? "quickAddToastIncome" : "quickAddToastExpense", {
         amount: num >= 1e9 ? formatMoneyCompact(num, currency, l) : formatMoney(num, currency),
