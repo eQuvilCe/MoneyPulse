@@ -48,7 +48,7 @@ export default function StatCard({
       <div className="relative flex items-center justify-between">
         <p className="mp-label">{title}</p>
         {icon && (
-          <span className={`flex h-8 w-8 items-center justify-center rounded-xl text-sm ${c.text}`} style={{ background: `rgba(${c.rgb},0.14)` }}>
+          <span aria-hidden className={`flex h-8 w-8 items-center justify-center rounded-xl text-sm ${c.text}`} style={{ background: `rgba(${c.rgb},0.14)` }}>
             {icon}
           </span>
         )}
