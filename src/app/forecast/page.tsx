@@ -2,9 +2,9 @@
 
 import { useMemo } from "react";
 import { useRealtimeData } from "@/hooks/useRealtimeData";
-import { PageShell, FadeItem } from "@/components/motion/PageShell";
+import { PageShell, FadeItem, Skeleton } from "@/components/motion/PageShell";
 import { getStats } from "@/lib/storage";
-import { formatMoney } from "@/lib/types";
+import { formatMoney, CATEGORY_ICONS } from "@/lib/types";
 import { generateAIAnalysis, getHealthScore, answerAIChat } from "@/lib/ai";
 import AIInsightBar from "@/components/AIInsightBar";
 import StatCard from "@/components/StatCard";
@@ -13,9 +13,12 @@ import { LetterReveal } from "@/components/motion/Reveal";
 import { motion } from "framer-motion";
 import { useApp } from "@/components/AppProvider";
 
+/** Share of each top category the "what if you cut" card suggests trimming. */
+const CUT_SHARE = 0.15;
+
 export default function ForecastPage() {
   const { tr } = useApp();
-  const { data } = useRealtimeData(0);
+  const { data } = useRealtimeData();
 
   // All hooks MUST run before any conditional return
   const stats = useMemo(() => (data ? getStats(data) : null), [data]);
@@ -50,13 +53,29 @@ export default function ForecastPage() {
       .map(([cat, amt]) => ({
         cat,
         amt,
-        save: Math.round(amt * 0.15),
+        save: Math.round(amt * CUT_SHARE),
       }));
   }, [stats]);
 
   if (!data || !stats || !stats30) {
-    return <div className="py-20 text-center text-slate-500">{tr("loading")}</div>;
+    return (
+      <PageShell className="page-accent-blue">
+        <FadeItem>
+          <Skeleton className="h-16 w-full" />
+        </FadeItem>
+        <div className="grid gap-3 sm:grid-cols-3">
+          <Skeleton className="h-24" />
+          <Skeleton className="h-24" />
+          <Skeleton className="h-24" />
+        </div>
+        <FadeItem>
+          <Skeleton className="h-48 w-full" />
+        </FadeItem>
+      </PageShell>
+    );
   }
+
+  const cur = data.settings.currency || "₽";
 
   return (
     <PageShell className="page-accent-blue">
@@ -78,7 +97,7 @@ export default function ForecastPage() {
         <TiltCard>
           <StatCard
             title={tr("expenseForecast")}
-            value={`~${formatMoney(projectedExpense, data.settings.currency)}`}
+            value={`~${formatMoney(projectedExpense, cur)}`}
             icon="↓"
             color="red"
           />
@@ -86,7 +105,7 @@ export default function ForecastPage() {
         <TiltCard>
           <StatCard
             title={tr("balanceForecast")}
-            value={formatMoney(projectedBalance, data.settings.currency)}
+            value={formatMoney(projectedBalance, cur)}
             icon="◈"
             color={projectedBalance >= 0 ? "green" : "red"}
           />
@@ -114,7 +133,7 @@ export default function ForecastPage() {
           </div>
           <div className="rounded-xl bg-white/[0.04] p-3">
             <p className="text-[10px] text-slate-500">{tr("dailyPaceLabel")}</p>
-            <p className="font-bold">~{formatMoney(Math.round(dailyBurn), data.settings.currency)}</p>
+            <p className="font-bold">~{formatMoney(Math.round(dailyBurn), cur)}</p>
           </div>
           <div className="rounded-xl bg-white/[0.04] p-3">
             <p className="text-[10px] text-slate-500">{tr("daysLeftLabel")}</p>
@@ -129,18 +148,23 @@ export default function ForecastPage() {
         <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-400">
           {tr("cutTopByPct")}
         </h2>
+        {cuts.length === 0 && <p className="mt-4 text-sm text-slate-500">{tr("forecastNoExpenses")}</p>}
         <div className="mt-4 space-y-3">
           {cuts.map((c) => (
             <div key={c.cat} className="flex items-center justify-between text-sm">
-              <span className="text-slate-300">{c.cat}</span>
-              <span className="text-slate-500">{formatMoney(c.amt, data.settings.currency)}</span>
-              <span className="font-semibold" style={{ color: "var(--page-accent)" }}>+{formatMoney(c.save, data.settings.currency)}</span>
+              <span className="text-slate-300">
+                {CATEGORY_ICONS[c.cat] || "📦"} {c.cat}
+              </span>
+              <span className="text-slate-500">{formatMoney(c.amt, cur)}</span>
+              <span className="font-semibold" style={{ color: "var(--page-accent)" }}>+{formatMoney(c.save, cur)}</span>
             </div>
           ))}
         </div>
+        {cuts.length > 0 && (
         <p className="mt-4 text-xs text-slate-500">
-          {tr("totalReclaimHint", { v: `~${formatMoney(cuts.reduce((s, c) => s + c.save, 0), data.settings.currency)}` })}
+          {tr("totalReclaimHint", { v: `~${formatMoney(cuts.reduce((s, c) => s + c.save, 0), cur)}` })}
         </p>
+        )}
         </TiltCard>
       </FadeItem>
 

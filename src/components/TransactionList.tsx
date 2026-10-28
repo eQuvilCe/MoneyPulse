@@ -2,10 +2,21 @@
 
 import { useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Transaction, CATEGORY_ICONS, CATEGORY_COLORS, formatMoney, MAX_AMOUNT, formatMoneyCompact, readAmount } from "@/lib/types";
+import { Transaction, CATEGORY_ICONS, CATEGORY_COLORS, formatMoney, MAX_AMOUNT, formatMoneyCompact, readAmount, formatShortDate } from "@/lib/types";
 import { deleteTransaction, updateTransaction } from "@/lib/storage";
 import { useApp } from "@/components/AppProvider";
 import { useToast } from "@/components/Toast";
+
+const CONFIRM_DELETE_MS = 3000;
+
+type SortMode = "newest" | "oldest" | "largest" | "smallest";
+
+const SORTERS: Record<SortMode, (a: Transaction, b: Transaction) => number> = {
+  newest: (a, b) => b.date.localeCompare(a.date),
+  oldest: (a, b) => a.date.localeCompare(b.date),
+  largest: (a, b) => b.amount - a.amount,
+  smallest: (a, b) => a.amount - b.amount,
+};
 
 interface Props {
   transactions: Transaction[];
@@ -14,6 +25,8 @@ interface Props {
   limit?: number;
   currency?: string;
   pageSize?: number;
+  /** Shown instead of the generic "no transactions" text, e.g. when a search matched nothing. */
+  emptyText?: React.ReactNode;
 }
 
 export default function TransactionList({
@@ -23,21 +36,27 @@ export default function TransactionList({
   limit,
   currency = "₽",
   pageSize = 15,
+  emptyText,
 }: Props) {
   const [page, setPage] = useState(0);
+  const [sort, setSort] = useState<SortMode>("newest");
   const [editId, setEditId] = useState<string | null>(null);
   const [editAmount, setEditAmount] = useState("");
   const [editDesc, setEditDesc] = useState("");
   const [editCat, setEditCat] = useState("");
   const [editDate, setEditDate] = useState("");
-  const { tr } = useApp();
+  // first tap arms the delete button, second tap within CONFIRM_DELETE_MS actually deletes
+  const [confirmId, setConfirmId] = useState<string | null>(null);
+  const { tr, lang } = useApp();
   const toast = useToast();
 
   const filtered = useMemo(() => {
     let list = type ? transactions.filter((t) => t.type === type) : transactions;
+    // stable sort: same-day entries keep the order they came in
+    list = [...list].sort(SORTERS[sort]);
     if (limit) list = list.slice(0, limit);
     return list;
-  }, [transactions, type, limit]);
+  }, [transactions, type, limit, sort]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const pageSafe = Math.min(page, totalPages - 1);
@@ -69,21 +88,57 @@ export default function TransactionList({
     onChange();
   };
 
+  const copyAmount = async (amount: number) => {
+    try {
+      await navigator.clipboard.writeText(String(amount));
+      toast(tr("amountCopied"), "info");
+    } catch {
+      toast(tr("copyFailed"), "err");
+    }
+  };
+
   const remove = async (id: string) => {
+    if (confirmId !== id) {
+      setConfirmId(id);
+      setTimeout(() => setConfirmId((cur) => (cur === id ? null : cur)), CONFIRM_DELETE_MS);
+      return;
+    }
+    setConfirmId(null);
     await deleteTransaction(id);
+    toast(tr("transactionDeleted"), "info");
     onChange();
   };
 
   if (!filtered.length) {
     return (
       <div className="rounded-2xl border border-dashed border-white/10 py-12 text-center text-sm text-slate-500">
-        {tr("noTransactions")}
+        {emptyText ?? tr("noTransactions")}
       </div>
     );
   }
 
   return (
     <div className="space-y-2">
+      {!limit && filtered.length > 1 && (
+        <div className="flex justify-end">
+          <label className="flex items-center gap-2 text-xs text-slate-500">
+            {tr("sortBy")}
+            <select
+              value={sort}
+              onChange={(e) => {
+                setSort(e.target.value as SortMode);
+                setPage(0);
+              }}
+              className="rounded-lg border border-white/10 bg-slate-900 px-2 py-1 text-xs text-slate-300 outline-none focus:border-white/30"
+            >
+              <option value="newest">{tr("sortNewest")}</option>
+              <option value="oldest">{tr("sortOldest")}</option>
+              <option value="largest">{tr("sortLargest")}</option>
+              <option value="smallest">{tr("sortSmallest")}</option>
+            </select>
+          </label>
+        </div>
+      )}
       <AnimatePresence mode="popLayout">
         {slice.map((t) => (
           <motion.div
@@ -95,7 +150,13 @@ export default function TransactionList({
             className="mp-card rounded-xl p-3"
           >
             {editId === t.id ? (
-              <div className="space-y-2">
+              <div
+                className="space-y-2"
+                onKeyDown={(e) => {
+                  if (e.key === "Escape") setEditId(null);
+                  if (e.key === "Enter" && (e.target as HTMLElement).tagName === "INPUT") void saveEdit();
+                }}
+              >
                 <div className="grid gap-2 sm:grid-cols-2">
                   <input
                     type="number"
@@ -103,11 +164,15 @@ export default function TransactionList({
                     onChange={(e) => setEditAmount(e.target.value)}
                     className="rounded-lg border border-white/10 bg-slate-900 px-3 py-2 text-sm"
                     placeholder={tr("amount")}
+                    aria-label={tr("amount")}
+                    inputMode="decimal"
+                    autoFocus
                   />
                   <input
                     type="date"
                     value={editDate}
                     onChange={(e) => setEditDate(e.target.value)}
+                    aria-label={tr("dateLabel")}
                     className="rounded-lg border border-white/10 bg-slate-900 px-3 py-2 text-sm"
                   />
                   <input
@@ -115,12 +180,14 @@ export default function TransactionList({
                     onChange={(e) => setEditCat(e.target.value)}
                     className="rounded-lg border border-white/10 bg-slate-900 px-3 py-2 text-sm"
                     placeholder={tr("category")}
+                    aria-label={tr("category")}
                   />
                   <input
                     value={editDesc}
                     onChange={(e) => setEditDesc(e.target.value)}
                     className="rounded-lg border border-white/10 bg-slate-900 px-3 py-2 text-sm"
                     placeholder={tr("txDescriptionPlaceholder")}
+                    aria-label={tr("txDescriptionPlaceholder")}
                   />
                 </div>
                 <div className="flex gap-2">
@@ -150,34 +217,44 @@ export default function TransactionList({
                   <p className="truncate text-sm font-medium text-white">
                     {t.description}
                     {t.recurring && (
-                      <span className="ml-1.5 text-[10px] text-cyan-400">↻</span>
+                      <span className="ml-1.5 text-[10px] text-cyan-400" title={tr("recurringBadge")} aria-label={tr("recurringBadge")}>
+                        ↻
+                      </span>
                     )}
                   </p>
                   <p className="text-xs text-slate-500">
-                    {t.category} · {t.date}
+                    {t.category} · <time dateTime={t.date} title={t.date}>{formatShortDate(t.date, lang)}</time>
                   </p>
                 </div>
-                <p
-                  className={`shrink-0 text-sm font-bold tabular-nums ${
+                <button
+                  type="button"
+                  onClick={() => void copyAmount(t.amount)}
+                  title={tr("copyAmount")}
+                  aria-label={`${tr("copyAmount")}: ${formatMoney(t.amount, currency)}`}
+                  className={`shrink-0 rounded-md px-1 text-sm font-bold tabular-nums transition hover:bg-white/5 ${
                     t.type === "income" ? "text-emerald-400" : "text-rose-400"
                   }`}
                 >
                   {t.type === "income" ? "+" : "−"}
                   {formatMoney(t.amount, currency).replace(/^[−+]/, "")}
-                </p>
+                </button>
                 <button
                   onClick={() => startEdit(t)}
                   className="rounded-lg p-1.5 text-slate-500 hover:bg-white/5 hover:text-cyan-400"
                   title={tr("editAction")}
+                  aria-label={tr("editAction")}
                 >
                   ✎
                 </button>
                 <button
                   onClick={() => void remove(t.id)}
-                  className="rounded-lg p-1.5 text-slate-500 hover:bg-white/5 hover:text-rose-400"
-                  title={tr("remove")}
+                  className={`rounded-lg p-1.5 text-xs hover:bg-white/5 hover:text-rose-400 ${
+                    confirmId === t.id ? "bg-rose-500/15 font-semibold text-rose-300" : "text-slate-500"
+                  }`}
+                  title={confirmId === t.id ? tr("tapAgainToDelete") : tr("remove")}
+                  aria-label={confirmId === t.id ? tr("tapAgainToDelete") : tr("remove")}
                 >
-                  🗑️
+                  {confirmId === t.id ? tr("confirmDeleteShort") : "🗑️"}
                 </button>
               </div>
             )}

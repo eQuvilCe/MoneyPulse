@@ -14,7 +14,7 @@ import { useApp } from "@/components/AppProvider";
 
 export default function IncomePage() {
   const [data, setData] = useState<FinanceData | null>(null);
-  const { tr, lang } = useApp();
+  const { tr } = useApp();
   const refresh = () => loadDataAsync().then(setData);
   useEffect(() => {
     refresh();
@@ -50,7 +50,7 @@ export default function IncomePage() {
           <LetterReveal text={tr("income")} />
         </h1>
         <p className="mt-1 text-sm text-slate-400">
-          {lang === "ru" ? "Поступления · AI отслеживает источники" : "Inflows · AI tracks sources"}
+          {tr("incomeHeroSubtitle")}
         </p>
       </FadeItem>
       <FadeItem>
@@ -62,7 +62,7 @@ export default function IncomePage() {
         </TiltCard>
         <TiltCard>
           <StatCard
-            title={lang === "ru" ? "Операций" : "Ops"}
+            title={tr("operations")}
             value={`${incomeTx.length}`}
             icon="◈"
             color="blue"
@@ -86,7 +86,7 @@ export default function IncomePage() {
       </FadeItem>
       <FadeItem>
         <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-400">
-          {lang === "ru" ? "История" : "History"}
+          {tr("history")}
         </h2>
         <TransactionList
           transactions={data.transactions}

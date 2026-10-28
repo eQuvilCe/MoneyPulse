@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Send } from "lucide-react";
 import { useApp } from "@/components/AppProvider";
@@ -32,6 +32,7 @@ function NavItem({
       ref={ref}
       href={href}
       onClick={onNavigate}
+      aria-current={active ? "page" : undefined}
       onMouseMove={(e) => {
         const r = ref.current?.getBoundingClientRect();
         if (!r) return;
@@ -93,7 +94,16 @@ export default function Sidebar() {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const { tr, user, lang, setLang, logout } = useApp();
-  const { data } = useRealtimeData(0);
+  const { data } = useRealtimeData();
+
+  useEffect(() => {
+    if (!mobileOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setMobileOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [mobileOpen]);
 
   const navItems = [
     { href: "/", label: tr("pulse"), icon: "◈" },
@@ -132,7 +142,7 @@ export default function Sidebar() {
         <PulseRing score={data ? getHealthScore(data) : 0} size={88} />
       </div>
 
-      <nav className="flex-1 space-y-0.5 overflow-y-auto px-2 py-3">
+      <nav aria-label={tr("mainNavigation")} className="flex-1 space-y-0.5 overflow-y-auto px-2 py-3">
         {navItems.map((item) => (
           <NavItem
             key={item.href}
@@ -158,8 +168,8 @@ export default function Sidebar() {
             <Send size={14} aria-hidden />
           </span>
           <span className="min-w-0">
-            <span className="block text-[13px] font-semibold leading-tight">{lang === "ru" ? "Бот в Telegram" : "Telegram bot"}</span>
-            <span className="block truncate text-[10px] text-sky-300/70">{lang === "ru" ? "Траты одной строкой" : "Log spending in one line"}</span>
+            <span className="block text-[13px] font-semibold leading-tight">{tr("telegramBot")}</span>
+            <span className="block truncate text-[10px] text-sky-300/70">{tr("telegramBotHint")}</span>
           </span>
         </a>
         <div className="flex gap-1">
@@ -168,6 +178,8 @@ export default function Sidebar() {
               key={l}
               type="button"
               onClick={() => setLang(l)}
+              aria-pressed={lang === l}
+              title={l === "ru" ? "Русский" : "English"}
               className={`rounded-lg px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider transition ${
                 lang === l
                   ? "bg-cyan-400/10 text-cyan-300 ring-1 ring-cyan-400/25"
@@ -187,7 +199,7 @@ export default function Sidebar() {
               onClick={() => void logout()}
               className="mt-1.5 text-[10px] text-slate-500 transition hover:text-rose-400"
             >
-              {lang === "ru" ? "Выйти" : "Log out"}
+              {tr("logout")}
             </button>
           </div>
         )}
@@ -205,7 +217,8 @@ export default function Sidebar() {
         type="button"
         onClick={() => setMobileOpen(true)}
         className="fixed left-3 top-3 z-40 flex h-10 w-10 items-center justify-center rounded-xl bg-[#0e1420] text-slate-300 ring-1 ring-white/10 lg:hidden"
-        aria-label="Menu"
+        aria-label={tr("openMenu")}
+        aria-expanded={mobileOpen}
       >
         ☰
       </button>

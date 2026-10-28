@@ -6,7 +6,7 @@ import { onDataChange } from "@/lib/events";
 import { FinanceData } from "@/lib/types";
 
 /** Load once + refresh only when user mutates data (no polling loop). */
-export function useRealtimeData(_intervalMs = 0) {
+export function useRealtimeData() {
   const [data, setData] = useState<FinanceData | null>(null);
   const [live, setLive] = useState(true);
   const busy = useRef(false);

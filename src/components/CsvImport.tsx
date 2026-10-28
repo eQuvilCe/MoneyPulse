@@ -37,16 +37,6 @@ function parseCSV(text: string, fallbackDesc: string) {
     const desc = get("description", "описан", "memo", "detail", "назначен") || fallbackDesc;
     const typeHint = get("type", "тип");
     const signed = parseFloat(amountRaw.replace(/\s/g, "").replace(",", "."));
-    const type: "income" | "expense" =
-      typeHint.includes("income") || typeHint.includes("доход") || signed > 0 && typeHint === ""
-        ? signed < 0 || typeHint.includes("expense") || typeHint.includes("расход")
-          ? "expense"
-          : "income"
-        : signed < 0
-        ? "expense"
-        : typeHint.includes("доход")
-        ? "income"
-        : "expense";
     // banks often: positive = credit
     let finalType: "income" | "expense" = "expense";
     if (typeHint) {

@@ -19,9 +19,9 @@ const PROVIDERS = [
 ];
 
 export default function BanksPage() {
-  const { data, refresh } = useRealtimeData(0);
+  const { data, refresh } = useRealtimeData();
   const toast = useToast();
-  const { tr, lang } = useApp();
+  const { tr } = useApp();
   const [sms, setSms] = useState("");
   const [parsed, setParsed] = useState<ReturnType<typeof parseBankSms>>(null);
   const [pdfNote, setPdfNote] = useState("");
@@ -33,18 +33,23 @@ export default function BanksPage() {
   const tryParse = () => {
     const p = parseBankSms(sms);
     setParsed(p);
-    if (!p) toast(lang === "ru" ? "Не удалось разобрать SMS" : "Could not parse SMS", "err");
+    if (!p) toast(tr("smsParseFail"), "err");
   };
 
   const confirmSms = async () => {
-    if (!parsed) return;
-    await addTransaction({
-      type: parsed.type,
-      amount: parsed.amount,
-      category: guessCategory(parsed.merchant),
-      description: parsed.merchant,
-      date: dateKey(),
-    });
+    if (!parsed || busy) return;
+    setBusy(true);
+    try {
+      await addTransaction({
+        type: parsed.type,
+        amount: parsed.amount,
+        category: guessCategory(parsed.merchant),
+        description: parsed.merchant,
+        date: dateKey(),
+      });
+    } finally {
+      setBusy(false);
+    }
     toast(
       `${parsed.type === "expense" ? "−" : "+"}${formatMoney(parsed.amount, parsed.currency || cur)} · ${parsed.merchant}`
     );
@@ -61,20 +66,12 @@ export default function BanksPage() {
       const text = new TextDecoder("utf-8", { fatal: false }).decode(buf);
       const matches = text.match(/\d[\d\s.,]{2,12}\s*(?:UZS|USD|RUB|EUR|сум)?/gi) || [];
       if (matches.length < 2) {
-        setPdfNote(
-          lang === "ru"
-            ? "PDF похож на скан. Лучше: CSV из банка → Настройки → Импорт, или вставь SMS выше."
-            : "PDF looks scanned. Better: bank CSV → Settings → Import, or paste SMS above."
-        );
+        setPdfNote(tr("pdfLooksScan"));
       } else {
-        setPdfNote(
-          lang === "ru"
-            ? `Нашли ~${matches.length} сумм в тексте. Полный разбор — с AI. Пока: CSV или SMS по одной.`
-            : `Found ~${matches.length} amounts. Full parse needs AI. For now: CSV or one SMS at a time.`
-        );
+        setPdfNote(tr("foundSumsInText", { n: matches.length }));
       }
     } catch {
-      setPdfNote(lang === "ru" ? "Не удалось прочитать файл." : "Could not read file.");
+      setPdfNote(tr("fileReadFail"));
     }
     setBusy(false);
   };
@@ -94,9 +91,9 @@ export default function BanksPage() {
       {/* Card brands */}
       <FadeItem className="grid gap-2 sm:grid-cols-3">
         {[
-          { name: "Uzcard", tip: lang === "ru" ? "SMS / push → сюда" : "SMS / push → here" },
-          { name: "Humo", tip: lang === "ru" ? "SMS / push → сюда" : "SMS / push → here" },
-          { name: "Visa / MC", tip: lang === "ru" ? "Международные карты" : "International cards" },
+          { name: "Uzcard", tip: tr("smsPushHere") },
+          { name: "Humo", tip: tr("smsPushHere") },
+          { name: "Visa / MC", tip: tr("intlCards") },
         ].map((c) => (
           <TiltCard key={c.name} className="mp-card rounded-2xl px-4 py-3 text-center">
             <p className="text-sm font-bold text-white">{c.name}</p>
@@ -115,29 +112,17 @@ export default function BanksPage() {
           }}
         >
         <p className="font-semibold" style={{ color: "var(--page-accent)" }}>
-          {lang === "ru" ? "Идея: карта MoneyPulse" : "Idea: MoneyPulse card"}
+          {tr("cardIdea")}
         </p>
         <p className="mt-1">
-          {lang === "ru"
-            ? "Своя карта без % на пополнение, все платежи и зарплата сразу в приложении: где, кому, когда. Пока — через SMS банков. Open Banking / партнёрский BIN — roadmap Pro."
-            : "Your own card with no top-up fee; every payment and salary appears here: where, who, when. For now — bank SMS. Open Banking / partner BIN is Pro roadmap."}
+          {tr("cardIdeaBody")}
         </p>
         </div>
       </FadeItem>
 
       {/* How it works */}
       <FadeItem className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 px-4 py-3 text-xs leading-relaxed text-emerald-100/90">
-        {lang === "ru" ? (
-          <>
-            <strong>Как пользоваться:</strong> скопируй SMS от банка → «Разобрать» → проверь сумму →
-            «Подтвердить». Операция появится в расходах/доходах. Авто-подключение банков — в Pro.
-          </>
-        ) : (
-          <>
-            <strong>How to use:</strong> paste bank SMS → Parse → check amount → Confirm. It becomes a
-            transaction. Full bank auto-sync is Pro roadmap.
-          </>
-        )}
+        <strong>{tr("banksHowToTitle")}</strong> {tr("banksHowToBody")}
       </FadeItem>
 
       <FadeItem>
@@ -145,9 +130,7 @@ export default function BanksPage() {
         <div className="space-y-3">
         <h2 className="text-sm font-bold text-white">{tr("pasteSms")}</h2>
         <p className="text-xs text-slate-500">
-          {lang === "ru"
-            ? "Пример: Karta ****1234: oplata 45,000 UZS, Korzinka. Ostatok: 1,200,000"
-            : "Example: Card ****1234: payment 45.00 USD at Store. Balance: 1,200.00"}
+          {tr("smsExample")}
         </p>
         <textarea
           value={sms}
@@ -156,14 +139,16 @@ export default function BanksPage() {
             setParsed(null);
           }}
           rows={4}
-          placeholder={lang === "ru" ? "Вставь текст уведомления…" : "Paste notification text…"}
+          placeholder={tr("pasteNotificationText")}
+          aria-label={tr("pasteSms")}
           className="w-full rounded-xl border border-white/10 bg-slate-900 px-3 py-2.5 text-sm outline-none"
           style={{ borderColor: "var(--mp-border)" }}
         />
         <button
           type="button"
           onClick={tryParse}
-          className="rounded-xl px-4 py-2 text-sm font-semibold ring-1"
+          disabled={!sms.trim()}
+          className="rounded-xl px-4 py-2 text-sm font-semibold ring-1 transition hover:brightness-125 disabled:cursor-not-allowed disabled:opacity-40"
           style={{
             background: "rgba(var(--page-accent-rgb), 0.2)",
             color: "var(--page-accent)",
@@ -190,7 +175,8 @@ export default function BanksPage() {
               <button
                 type="button"
                 onClick={() => void confirmSms()}
-                className="rounded-xl bg-emerald-500 px-4 py-2 text-sm font-bold text-white"
+                disabled={busy}
+                className="rounded-xl bg-emerald-500 px-4 py-2 text-sm font-bold text-white transition hover:bg-emerald-400 disabled:opacity-50"
               >
                 {tr("confirm")}
               </button>
@@ -213,14 +199,12 @@ export default function BanksPage() {
         <div className="space-y-3">
         <h2 className="text-sm font-bold">{tr("pdfStatement")}</h2>
         <p className="text-xs text-slate-500">
-          {lang === "ru"
-            ? "Лучший путь — CSV из банка (Настройки → Импорт). PDF-сканы требуют AI."
-            : "Best path: bank CSV (Settings → Import). Scanned PDFs need AI."}
+          {tr("bestWayCsv")}
         </p>
         <label className="flex cursor-pointer flex-col items-center rounded-2xl border border-dashed border-white/15 px-4 py-10 hover:border-emerald-500/30">
           <span className="text-2xl">📄</span>
           <span className="mt-2 text-sm text-slate-400">
-            {busy ? "…" : lang === "ru" ? "PDF / Excel сюда" : "Drop PDF / Excel"}
+            {busy ? "…" : tr("pdfExcelHere")}
           </span>
           <input
             type="file"
@@ -228,9 +212,10 @@ export default function BanksPage() {
             className="hidden"
             onChange={(e) => {
               const f = e.target.files?.[0];
+              e.target.value = "";
               if (!f) return;
-              if (f.name.endsWith(".csv")) {
-                toast(lang === "ru" ? "CSV → Настройки → Импорт" : "CSV → Settings → Import");
+              if (f.name.toLowerCase().endsWith(".csv")) {
+                toast(tr("csvGoToImport"));
                 return;
               }
               void onPdf(f);
@@ -251,7 +236,7 @@ export default function BanksPage() {
           <div>
             <h2 className="text-sm font-bold">{tr("accounts")}</h2>
             <p className="mt-1 text-xs text-slate-500">
-              {lang === "ru" ? "Балансы по картам и счетам" : "Balances per card & account"}
+              {tr("cardBalances")}
             </p>
           </div>
         </div>

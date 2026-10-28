@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import { loadDataAsync, getStats } from "@/lib/storage";
 import { FinanceData, CATEGORY_ICONS, formatMoney } from "@/lib/types";
 import TransactionForm from "@/components/TransactionForm";
@@ -16,10 +16,24 @@ export default function ExpensesPage() {
   const [data, setData] = useState<FinanceData | null>(null);
   const [filter, setFilter] = useState("all");
   const [q, setQ] = useState("");
-  const { tr, lang } = useApp();
+  const { tr } = useApp();
+  const searchRef = useRef<HTMLInputElement>(null);
   const refresh = () => loadDataAsync().then(setData);
   useEffect(() => {
     refresh();
+  }, []);
+
+  // "/" jumps to search, like most list UIs
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "/" || e.metaKey || e.ctrlKey || e.altKey) return;
+      const el = e.target as HTMLElement | null;
+      if (el && (el.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(el.tagName))) return;
+      e.preventDefault();
+      searchRef.current?.focus();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
   }, []);
 
   const filtered = useMemo(() => {
@@ -27,12 +41,15 @@ export default function ExpensesPage() {
     let list = data.transactions.filter((t) => t.type === "expense");
     if (filter !== "all") list = list.filter((t) => t.category === filter);
     if (q.trim()) {
-      const s = q.toLowerCase();
+      const s = q.trim().toLowerCase();
+      // "45 000" and "45,5" should still match the stored number
+      const digits = s.replace(/\s/g, "").replace(",", ".");
       list = list.filter(
         (t) =>
           t.description.toLowerCase().includes(s) ||
           t.category.toLowerCase().includes(s) ||
-          String(t.amount).includes(s)
+          t.date.includes(s) ||
+          (digits !== "" && String(t.amount).includes(digits))
       );
     }
     return list;
@@ -70,7 +87,7 @@ export default function ExpensesPage() {
           <LetterReveal text={tr("expenses")} />
         </h1>
         <p className="mt-1 text-sm text-slate-400">
-          {lang === "ru" ? "Поиск · фильтры · AI на страже" : "Search · filters · AI on watch"}
+          {tr("expensesHeroSubtitle")}
         </p>
       </FadeItem>
       <FadeItem>
@@ -82,7 +99,7 @@ export default function ExpensesPage() {
         </TiltCard>
         <TiltCard>
           <StatCard
-            title={lang === "ru" ? "Операций" : "Ops"}
+            title={tr("operations")}
             value={`${expenseTx.length}`}
             icon="◈"
             color="amber"
@@ -90,7 +107,7 @@ export default function ExpensesPage() {
         </TiltCard>
         <TiltCard>
           <StatCard
-            title={lang === "ru" ? "Категорий" : "Categories"}
+            title={tr("categoriesCount")}
             value={`${Object.keys(stats.byCategory).length}`}
             icon="▣"
             color="purple"
@@ -98,18 +115,38 @@ export default function ExpensesPage() {
         </TiltCard>
       </div>
       <FadeItem>
-        <input
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-          placeholder={lang === "ru" ? "Поиск: кофе, такси, сумма..." : "Search: coffee, taxi, amount..."}
-          className="w-full rounded-xl border border-white/10 bg-slate-900/60 px-4 py-3 text-sm text-white outline-none transition focus:border-[var(--page-accent)]/50"
-        />
+        <div className="relative">
+          <input
+            ref={searchRef}
+            enterKeyHint="search"
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Escape") setQ("");
+            }}
+            placeholder={tr("searchExpensesPlaceholder")}
+            aria-label={tr("searchExpensesPlaceholder")}
+            className="w-full rounded-xl border border-white/10 bg-slate-900/60 px-4 py-3 pr-10 text-sm text-white outline-none transition focus:border-[var(--page-accent)]/50"
+          />
+          {q && (
+            <button
+              type="button"
+              onClick={() => setQ("")}
+              aria-label={tr("clearSearch")}
+              title={tr("clearSearch")}
+              className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg px-2 py-1 text-slate-500 transition hover:bg-white/5 hover:text-white"
+            >
+              ×
+            </button>
+          )}
+        </div>
       </FadeItem>
       <FadeItem>
         <div className="flex flex-wrap gap-1.5">
           <button
             type="button"
             onClick={() => setFilter("all")}
+            aria-pressed={filter === "all"}
             className="rounded-full px-3 py-1 text-xs transition"
             style={
               filter === "all"
@@ -117,13 +154,14 @@ export default function ExpensesPage() {
                 : { color: "#64748b" }
             }
           >
-            {lang === "ru" ? "Все" : "All"}
+            {tr("all")}
           </button>
           {topCats.map(([cat, amount]) => (
             <button
               key={cat}
               type="button"
               onClick={() => setFilter(cat)}
+              aria-pressed={filter === cat}
               className="rounded-full px-3 py-1 text-xs transition"
               style={
                 filter === cat
@@ -142,10 +180,32 @@ export default function ExpensesPage() {
       </FadeItem>
       <FadeItem>
         <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-400">
-          {lang === "ru" ? "История" : "History"}{" "}
+          {tr("history")}{" "}
           {filtered.length !== expenseTx.length ? `(${filtered.length})` : ""}
         </h2>
-        <TransactionList transactions={filtered} type="expense" onChange={refresh} currency={cur} />
+        <TransactionList
+          transactions={filtered}
+          type="expense"
+          onChange={refresh}
+          currency={cur}
+          emptyText={
+            expenseTx.length > 0 && (q.trim() || filter !== "all") ? (
+              <>
+                <p>{q.trim() ? tr("nothingFoundFor", { q: q.trim() }) : tr("nothingFound")}</p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setQ("");
+                    setFilter("all");
+                  }}
+                  className="mt-3 rounded-lg px-3 py-1.5 text-xs ring-1 ring-white/10 transition hover:bg-white/5 hover:text-white"
+                >
+                  {tr("resetFilters")}
+                </button>
+              </>
+            ) : undefined
+          }
+        />
       </FadeItem>
     </PageShell>
   );

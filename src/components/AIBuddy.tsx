@@ -122,8 +122,17 @@ export default function AIBuddy() {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, typing, open]);
 
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open]);
+
   const send = async (text: string) => {
-    if (!text.trim() || !data) return;
+    if (!text.trim() || !data || typing) return;
     const history = messages;
     setMessages((m) => [...m, { role: "user", text }]);
     setInput("");
@@ -277,7 +286,10 @@ export default function AIBuddy() {
                   </p>
                 </div>
                 <button
+                  type="button"
                   onClick={() => setOpen(false)}
+                  aria-label={tr("closeLabel")}
+                  title={tr("closeLabel")}
                   className="rounded-lg p-1.5 text-slate-500 hover:bg-white/5 hover:text-white"
                 >
                   ✕
@@ -343,11 +355,15 @@ export default function AIBuddy() {
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   placeholder={tr("buddyInputPlaceholder")}
+                  aria-label={tr("buddyInputPlaceholder")}
                   className="flex-1 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-sm text-white outline-none focus:border-emerald-500/40"
                 />
                 <button
                   type="submit"
-                  className="rounded-xl bg-emerald-500 px-3.5 py-2 text-sm font-semibold text-white hover:bg-emerald-400"
+                  disabled={typing || !input.trim()}
+                  aria-label={tr("sendMessage")}
+                  title={tr("sendMessage")}
+                  className="rounded-xl bg-emerald-500 px-3.5 py-2 text-sm font-semibold text-white hover:bg-emerald-400 disabled:opacity-40"
                 >
                   →
                 </button>

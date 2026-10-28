@@ -6,6 +6,19 @@ import { motion, AnimatePresence } from "framer-motion";
 
 type ToastItem = { id: number; text: string; type: "ok" | "err" | "info" };
 
+/** How long a toast stays on screen. */
+const TOAST_DURATION_MS = 2800;
+/** Window after a server rejection during which success toasts are swallowed. */
+const REJECT_SUPPRESS_MS = 2000;
+/** Older toasts are dropped once this many are stacked. */
+const MAX_TOASTS = 4;
+
+const TOAST_COLORS: Record<ToastItem["type"], string> = {
+  ok: "border-emerald-500/30 bg-emerald-500/15 text-emerald-200",
+  err: "border-rose-500/30 bg-rose-500/15 text-rose-200",
+  info: "border-cyan-500/30 bg-cyan-500/15 text-cyan-200",
+};
+
 const Ctx = createContext<(text: string, type?: ToastItem["type"]) => void>(() => {});
 
 export function useToast() {
@@ -20,10 +33,10 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   const rejectedAt = useRef(0);
 
   const push = useCallback((text: string, type: ToastItem["type"] = "ok") => {
-    if (type === "ok" && Date.now() - rejectedAt.current < 2000) return;
+    if (type === "ok" && Date.now() - rejectedAt.current < REJECT_SUPPRESS_MS) return;
     const id = Date.now() + Math.random();
-    setItems((prev) => [...prev.slice(-3), { id, text, type }]);
-    setTimeout(() => setItems((prev) => prev.filter((t) => t.id !== id)), 2800);
+    setItems((prev) => [...prev.slice(-(MAX_TOASTS - 1)), { id, text, type }]);
+    setTimeout(() => setItems((prev) => prev.filter((t) => t.id !== id)), TOAST_DURATION_MS);
   }, []);
 
   useEffect(
@@ -35,16 +48,10 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     [push]
   );
 
-  const colors = {
-    ok: "border-emerald-500/30 bg-emerald-500/15 text-emerald-200",
-    err: "border-rose-500/30 bg-rose-500/15 text-rose-200",
-    info: "border-cyan-500/30 bg-cyan-500/15 text-cyan-200",
-  };
-
   return (
     <Ctx.Provider value={push}>
       {children}
-      <div className="pointer-events-none fixed bottom-24 left-1/2 z-[100] flex w-full max-w-sm -translate-x-1/2 flex-col gap-2 px-4 lg:bottom-8">
+      <div aria-live="polite" className="pointer-events-none fixed bottom-24 left-1/2 z-[100] flex w-full max-w-sm -translate-x-1/2 flex-col gap-2 px-4 lg:bottom-8">
         <AnimatePresence>
           {items.map((t) => (
             <motion.div
@@ -52,7 +59,9 @@ export function ToastProvider({ children }: { children: ReactNode }) {
               initial={{ opacity: 0, y: 16, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -8, scale: 0.95 }}
-              className={`pointer-events-auto rounded-2xl border px-4 py-3 text-sm font-medium shadow-xl backdrop-blur-xl ${colors[t.type]}`}
+              role={t.type === "err" ? "alert" : "status"}
+              onClick={() => setItems((prev) => prev.filter((x) => x.id !== t.id))}
+              className={`pointer-events-auto cursor-pointer rounded-2xl border px-4 py-3 text-sm font-medium shadow-xl backdrop-blur-xl ${TOAST_COLORS[t.type]}`}
             >
               {t.text}
             </motion.div>
