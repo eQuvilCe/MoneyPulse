@@ -33,10 +33,11 @@ export default function SubscriptionsPage() {
 
   const { list, monthly, yearly } = getSubscriptions(data);
   const cur = data.settings.currency || "₽";
-  const income = data.transactions
-    .filter((t) => t.type === "income")
-    .reduce((s, t) => s + t.amount, 0);
-  const pctOfIncome = income > 0 ? Math.round((monthly / income) * 100) : 0;
+  // compare a monthly cost with a monthly income, not with everything ever earned
+  const incomeTx = data.transactions.filter((t) => t.type === "income");
+  const incomeMonths = new Set(incomeTx.map((t) => t.date.slice(0, 7))).size;
+  const avgMonthlyIncome = incomeMonths ? incomeTx.reduce((s, t) => s + t.amount, 0) / incomeMonths : 0;
+  const pctOfIncome = avgMonthlyIncome > 0 ? Math.round((monthly / avgMonthlyIncome) * 100) : 0;
 
   return (
     <PageShell className="page-accent-rose">
