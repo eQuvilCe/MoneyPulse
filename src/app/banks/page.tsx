@@ -86,9 +86,9 @@ export default function BanksPage() {
       {/* Card brands */}
       <FadeItem className="grid gap-2 sm:grid-cols-3">
         {[
-          { name: "Uzcard", tip: lang === "ru" ? "SMS / push → сюда" : "SMS / push → here" },
-          { name: "Humo", tip: lang === "ru" ? "SMS / push → сюда" : "SMS / push → here" },
-          { name: "Visa / MC", tip: lang === "ru" ? "Международные карты" : "International cards" },
+          { name: "Uzcard", tip: tr("smsPushHere") },
+          { name: "Humo", tip: tr("smsPushHere") },
+          { name: "Visa / MC", tip: tr("intlCards") },
         ].map((c) => (
           <TiltCard key={c.name} className="mp-card rounded-2xl px-4 py-3 text-center">
             <p className="text-sm font-bold text-white">{c.name}</p>
@@ -107,29 +107,17 @@ export default function BanksPage() {
           }}
         >
         <p className="font-semibold" style={{ color: "var(--page-accent)" }}>
-          {lang === "ru" ? "Идея: карта MoneyPulse" : "Idea: MoneyPulse card"}
+          {tr("cardIdea")}
         </p>
         <p className="mt-1">
-          {lang === "ru"
-            ? "Своя карта без % на пополнение, все платежи и зарплата сразу в приложении: где, кому, когда. Пока — через SMS банков. Open Banking / партнёрский BIN — roadmap Pro."
-            : "Your own card with no top-up fee; every payment and salary appears here: where, who, when. For now — bank SMS. Open Banking / partner BIN is Pro roadmap."}
+          {tr("cardIdeaBody")}
         </p>
         </div>
       </FadeItem>
 
       {/* How it works */}
       <FadeItem className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 px-4 py-3 text-xs leading-relaxed text-emerald-100/90">
-        {lang === "ru" ? (
-          <>
-            <strong>Как пользоваться:</strong> скопируй SMS от банка → «Разобрать» → проверь сумму →
-            «Подтвердить». Операция появится в расходах/доходах. Авто-подключение банков — в Pro.
-          </>
-        ) : (
-          <>
-            <strong>How to use:</strong> paste bank SMS → Parse → check amount → Confirm. It becomes a
-            transaction. Full bank auto-sync is Pro roadmap.
-          </>
-        )}
+        <strong>{tr("banksHowToTitle")}</strong> {tr("banksHowToBody")}
       </FadeItem>
 
       <FadeItem>

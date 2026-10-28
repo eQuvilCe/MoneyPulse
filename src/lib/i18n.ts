@@ -201,6 +201,8 @@ export const translations = {
     bestWayCsv: "Лучший путь — CSV из банка (Настройки → Импорт). PDF-сканы требуют AI.",
     pdfExcelHere: "PDF / Excel сюда",
     cardBalances: "Балансы по картам и счетам",
+    banksHowToTitle: "Как пользоваться:",
+    banksHowToBody: "скопируй SMS от банка → «Разобрать» → проверь сумму → «Подтвердить». Операция появится в расходах/доходах. Авто-подключение банков — в Pro.",
     // budgets page
     foodCategory: "еда",
     limitUpdated: "Лимит обновлён",
@@ -636,6 +638,8 @@ export const translations = {
     bestWayCsv: "The best way is a CSV from your bank (Settings → Import). PDF scans need AI.",
     pdfExcelHere: "PDF / Excel here",
     cardBalances: "Card and account balances",
+    banksHowToTitle: "How to use:",
+    banksHowToBody: "paste a bank SMS → Parse → check the amount → Confirm. It becomes a transaction. Full bank auto-sync is on the Pro roadmap.",
     // budgets page
     foodCategory: "food",
     limitUpdated: "Limit updated",
