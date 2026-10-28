@@ -135,13 +135,15 @@ export default function BanksPage() {
           }}
           rows={4}
           placeholder={tr("pasteNotificationText")}
+          aria-label={tr("pasteSms")}
           className="w-full rounded-xl border border-white/10 bg-slate-900 px-3 py-2.5 text-sm outline-none"
           style={{ borderColor: "var(--mp-border)" }}
         />
         <button
           type="button"
           onClick={tryParse}
-          className="rounded-xl px-4 py-2 text-sm font-semibold ring-1"
+          disabled={!sms.trim()}
+          className="rounded-xl px-4 py-2 text-sm font-semibold ring-1 transition hover:brightness-125 disabled:cursor-not-allowed disabled:opacity-40"
           style={{
             background: "rgba(var(--page-accent-rgb), 0.2)",
             color: "var(--page-accent)",
