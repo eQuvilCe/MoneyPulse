@@ -1,6 +1,13 @@
 "use client";
 
 import { dateKey } from "@/lib/types";
+import { t } from "@/lib/i18n";
+
+/** Local hour after which an empty day triggers the reminder. */
+const NUDGE_HOUR = 20;
+/** Cap for the pending timer so a tab left open overnight doesn't fire tomorrow. */
+const MAX_NUDGE_DELAY_MS = 12 * 60 * 60 * 1000;
+
 export async function enableBrowserNotifications(): Promise<boolean> {
   if (typeof window === "undefined" || !("Notification" in window)) return false;
   if (Notification.permission === "granted") return true;
@@ -39,22 +46,20 @@ export function scheduleEveningNudge(enabled: boolean, hasToday: boolean, lang: 
     localStorage.setItem(doneKey, "1");
     notifyIfAllowed(
       "MoneyPulse",
-      lang === "ru"
-        ? "Уже после 20:00, а записей за сегодня нет. Добавь доход или расход за 20 секунд."
-        : "It's after 8 PM and no logs today. Add income or expense in 20 seconds.",
+      t(lang, "eveningNudgeBody"),
       true
     );
   };
 
   const now = new Date();
   const target = new Date();
-  target.setHours(20, 0, 0, 0);
+  target.setHours(NUDGE_HOUR, 0, 0, 0);
   if (now >= target) {
     // already past 20:00 — fire once this session if no txs
     fire();
     return;
   }
   const ms = target.getTime() - now.getTime();
-  window.setTimeout(fire, Math.min(ms, 12 * 60 * 60 * 1000));
+  window.setTimeout(fire, Math.min(ms, MAX_NUDGE_DELAY_MS));
 }
 
