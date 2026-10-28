@@ -55,8 +55,8 @@ npm run build && npx cap add android && npx cap sync
 5. **PWA** — уже в репо; проверь HTTPS  
 6. **Telegram**  
    - BotFather → токен → `TELEGRAM_BOT_TOKEN`  
-   - Webhook: `…/setWebhook?url=https://DOMAIN/api/telegram`  
-   - Menu Button WebApp: `https://DOMAIN/tg`  
+   - Проще всего одной командой: `node scripts/telegram-setup.mjs <BOT_TOKEN> https://DOMAIN` — скрипт ставит webhook с секретом, команды, кнопку меню и логотип, а потом печатает env-переменные. При смене домена запусти ещё раз с тем же секретом  
+   - Вручную: webhook `…/setWebhook?url=https://DOMAIN/api/telegram`, Menu Button WebApp `https://DOMAIN/tg`  
 7. **Ежедневный nudge** — Vercel Cron из `vercel.json` дёргает `/api/cron/daily` (15:00 UTC = 20:00 Ташкент), нужен `CRON_SECRET`  
 8. **Upstash Redis** — distributed rate limit (опционально)  
 9. **Clerk / Auth.js** — Google/Apple one-tap (upgrade с текущего JWT)
