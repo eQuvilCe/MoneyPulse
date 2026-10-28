@@ -4,7 +4,7 @@ import { formatNumber } from "@/lib/types";
 import { useState } from "react";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
-  AreaChart, Area, PieChart, Pie, Cell,
+  PieChart, Pie, Cell,
 } from "recharts";
 import { getStats } from "@/lib/storage";
 import { useRealtimeData } from "@/hooks/useRealtimeData";
