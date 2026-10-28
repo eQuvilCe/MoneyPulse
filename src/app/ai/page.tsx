@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { loadDataAsync, getStats } from "@/lib/storage";
+import { loadDataAsync } from "@/lib/storage";
 import { FinanceData, formatMoney } from "@/lib/types";
 import {
   generateAIAnalysis,
