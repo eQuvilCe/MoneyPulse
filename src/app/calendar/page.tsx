@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRealtimeData } from "@/hooks/useRealtimeData";
 import { PageShell, FadeItem } from "@/components/motion/PageShell";
 import TiltCard from "@/components/motion/TiltCard";
@@ -27,6 +27,19 @@ export default function CalendarPage() {
     return new Date(d.getFullYear(), d.getMonth(), 1);
   });
   const [selected, setSelected] = useState(() => dateKey());
+
+  // ← / → flip months when focus isn't in a text field
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+      const el = e.target as HTMLElement | null;
+      if (el && (el.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(el.tagName))) return;
+      const step = e.key === "ArrowLeft" ? -1 : 1;
+      setCursor((c) => new Date(c.getFullYear(), c.getMonth() + step, 1));
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
 
   const year = cursor.getFullYear();
   const month = cursor.getMonth();
