@@ -3,7 +3,9 @@
 import { motion } from "framer-motion";
 import FitText from "@/components/FitText";
 
-const tone: Record<string, { text: string; rgb: string }> = {
+export type StatTone = "green" | "red" | "blue" | "cyan" | "amber" | "purple";
+
+const tone: Record<StatTone, { text: string; rgb: string }> = {
   green: { text: "text-emerald-400", rgb: "52,211,153" },
   red: { text: "text-rose-400", rgb: "251,113,133" },
   blue: { text: "text-cyan-400", rgb: "34,211,238" },
@@ -30,9 +32,9 @@ export default function StatCard({
   title, value, fullValue, icon, color = "blue", subtitle, delay = 0, spark,
 }: {
   title: string; value: string; /** exact value for the tooltip when `value` is abbreviated */ fullValue?: string;
-  icon?: string; color?: string; subtitle?: string; delay?: number; spark?: number[];
+  icon?: string; color?: StatTone; subtitle?: string; delay?: number; spark?: number[];
 }) {
-  const c = tone[color] || tone.blue;
+  const c = tone[color];
   return (
     <motion.div
       initial={{ opacity: 0, y: 16, scale: 0.98 }}
