@@ -281,6 +281,8 @@ export const translations = {
     goalsHeroSubtitle: "Редактируй · копи · достигай",
     addGoalButton: "+ Цель",
     goalDeadlinePrefix: "до",
+    goalDaysLeft: "осталось {n} дн.",
+    goalOverdue: "срок прошёл",
     doneCheckmark: "Готово ✓",
     // income page
     incomeHeroSubtitle: "Поступления · AI отслеживает источники",
@@ -754,6 +756,8 @@ export const translations = {
     goalsHeroSubtitle: "Edit · save · achieve",
     addGoalButton: "+ Goal",
     goalDeadlinePrefix: "by",
+    goalDaysLeft: "{n} days left",
+    goalOverdue: "overdue",
     doneCheckmark: "Done ✓",
     // income page
     incomeHeroSubtitle: "Inflows · AI tracks sources",
