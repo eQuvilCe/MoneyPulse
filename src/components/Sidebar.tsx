@@ -158,8 +158,8 @@ export default function Sidebar() {
             <Send size={14} aria-hidden />
           </span>
           <span className="min-w-0">
-            <span className="block text-[13px] font-semibold leading-tight">{lang === "ru" ? "Бот в Telegram" : "Telegram bot"}</span>
-            <span className="block truncate text-[10px] text-sky-300/70">{lang === "ru" ? "Траты одной строкой" : "Log spending in one line"}</span>
+            <span className="block text-[13px] font-semibold leading-tight">{tr("telegramBot")}</span>
+            <span className="block truncate text-[10px] text-sky-300/70">{tr("telegramBotHint")}</span>
           </span>
         </a>
         <div className="flex gap-1">
@@ -187,7 +187,7 @@ export default function Sidebar() {
               onClick={() => void logout()}
               className="mt-1.5 text-[10px] text-slate-500 transition hover:text-rose-400"
             >
-              {lang === "ru" ? "Выйти" : "Log out"}
+              {tr("logout")}
             </button>
           </div>
         )}
