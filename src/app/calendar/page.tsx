@@ -58,13 +58,15 @@ export default function CalendarPage() {
     return list;
   }, [year, month]);
 
+  // shade relative to the busiest day of the visible month, not of all time
   const maxExp = useMemo(() => {
     let m = 1;
-    Object.values(byDay).forEach((v) => {
-      if (v.expense > m) m = v.expense;
-    });
+    for (const c of cells) {
+      const v = c && byDay[c.key];
+      if (v && v.expense > m) m = v.expense;
+    }
     return m;
-  }, [byDay]);
+  }, [byDay, cells]);
 
   const dayInfo = byDay[selected] || { income: 0, expense: 0, count: 0 };
   const dayTx = data?.transactions.filter((t) => t.date === selected) || [];
