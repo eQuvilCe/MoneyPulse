@@ -47,6 +47,7 @@ function prettyAmount(raw: string): string {
   return `${grouped || "0"},${rest.join("").slice(0, 2)}`;
 }
 
+/** Inverse of prettyAmount: "1 234,5" → 1234.5; anything unparsable becomes 0. */
 function parseAmount(pretty: string): number {
   const n = parseFloat(pretty.replace(/\s/g, "").replace(",", "."));
   return Number.isFinite(n) ? n : 0;
