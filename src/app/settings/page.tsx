@@ -686,6 +686,7 @@ export default function SettingsPage() {
               value={deletePassword}
               onChange={(e) => setDeletePassword(e.target.value)}
               placeholder={tr("passwordIfAny")}
+              aria-label={tr("passwordIfAny")}
               className={fieldClass}
               autoComplete="current-password"
             />
@@ -693,6 +694,9 @@ export default function SettingsPage() {
               value={deleteConfirmText}
               onChange={(e) => setDeleteConfirmText(e.target.value)}
               placeholder="DELETE"
+              aria-label={tr("deleteConfirmPrompt")}
+              autoCapitalize="characters"
+              autoComplete="off"
               className={fieldClass}
             />
             <div className="flex gap-2">
