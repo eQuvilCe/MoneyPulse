@@ -143,12 +143,15 @@ export default function ScanPage() {
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
             placeholder={tr("amount")}
+            aria-label={tr("amount")}
+            inputMode="decimal"
             className="w-full rounded-xl border border-white/10 bg-slate-900/70 px-3 py-2.5 text-sm outline-none focus:border-[var(--page-accent)]/50"
           />
           <input
             value={desc}
             onChange={(e) => setDesc(e.target.value)}
             placeholder={tr("descriptionOrStore")}
+            aria-label={tr("descriptionOrStore")}
             className="w-full rounded-xl border border-white/10 bg-slate-900/70 px-3 py-2.5 text-sm outline-none focus:border-[var(--page-accent)]/50"
           />
           <div className="grid gap-2 sm:grid-cols-2">
@@ -156,6 +159,7 @@ export default function ScanPage() {
               value={category}
               onChange={(e) => setCategory(e.target.value)}
               placeholder={tr("category")}
+              aria-label={tr("category")}
               className="rounded-xl border border-white/10 bg-slate-900/70 px-3 py-2.5 text-sm outline-none focus:border-[var(--page-accent)]/50"
             />
             <input
