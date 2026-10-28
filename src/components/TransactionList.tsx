@@ -172,6 +172,7 @@ export default function TransactionList({
                   onClick={() => startEdit(t)}
                   className="rounded-lg p-1.5 text-slate-500 hover:bg-white/5 hover:text-cyan-400"
                   title={tr("editAction")}
+                  aria-label={tr("editAction")}
                 >
                   ✎
                 </button>
@@ -179,6 +180,7 @@ export default function TransactionList({
                   onClick={() => void remove(t.id)}
                   className="rounded-lg p-1.5 text-slate-500 hover:bg-white/5 hover:text-rose-400"
                   title={tr("remove")}
+                  aria-label={tr("remove")}
                 >
                   🗑️
                 </button>
