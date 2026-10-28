@@ -42,7 +42,8 @@ export default function BudgetsPage() {
       </PageShell>
     );
   }
-  const statuses = getBudgetStatus(data);
+  // most stretched limits first — that's what needs attention
+  const statuses = [...getBudgetStatus(data)].sort((a, b) => b.percent - a.percent);
   const cur = data.settings.currency || "₽";
   const cats = allExpenseCategories(data.settings);
   const now = new Date();
