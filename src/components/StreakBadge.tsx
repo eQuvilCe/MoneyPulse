@@ -31,6 +31,7 @@ export default function StreakBadge({ data }: { data: FinanceData }) {
           className="flex h-14 w-14 items-center justify-center rounded-2xl bg-orange-500/15 text-2xl ring-1 ring-orange-500/25"
           animate={streak > 0 ? { scale: [1, 1.08, 1] } : {}}
           transition={{ duration: 2, repeat: Infinity }}
+          aria-hidden
         >
           🔥
         </motion.div>
