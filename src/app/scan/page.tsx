@@ -84,10 +84,10 @@ export default function ScanPage() {
           MoneyPulse
         </p>
         <h1 className="mt-1 text-3xl font-bold">
-          <LetterReveal text={lang === "ru" ? "Сканер чеков" : "Receipt scanner"} />
+          <LetterReveal text={tr("scannerHeroTitle")} />
         </h1>
         <p className="mt-1 text-sm text-slate-400">
-          {lang === "ru" ? "Фото → AI Vision → транзакция за секунды" : "Photo → AI Vision → transaction in seconds"}
+          {tr("scannerHeroSubtitle")}
         </p>
       </FadeItem>
 
@@ -112,13 +112,7 @@ export default function ScanPage() {
                   📷
                 </motion.span>
                 <p className="mt-4 text-sm font-semibold text-white">
-                  {busy
-                    ? lang === "ru"
-                      ? "AI читает чек…"
-                      : "AI reading…"
-                    : lang === "ru"
-                      ? "Нажми или перетащи фото чека"
-                      : "Tap or drop receipt photo"}
+                  {busy ? tr("aiReadingReceipt") : tr("tapOrDropPhoto")}
                 </p>
                 <p className="mt-1 text-xs text-slate-500">JPG · PNG · HEIC</p>
               </>
@@ -182,9 +176,7 @@ export default function ScanPage() {
       )}
 
       <FadeItem className="rounded-2xl border border-white/5 bg-white/[0.02] px-4 py-3 text-xs text-slate-500">
-        {lang === "ru"
-          ? "Нужен AI_API_KEY (vision) в .env для авто-распознавания. Без ключа — заполни поля вручную после фото."
-          : "Set AI_API_KEY (vision) in .env for auto-OCR. Without key — fill fields manually after photo."}
+        {tr("scanNeedsApiKey")}
       </FadeItem>
     </PageShell>
   );
