@@ -123,11 +123,15 @@ export default function TransactionList({
                     onChange={(e) => setEditAmount(e.target.value)}
                     className="rounded-lg border border-white/10 bg-slate-900 px-3 py-2 text-sm"
                     placeholder={tr("amount")}
+                    aria-label={tr("amount")}
+                    inputMode="decimal"
+                    autoFocus
                   />
                   <input
                     type="date"
                     value={editDate}
                     onChange={(e) => setEditDate(e.target.value)}
+                    aria-label={tr("dateLabel")}
                     className="rounded-lg border border-white/10 bg-slate-900 px-3 py-2 text-sm"
                   />
                   <input
@@ -135,12 +139,14 @@ export default function TransactionList({
                     onChange={(e) => setEditCat(e.target.value)}
                     className="rounded-lg border border-white/10 bg-slate-900 px-3 py-2 text-sm"
                     placeholder={tr("category")}
+                    aria-label={tr("category")}
                   />
                   <input
                     value={editDesc}
                     onChange={(e) => setEditDesc(e.target.value)}
                     className="rounded-lg border border-white/10 bg-slate-900 px-3 py-2 text-sm"
                     placeholder={tr("txDescriptionPlaceholder")}
+                    aria-label={tr("txDescriptionPlaceholder")}
                   />
                 </div>
                 <div className="flex gap-2">
