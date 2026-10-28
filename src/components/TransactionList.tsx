@@ -76,6 +76,15 @@ export default function TransactionList({
     onChange();
   };
 
+  const copyAmount = async (amount: number) => {
+    try {
+      await navigator.clipboard.writeText(String(amount));
+      toast(tr("amountCopied"), "info");
+    } catch {
+      toast(tr("copyFailed"), "err");
+    }
+  };
+
   const remove = async (id: string) => {
     if (confirmId !== id) {
       setConfirmId(id);
@@ -185,14 +194,18 @@ export default function TransactionList({
                     {t.category} · <time dateTime={t.date} title={t.date}>{formatShortDate(t.date, lang)}</time>
                   </p>
                 </div>
-                <p
-                  className={`shrink-0 text-sm font-bold tabular-nums ${
+                <button
+                  type="button"
+                  onClick={() => void copyAmount(t.amount)}
+                  title={tr("copyAmount")}
+                  aria-label={`${tr("copyAmount")}: ${formatMoney(t.amount, currency)}`}
+                  className={`shrink-0 rounded-md px-1 text-sm font-bold tabular-nums transition hover:bg-white/5 ${
                     t.type === "income" ? "text-emerald-400" : "text-rose-400"
                   }`}
                 >
                   {t.type === "income" ? "+" : "−"}
                   {formatMoney(t.amount, currency).replace(/^[−+]/, "")}
-                </p>
+                </button>
                 <button
                   onClick={() => startEdit(t)}
                   className="rounded-lg p-1.5 text-slate-500 hover:bg-white/5 hover:text-cyan-400"
