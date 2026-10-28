@@ -93,7 +93,8 @@ export default function BudgetsPage() {
               setCat(DEFAULT_BUDGET_CATEGORY);
               setShow(!show);
             }}
-            className="rounded-xl px-4 py-2.5 text-sm font-semibold text-white shadow-lg"
+            aria-expanded={show}
+            className="rounded-xl px-4 py-2.5 text-sm font-semibold text-white shadow-lg transition hover:brightness-110"
             style={{
               background: "linear-gradient(135deg, var(--page-accent), var(--page-accent-2))",
               boxShadow: "0 8px 24px rgba(var(--page-accent-rgb), 0.25)",
@@ -116,6 +117,7 @@ export default function BudgetsPage() {
                 value={cat}
                 onChange={(e) => setCat(e.target.value)}
                 disabled={!!editId}
+                aria-label={tr("category")}
                 className="rounded-xl border border-white/10 bg-slate-900 px-3 py-2.5 text-sm"
               >
                 {cats.map((c) => (
@@ -129,6 +131,9 @@ export default function BudgetsPage() {
                 value={limit}
                 onChange={(e) => setLimit(e.target.value)}
                 placeholder={tr("limitFor", { cur })}
+                aria-label={tr("limitFor", { cur })}
+                inputMode="decimal"
+                autoFocus
                 required
                 min="1"
                 className="rounded-xl border border-white/10 bg-slate-900 px-3 py-2.5 text-sm"
