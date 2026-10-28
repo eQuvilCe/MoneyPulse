@@ -41,6 +41,7 @@ export default function TransactionForm({ type, onAdded, currency = "₽", setti
   const [date, setDate] = useState(dateKey());
   const [recurring, setRecurring] = useState(false);
   const [open, setOpen] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const toast = useToast();
   const { tr } = useApp();
 
@@ -65,7 +66,8 @@ export default function TransactionForm({ type, onAdded, currency = "₽", setti
       toast(tr("amountTooBig", { max: formatMoneyCompact(MAX_AMOUNT, currency) }), "err");
       return;
     }
-    if (!num) return;
+    if (!num || submitting) return;
+    setSubmitting(true);
     void addTransaction({
       type,
       amount: num,
@@ -84,7 +86,9 @@ export default function TransactionForm({ type, onAdded, currency = "₽", setti
           : `−${formatMoney(num, currency)} ${tr("addExpense").toLowerCase()}${recurring ? " ↻" : ""}`
       );
       onAdded();
-    });
+    })
+      .catch(() => toast(tr("quickAddSaveError"), "err"))
+      .finally(() => setSubmitting(false));
   };
 
   return (
@@ -185,9 +189,10 @@ export default function TransactionForm({ type, onAdded, currency = "₽", setti
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 rounded-xl bg-emerald-500 py-3 text-sm font-semibold text-white hover:bg-emerald-400"
+                  disabled={submitting}
+                  className="flex-1 rounded-xl bg-emerald-500 py-3 text-sm font-semibold text-white hover:bg-emerald-400 disabled:opacity-60"
                 >
-                  {tr("add")}
+                  {submitting ? tr("saving") : tr("add")}
                 </button>
               </div>
             </motion.form>
