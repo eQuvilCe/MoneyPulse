@@ -434,6 +434,7 @@ export default function SettingsPage() {
                 key={c.code}
                 type="button"
                 onClick={() => setCurrency(c.code)}
+                aria-pressed={currency === c.code}
                 className={
                   currency === c.code
                     ? "rounded-xl px-3 py-2 text-sm font-semibold transition"
@@ -485,6 +486,7 @@ export default function SettingsPage() {
                 key={l.id}
                 type="button"
                 onClick={() => setLang(l.id)}
+                aria-pressed={lang === l.id}
                 className="rounded-xl px-5 py-2.5 text-sm font-semibold transition"
                 style={
                   lang === l.id
@@ -509,6 +511,7 @@ export default function SettingsPage() {
               <button
                 key={th}
                 type="button"
+                aria-pressed={theme === th}
                 onClick={() => {
                   setTheme(th);
                   void updateSettings({ theme: th });
