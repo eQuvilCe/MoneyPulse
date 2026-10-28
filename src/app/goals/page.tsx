@@ -223,16 +223,21 @@ export default function GoalsPage() {
                   <div className="flex gap-1">
                     <button
                       onClick={() => openEdit(g)}
-                      className="rounded-lg p-1 text-slate-500 hover:text-cyan-400"
+                      title={tr("editGoal")}
+                      aria-label={tr("editGoal")}
+                      className="rounded-lg p-1 text-slate-500 hover:bg-white/5 hover:text-cyan-400"
                     >
                       ✎
                     </button>
                     <button
                       onClick={async () => {
+                        if (!window.confirm(tr("deleteGoalConfirm", { title: g.title }))) return;
                         await deleteGoal(g.id);
                         refresh();
                       }}
-                      className="rounded-lg p-1 text-slate-600 hover:text-rose-400"
+                      title={tr("deleteGoal")}
+                      aria-label={tr("deleteGoal")}
+                      className="rounded-lg p-1 text-slate-600 hover:bg-white/5 hover:text-rose-400"
                     >
                       ✕
                     </button>
