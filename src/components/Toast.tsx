@@ -6,6 +6,13 @@ import { motion, AnimatePresence } from "framer-motion";
 
 type ToastItem = { id: number; text: string; type: "ok" | "err" | "info" };
 
+/** How long a toast stays on screen. */
+const TOAST_DURATION_MS = 2800;
+/** Window after a server rejection during which success toasts are swallowed. */
+const REJECT_SUPPRESS_MS = 2000;
+/** Older toasts are dropped once this many are stacked. */
+const MAX_TOASTS = 4;
+
 const Ctx = createContext<(text: string, type?: ToastItem["type"]) => void>(() => {});
 
 export function useToast() {
@@ -20,10 +27,10 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   const rejectedAt = useRef(0);
 
   const push = useCallback((text: string, type: ToastItem["type"] = "ok") => {
-    if (type === "ok" && Date.now() - rejectedAt.current < 2000) return;
+    if (type === "ok" && Date.now() - rejectedAt.current < REJECT_SUPPRESS_MS) return;
     const id = Date.now() + Math.random();
-    setItems((prev) => [...prev.slice(-3), { id, text, type }]);
-    setTimeout(() => setItems((prev) => prev.filter((t) => t.id !== id)), 2800);
+    setItems((prev) => [...prev.slice(-(MAX_TOASTS - 1)), { id, text, type }]);
+    setTimeout(() => setItems((prev) => prev.filter((t) => t.id !== id)), TOAST_DURATION_MS);
   }, []);
 
   useEffect(
