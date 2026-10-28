@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Transaction, CATEGORY_ICONS, CATEGORY_COLORS, formatMoney, MAX_AMOUNT, formatMoneyCompact, readAmount } from "@/lib/types";
+import { Transaction, CATEGORY_ICONS, CATEGORY_COLORS, formatMoney, MAX_AMOUNT, formatMoneyCompact, readAmount, formatShortDate } from "@/lib/types";
 import { deleteTransaction, updateTransaction } from "@/lib/storage";
 import { useApp } from "@/components/AppProvider";
 import { useToast } from "@/components/Toast";
@@ -37,7 +37,7 @@ export default function TransactionList({
   const [editDate, setEditDate] = useState("");
   // first tap arms the delete button, second tap within CONFIRM_DELETE_MS actually deletes
   const [confirmId, setConfirmId] = useState<string | null>(null);
-  const { tr } = useApp();
+  const { tr, lang } = useApp();
   const toast = useToast();
 
   const filtered = useMemo(() => {
@@ -182,7 +182,7 @@ export default function TransactionList({
                     )}
                   </p>
                   <p className="text-xs text-slate-500">
-                    {t.category} · {t.date}
+                    {t.category} · <time dateTime={t.date} title={t.date}>{formatShortDate(t.date, lang)}</time>
                   </p>
                 </div>
                 <p
