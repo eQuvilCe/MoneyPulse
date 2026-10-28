@@ -57,8 +57,6 @@ export function parseBankSms(text: string): ParsedSms | null {
   const raw = text.trim();
   if (raw.length < 8) return null;
 
-  const lower = raw.toLowerCase();
-
   // type
   let type: "income" | "expense" = "expense";
   if (
