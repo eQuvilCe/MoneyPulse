@@ -55,7 +55,8 @@ export default function AnalyticsPage() {
               <button
                 key={String(p.v)}
                 onClick={() => setPeriod(p.v as number | undefined)}
-                className="rounded-lg px-3 py-1.5 text-xs font-medium ring-1"
+                aria-pressed={period === p.v}
+                className="rounded-lg px-3 py-1.5 text-xs font-medium ring-1 transition hover:text-white"
                 style={
                   period === p.v
                     ? { background: "rgba(var(--page-accent-rgb), 0.18)", color: "#fff", boxShadow: "inset 0 0 0 1px rgba(var(--page-accent-rgb), 0.35)" }
