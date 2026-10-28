@@ -10,9 +10,11 @@ import { useToast } from "@/components/Toast";
 import { onSessionExpired } from "@/lib/events";
 
 const PUBLIC = ["/privacy", "/terms", "/offline"];
+/** Several requests can fail with 401 at once — show the expiry toast only once per burst. */
+const SESSION_TOAST_DEDUPE_MS = 5000;
 
 export default function AuthShell({ children }: { children: React.ReactNode }) {
-  const { user, ready, lang } = useApp();
+  const { user, ready, tr } = useApp();
   const path = usePathname();
   const toast = useToast();
 
@@ -20,11 +22,11 @@ export default function AuthShell({ children }: { children: React.ReactNode }) {
     let lastShown = 0;
     return onSessionExpired(() => {
       const now = Date.now();
-      if (now - lastShown < 5000) return; // collapse duplicate fires (e.g. dev StrictMode double-effects)
+      if (now - lastShown < SESSION_TOAST_DEDUPE_MS) return; // collapse duplicate fires (e.g. dev StrictMode double-effects)
       lastShown = now;
-      toast(lang === "ru" ? "Сессия истекла — войди снова" : "Session expired — please sign in again", "err");
+      toast(tr("sessionExpired"), "err");
     });
-  }, [toast, lang]);
+  }, [toast, tr]);
 
   if (!ready) {
     return (
