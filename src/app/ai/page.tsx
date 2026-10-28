@@ -13,7 +13,7 @@ import {
   getHealthScore,
 } from "@/lib/ai";
 import { fullAnalysis } from "@/lib/insights";
-import { PageShell, FadeItem } from "@/components/motion/PageShell";
+import { PageShell, FadeItem, Skeleton } from "@/components/motion/PageShell";
 import TiltCard from "@/components/motion/TiltCard";
 import { LetterReveal } from "@/components/motion/Reveal";
 import { useApp } from "@/components/AppProvider";
@@ -83,7 +83,21 @@ export default function AIPage() {
     setLoading(false);
   };
 
-  if (!data) return <div className="py-20 text-center text-slate-500">{tr("loading")}</div>;
+  if (!data) {
+    return (
+      <PageShell className="page-accent-sky">
+        <FadeItem>
+          <Skeleton className="h-16 w-full" />
+        </FadeItem>
+        <FadeItem>
+          <Skeleton className="h-64 w-full" />
+        </FadeItem>
+        <FadeItem>
+          <Skeleton className="h-80 w-full" />
+        </FadeItem>
+      </PageShell>
+    );
+  }
 
   const advice = generateAIAnalysis(data);
   const health = getHealthScore(data);
