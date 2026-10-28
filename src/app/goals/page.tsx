@@ -16,6 +16,15 @@ import { emitCelebrate } from "@/lib/events";
 /** One-tap contribution amounts shown under each unfinished goal. */
 const QUICK_CONTRIBUTIONS = [1000, 5000, 10000, 25000];
 
+/** Whole days from today until a YYYY-MM-DD deadline; negative once it has passed. */
+function daysUntil(deadline: string): number {
+  const [y, m, d] = deadline.split("-").map(Number);
+  const end = new Date(y, m - 1, d);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return Math.round((end.getTime() - today.getTime()) / 86_400_000);
+}
+
 export default function GoalsPage() {
   const { tr, lang } = useApp();
   const [data, setData] = useState<FinanceData | null>(null);
@@ -217,6 +226,14 @@ export default function GoalsPage() {
                       {g.deadline && (
                         <p className="text-[11px] text-slate-500">
                           {tr("goalDeadlinePrefix")} {formatShortDate(g.deadline, lang)}
+                          {progress < 100 && (() => {
+                            const days = daysUntil(g.deadline);
+                            return days < 0 ? (
+                              <span className="text-rose-400"> · {tr("goalOverdue")}</span>
+                            ) : (
+                              <span> · {tr("goalDaysLeft", { n: days })}</span>
+                            );
+                          })()}
                         </p>
                       )}
                     </div>
