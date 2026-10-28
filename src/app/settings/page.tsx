@@ -445,7 +445,7 @@ export default function SettingsPage() {
           <div className="flex gap-2">
             {(
               [
-                { id: "ru" as const, label: "Русский" },
+                { id: "ru" as const, label: tr("russianLang") },
                 { id: "en" as const, label: "English" },
               ] as const
             ).map((l) => (
@@ -503,7 +503,7 @@ export default function SettingsPage() {
       <SettingsCard>
         <SectionHeading icon={Tags}>{tr("customCategories")}</SectionHeading>
         <p className="text-xs text-slate-500">
-          {lang === "ru" ? "Например «Питомцы», «Спорт» — появятся в формах расходов" : "e.g. Pets, Sports — show up in expense forms"}
+          {tr("customCategoryHint")}
         </p>
         <div className="flex gap-2">
           <input
@@ -607,9 +607,9 @@ export default function SettingsPage() {
       <SettingsCard>
         <SectionHeading icon={ShieldCheck}>{tr("security")}</SectionHeading>
         <ul className="space-y-1.5 text-xs leading-relaxed text-slate-500">
-          <li>• {lang === "ru" ? "Пароли: scrypt, в cookie только JWT" : "Passwords: scrypt, JWT cookie only"}</li>
-          <li>• {lang === "ru" ? "Данные изолированы по user_id" : "Data isolated by user_id"}</li>
-          <li>• {lang === "ru" ? "Сессия до 1 года при «Запомнить»" : "Session up to 1 year with Remember"}</li>
+          <li>• {tr("securityScrypt")}</li>
+          <li>• {tr("securityIsolation")}</li>
+          <li>• {tr("securitySession")}</li>
         </ul>
         <button
           type="button"
