@@ -58,7 +58,3 @@ export function scheduleEveningNudge(enabled: boolean, hasToday: boolean, lang: 
   window.setTimeout(fire, Math.min(ms, 12 * 60 * 60 * 1000));
 }
 
-/** @deprecated use scheduleEveningNudge */
-export function maybeNudgeToday(enabled: boolean, hasToday: boolean) {
-  scheduleEveningNudge(enabled, hasToday, "ru");
-}
