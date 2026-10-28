@@ -158,6 +158,14 @@ export default function CalendarPage() {
                 key={c.key}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => setSelected(c.key)}
+                aria-pressed={isSel}
+                aria-current={isToday ? "date" : undefined}
+                aria-label={
+                  info
+                    ? `${c.day}: +${formatMoney(info.income, cur)} / −${formatMoney(info.expense, cur)}`
+                    : String(c.day)
+                }
+                title={info ? `+${formatMoney(info.income, cur)} · −${formatMoney(info.expense, cur)}` : undefined}
                 className={`relative flex aspect-square flex-col items-center justify-center rounded-xl text-xs ring-1 ${
                   isSel ? "" : "ring-white/5 hover:ring-white/15"
                 }`}
