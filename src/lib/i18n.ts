@@ -187,6 +187,10 @@ export const translations = {
     chatTitle: "Чат · MoneyPulse AI",
     askAboutMoney: "Спроси про деньги…",
     aiThinking: "AI думает…",
+    aiAnalysisActive: "анализ активен",
+    aiInsightFallbackTitle: "Ваш финансовый AI",
+    aiInsightFallbackBody: "Добавь операции — система начнёт строить инсайты.",
+    openAi: "Открыть AI",
     // analytics page
     analyticsHeroTitle: "Аналитика",
     analyticsChartsHint: "Графики · AI интерпретирует цифры",
@@ -648,6 +652,10 @@ export const translations = {
     chatTitle: "Chat · MoneyPulse AI",
     askAboutMoney: "Ask about your money…",
     aiThinking: "AI is thinking…",
+    aiAnalysisActive: "analysis active",
+    aiInsightFallbackTitle: "Your finance AI",
+    aiInsightFallbackBody: "Add transactions — the system will build insights.",
+    openAi: "Open AI",
     // analytics page
     analyticsHeroTitle: "Analytics",
     analyticsChartsHint: "Charts · AI reads the numbers",
