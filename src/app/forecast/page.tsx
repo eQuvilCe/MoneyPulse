@@ -13,6 +13,9 @@ import { LetterReveal } from "@/components/motion/Reveal";
 import { motion } from "framer-motion";
 import { useApp } from "@/components/AppProvider";
 
+/** Share of each top category the "what if you cut" card suggests trimming. */
+const CUT_SHARE = 0.15;
+
 export default function ForecastPage() {
   const { tr } = useApp();
   const { data } = useRealtimeData();
@@ -50,7 +53,7 @@ export default function ForecastPage() {
       .map(([cat, amt]) => ({
         cat,
         amt,
-        save: Math.round(amt * 0.15),
+        save: Math.round(amt * CUT_SHARE),
       }));
   }, [stats]);
 
