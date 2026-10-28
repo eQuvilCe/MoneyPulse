@@ -64,6 +64,8 @@ export const translations = {
     // common
     total: "Всего",
     remove: "Удалить",
+    confirmDeleteShort: "Удалить?",
+    tapAgainToDelete: "Нажми ещё раз, чтобы удалить",
     edit: "Изменить",
     cancel: "Отмена",
     confirm: "Подтвердить",
@@ -510,6 +512,8 @@ export const translations = {
     spending: "Spending",
     total: "Total",
     remove: "Remove",
+    confirmDeleteShort: "Delete?",
+    tapAgainToDelete: "Tap again to delete",
     edit: "Edit",
     cancel: "Cancel",
     confirm: "Confirm",

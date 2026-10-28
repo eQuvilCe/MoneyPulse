@@ -7,6 +7,8 @@ import { deleteTransaction, updateTransaction } from "@/lib/storage";
 import { useApp } from "@/components/AppProvider";
 import { useToast } from "@/components/Toast";
 
+const CONFIRM_DELETE_MS = 3000;
+
 interface Props {
   transactions: Transaction[];
   type?: "income" | "expense";
@@ -33,6 +35,8 @@ export default function TransactionList({
   const [editDesc, setEditDesc] = useState("");
   const [editCat, setEditCat] = useState("");
   const [editDate, setEditDate] = useState("");
+  // first tap arms the delete button, second tap within CONFIRM_DELETE_MS actually deletes
+  const [confirmId, setConfirmId] = useState<string | null>(null);
   const { tr } = useApp();
   const toast = useToast();
 
@@ -73,6 +77,12 @@ export default function TransactionList({
   };
 
   const remove = async (id: string) => {
+    if (confirmId !== id) {
+      setConfirmId(id);
+      setTimeout(() => setConfirmId((cur) => (cur === id ? null : cur)), CONFIRM_DELETE_MS);
+      return;
+    }
+    setConfirmId(null);
     await deleteTransaction(id);
     onChange();
   };
@@ -180,11 +190,13 @@ export default function TransactionList({
                 </button>
                 <button
                   onClick={() => void remove(t.id)}
-                  className="rounded-lg p-1.5 text-slate-500 hover:bg-white/5 hover:text-rose-400"
-                  title={tr("remove")}
-                  aria-label={tr("remove")}
+                  className={`rounded-lg p-1.5 text-xs hover:bg-white/5 hover:text-rose-400 ${
+                    confirmId === t.id ? "bg-rose-500/15 font-semibold text-rose-300" : "text-slate-500"
+                  }`}
+                  title={confirmId === t.id ? tr("tapAgainToDelete") : tr("remove")}
+                  aria-label={confirmId === t.id ? tr("tapAgainToDelete") : tr("remove")}
                 >
-                  🗑️
+                  {confirmId === t.id ? tr("confirmDeleteShort") : "🗑️"}
                 </button>
               </div>
             )}
