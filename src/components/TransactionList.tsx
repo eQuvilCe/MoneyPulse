@@ -9,6 +9,15 @@ import { useToast } from "@/components/Toast";
 
 const CONFIRM_DELETE_MS = 3000;
 
+type SortMode = "newest" | "oldest" | "largest" | "smallest";
+
+const SORTERS: Record<SortMode, (a: Transaction, b: Transaction) => number> = {
+  newest: (a, b) => b.date.localeCompare(a.date),
+  oldest: (a, b) => a.date.localeCompare(b.date),
+  largest: (a, b) => b.amount - a.amount,
+  smallest: (a, b) => a.amount - b.amount,
+};
+
 interface Props {
   transactions: Transaction[];
   type?: "income" | "expense";
@@ -30,6 +39,7 @@ export default function TransactionList({
   emptyText,
 }: Props) {
   const [page, setPage] = useState(0);
+  const [sort, setSort] = useState<SortMode>("newest");
   const [editId, setEditId] = useState<string | null>(null);
   const [editAmount, setEditAmount] = useState("");
   const [editDesc, setEditDesc] = useState("");
@@ -42,9 +52,11 @@ export default function TransactionList({
 
   const filtered = useMemo(() => {
     let list = type ? transactions.filter((t) => t.type === type) : transactions;
+    // stable sort: same-day entries keep the order they came in
+    list = [...list].sort(SORTERS[sort]);
     if (limit) list = list.slice(0, limit);
     return list;
-  }, [transactions, type, limit]);
+  }, [transactions, type, limit, sort]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const pageSafe = Math.min(page, totalPages - 1);
@@ -107,6 +119,26 @@ export default function TransactionList({
 
   return (
     <div className="space-y-2">
+      {!limit && filtered.length > 1 && (
+        <div className="flex justify-end">
+          <label className="flex items-center gap-2 text-xs text-slate-500">
+            {tr("sortBy")}
+            <select
+              value={sort}
+              onChange={(e) => {
+                setSort(e.target.value as SortMode);
+                setPage(0);
+              }}
+              className="rounded-lg border border-white/10 bg-slate-900 px-2 py-1 text-xs text-slate-300 outline-none focus:border-white/30"
+            >
+              <option value="newest">{tr("sortNewest")}</option>
+              <option value="oldest">{tr("sortOldest")}</option>
+              <option value="largest">{tr("sortLargest")}</option>
+              <option value="smallest">{tr("sortSmallest")}</option>
+            </select>
+          </label>
+        </div>
+      )}
       <AnimatePresence mode="popLayout">
         {slice.map((t) => (
           <motion.div
