@@ -37,14 +37,19 @@ export default function BanksPage() {
   };
 
   const confirmSms = async () => {
-    if (!parsed) return;
-    await addTransaction({
-      type: parsed.type,
-      amount: parsed.amount,
-      category: guessCategory(parsed.merchant),
-      description: parsed.merchant,
-      date: dateKey(),
-    });
+    if (!parsed || busy) return;
+    setBusy(true);
+    try {
+      await addTransaction({
+        type: parsed.type,
+        amount: parsed.amount,
+        category: guessCategory(parsed.merchant),
+        description: parsed.merchant,
+        date: dateKey(),
+      });
+    } finally {
+      setBusy(false);
+    }
     toast(
       `${parsed.type === "expense" ? "−" : "+"}${formatMoney(parsed.amount, parsed.currency || cur)} · ${parsed.merchant}`
     );
@@ -170,7 +175,8 @@ export default function BanksPage() {
               <button
                 type="button"
                 onClick={() => void confirmSms()}
-                className="rounded-xl bg-emerald-500 px-4 py-2 text-sm font-bold text-white"
+                disabled={busy}
+                className="rounded-xl bg-emerald-500 px-4 py-2 text-sm font-bold text-white transition hover:bg-emerald-400 disabled:opacity-50"
               >
                 {tr("confirm")}
               </button>
