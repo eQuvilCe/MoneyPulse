@@ -110,7 +110,7 @@ export default function CsvImport({ onDone }: { onDone: () => void }) {
           dragOver ? "border-emerald-500/60 bg-emerald-500/10" : "border-white/15 bg-white/[0.02]"
         }`}
       >
-        <span className="text-2xl">📄</span>
+        <span className="text-2xl" aria-hidden>📄</span>
         <span className="mt-2 text-sm text-slate-300">{busy ? tr("csvImporting") : tr("csvChooseFile")}</span>
         <input
           type="file"
@@ -119,6 +119,8 @@ export default function CsvImport({ onDone }: { onDone: () => void }) {
           disabled={busy}
           onChange={(e) => {
             const f = e.target.files?.[0];
+            // reset so picking the same statement again still triggers onChange
+            e.target.value = "";
             if (f) void onFile(f);
           }}
         />
