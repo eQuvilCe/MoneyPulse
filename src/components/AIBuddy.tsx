@@ -122,6 +122,15 @@ export default function AIBuddy() {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, typing, open]);
 
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open]);
+
   const send = async (text: string) => {
     if (!text.trim() || !data) return;
     const history = messages;
