@@ -6,14 +6,19 @@ import { FinanceData } from "@/lib/types";
 import { getHealthScore } from "@/lib/ai";
 import { motion } from "framer-motion";
 import { useApp } from "@/components/AppProvider";
+import { useToast } from "@/components/Toast";
+
+/** How long the Copy button reads "Copied" after a successful copy. */
+const COPIED_RESET_MS = 2000;
 
 export default function ShareCard({ data }: { data: FinanceData }) {
   const { tr, lang } = useApp();
+  const toast = useToast();
   const ref = useRef<HTMLDivElement>(null);
   const [copied, setCopied] = useState(false);
   const health = getHealthScore(data);
   const goal = data.goals[0];
-  const progress = goal
+  const progress = goal && goal.targetAmount > 0
     ? Math.min(100, Math.round((goal.currentAmount / goal.targetAmount) * 100))
     : 0;
   const streak = data.settings.streak || 0;
@@ -26,9 +31,9 @@ export default function ShareCard({ data }: { data: FinanceData }) {
     try {
       await navigator.clipboard.writeText(text);
       setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      setTimeout(() => setCopied(false), COPIED_RESET_MS);
     } catch {
-      /* ignore */
+      toast(tr("copyFailed"), "err");
     }
   };
 
@@ -73,14 +78,18 @@ export default function ShareCard({ data }: { data: FinanceData }) {
       </motion.div>
       <div className="mt-3 flex gap-2">
         <button
+          type="button"
           onClick={() => void share()}
-          className="flex-1 rounded-xl bg-emerald-500/20 py-2.5 text-sm font-semibold text-emerald-300 ring-1 ring-emerald-500/30"
+          className="flex-1 rounded-xl bg-emerald-500/20 py-2.5 text-sm font-semibold text-emerald-300 ring-1 ring-emerald-500/30 transition hover:bg-emerald-500/30"
         >
           {tr("shareLabel")}
         </button>
         <button
+          type="button"
           onClick={() => void copy()}
-          className="rounded-xl bg-white/5 px-4 py-2.5 text-sm text-slate-300 ring-1 ring-white/10"
+          aria-live="polite"
+          title={text}
+          className="rounded-xl bg-white/5 px-4 py-2.5 text-sm text-slate-300 ring-1 ring-white/10 transition hover:bg-white/10"
         >
           {copied ? tr("shareCopied") : tr("copyLabel")}
         </button>
