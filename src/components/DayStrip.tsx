@@ -2,13 +2,17 @@
 
 import { motion } from "framer-motion";
 import { FinanceData, dateKey } from "@/lib/types";
+import { useApp } from "@/components/AppProvider";
 
-function dayKey(offset: number) {
+/** How many days, ending today, the strip shows. */
+const STRIP_DAYS = 14;
+
+function dayKey(offset: number, locale: string) {
   const d = new Date();
   d.setDate(d.getDate() - offset);
   return {
     key: dateKey(d),
-    label: d.toLocaleDateString("ru-RU", { weekday: "short" }),
+    label: d.toLocaleDateString(locale, { weekday: "short" }),
     num: d.getDate(),
     isToday: offset === 0,
   };
@@ -21,7 +25,9 @@ interface Props {
 }
 
 export default function DayStrip({ data, selected, onSelect }: Props) {
-  const days = Array.from({ length: 14 }, (_, i) => dayKey(13 - i));
+  const { lang } = useApp();
+  const locale = lang === "en" ? "en-US" : "ru-RU";
+  const days = Array.from({ length: STRIP_DAYS }, (_, i) => dayKey(STRIP_DAYS - 1 - i, locale));
 
   const spent = (key: string) =>
     data.transactions
