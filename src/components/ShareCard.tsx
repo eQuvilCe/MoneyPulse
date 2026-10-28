@@ -78,14 +78,18 @@ export default function ShareCard({ data }: { data: FinanceData }) {
       </motion.div>
       <div className="mt-3 flex gap-2">
         <button
+          type="button"
           onClick={() => void share()}
-          className="flex-1 rounded-xl bg-emerald-500/20 py-2.5 text-sm font-semibold text-emerald-300 ring-1 ring-emerald-500/30"
+          className="flex-1 rounded-xl bg-emerald-500/20 py-2.5 text-sm font-semibold text-emerald-300 ring-1 ring-emerald-500/30 transition hover:bg-emerald-500/30"
         >
           {tr("shareLabel")}
         </button>
         <button
+          type="button"
           onClick={() => void copy()}
-          className="rounded-xl bg-white/5 px-4 py-2.5 text-sm text-slate-300 ring-1 ring-white/10"
+          aria-live="polite"
+          title={text}
+          className="rounded-xl bg-white/5 px-4 py-2.5 text-sm text-slate-300 ring-1 ring-white/10 transition hover:bg-white/10"
         >
           {copied ? tr("shareCopied") : tr("copyLabel")}
         </button>
