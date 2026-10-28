@@ -4,7 +4,7 @@ import { useMemo } from "react";
 import { useRealtimeData } from "@/hooks/useRealtimeData";
 import { PageShell, FadeItem, Skeleton } from "@/components/motion/PageShell";
 import { getStats } from "@/lib/storage";
-import { formatMoney } from "@/lib/types";
+import { formatMoney, CATEGORY_ICONS } from "@/lib/types";
 import { generateAIAnalysis, getHealthScore, answerAIChat } from "@/lib/ai";
 import AIInsightBar from "@/components/AIInsightBar";
 import StatCard from "@/components/StatCard";
@@ -148,18 +148,23 @@ export default function ForecastPage() {
         <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-400">
           {tr("cutTopByPct")}
         </h2>
+        {cuts.length === 0 && <p className="mt-4 text-sm text-slate-500">{tr("forecastNoExpenses")}</p>}
         <div className="mt-4 space-y-3">
           {cuts.map((c) => (
             <div key={c.cat} className="flex items-center justify-between text-sm">
-              <span className="text-slate-300">{c.cat}</span>
+              <span className="text-slate-300">
+                {CATEGORY_ICONS[c.cat] || "📦"} {c.cat}
+              </span>
               <span className="text-slate-500">{formatMoney(c.amt, cur)}</span>
               <span className="font-semibold" style={{ color: "var(--page-accent)" }}>+{formatMoney(c.save, cur)}</span>
             </div>
           ))}
         </div>
+        {cuts.length > 0 && (
         <p className="mt-4 text-xs text-slate-500">
           {tr("totalReclaimHint", { v: `~${formatMoney(cuts.reduce((s, c) => s + c.save, 0), cur)}` })}
         </p>
+        )}
         </TiltCard>
       </FadeItem>
 
