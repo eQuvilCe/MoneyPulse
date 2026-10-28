@@ -11,10 +11,15 @@ import AIInsightBar from "@/components/AIInsightBar";
 import { useToast } from "@/components/Toast";
 import { useApp } from "@/components/AppProvider";
 
+/** Category preselected when creating a new limit. */
+const DEFAULT_BUDGET_CATEGORY = "еда";
+/** From this share of the limit the bar turns amber. */
+const BUDGET_WARN_PERCENT = 80;
+
 export default function BudgetsPage() {
   const { tr } = useApp();
   const [data, setData] = useState<FinanceData | null>(null);
-  const [cat, setCat] = useState("еда");
+  const [cat, setCat] = useState(DEFAULT_BUDGET_CATEGORY);
   const [limit, setLimit] = useState("");
   const [show, setShow] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
@@ -81,7 +86,7 @@ export default function BudgetsPage() {
             onClick={() => {
               setEditId(null);
               setLimit("");
-              setCat("еда");
+              setCat(DEFAULT_BUDGET_CATEGORY);
               setShow(!show);
             }}
             className="rounded-xl px-4 py-2.5 text-sm font-semibold text-white shadow-lg"
@@ -189,7 +194,7 @@ export default function BudgetsPage() {
                     animate={{ width: `${Math.min(100, b.percent)}%` }}
                     transition={{ duration: 0.8 }}
                     className={`h-full rounded-full ${
-                      b.over ? "bg-rose-500" : b.percent >= 80 ? "bg-amber-500" : "bg-emerald-500"
+                      b.over ? "bg-rose-500" : b.percent >= BUDGET_WARN_PERCENT ? "bg-amber-500" : "bg-emerald-500"
                     }`}
                   />
                 </div>
