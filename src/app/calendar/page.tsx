@@ -11,6 +11,12 @@ import { motion } from "framer-motion";
 import { useApp } from "@/components/AppProvider";
 import { TKey } from "@/lib/i18n";
 
+/** "2025-03-01" → local midnight of that day (new Date("2025-03-01") would be UTC midnight). */
+function parseDateKey(key: string): Date {
+  const [y, m, d] = key.split("-").map(Number);
+  return new Date(y, m - 1, d);
+}
+
 const WEEKDAY_KEYS: TKey[] = ["dayMon", "dayTue", "dayWed", "dayThu", "dayFri", "daySat", "daySun"];
 
 export default function CalendarPage() {
@@ -145,7 +151,7 @@ export default function CalendarPage() {
       <FadeItem>
         <TiltCard className="mp-card rounded-2xl p-5">
         <h3 className="text-sm font-semibold">
-          {new Date(selected).toLocaleDateString(locale, {
+          {parseDateKey(selected).toLocaleDateString(locale, {
             day: "numeric",
             month: "long",
             year: "numeric",
