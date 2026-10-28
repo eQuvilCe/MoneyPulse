@@ -265,9 +265,12 @@ export default function GoalsPage() {
                       style={{ background: "linear-gradient(90deg, var(--page-accent), var(--page-accent-2))" }}
                     />
                   </div>
-                  <p className="mt-1 text-right text-xs" style={{ color: "var(--page-accent)" }}>
-                    {progress}%
-                  </p>
+                  <div className="mt-1 flex justify-between text-xs">
+                    <span className="text-slate-500">
+                      {left > 0 ? tr("remainingAmount", { v: formatMoney(left, cur) }) : ""}
+                    </span>
+                    <span style={{ color: "var(--page-accent)" }}>{progress}%</span>
+                  </div>
                 </div>
                 {left > 0 && (
                   <div className="mt-3 flex flex-wrap gap-1.5">
