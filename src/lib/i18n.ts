@@ -253,6 +253,7 @@ export const translations = {
     prevMonth: "Предыдущий месяц",
     nextMonth: "Следующий месяц",
     backToToday: "Сегодня",
+    monthTotals: "За месяц",
     // expenses page
     expensesHeroSubtitle: "Поиск · фильтры · AI на страже",
     operations: "Операций",
@@ -737,6 +738,7 @@ export const translations = {
     prevMonth: "Previous month",
     nextMonth: "Next month",
     backToToday: "Today",
+    monthTotals: "Month total",
     // expenses page
     expensesHeroSubtitle: "Search · filters · AI on guard",
     operations: "Transactions",
