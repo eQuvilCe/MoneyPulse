@@ -315,11 +315,11 @@ export default function SettingsPage() {
 
       {/* Password */}
       <SettingsCard>
-        <SectionHeading icon={Lock}>{lang === "ru" ? "Смена пароля" : "Change password"}</SectionHeading>
+        <SectionHeading icon={Lock}>{tr("changePasswordTitle")}</SectionHeading>
         <div className="grid gap-3 sm:grid-cols-3">
           <div>
             <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-slate-500">
-              {lang === "ru" ? "Текущий пароль" : "Current password"}
+              {tr("currentPassword")}
             </label>
             <input
               type="password"
@@ -331,7 +331,7 @@ export default function SettingsPage() {
           </div>
           <div>
             <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-slate-500">
-              {lang === "ru" ? "Новый пароль" : "New password"}
+              {tr("newPassword")}
             </label>
             <input
               type="password"
@@ -343,7 +343,7 @@ export default function SettingsPage() {
           </div>
           <div>
             <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-slate-500">
-              {lang === "ru" ? "Повтори пароль" : "Confirm password"}
+              {tr("repeatPassword")}
             </label>
             <input
               type="password"
@@ -361,13 +361,13 @@ export default function SettingsPage() {
           className="rounded-xl px-6 py-2.5 text-sm font-semibold text-slate-950 shadow-lg disabled:opacity-50"
           style={{ background: "var(--page-accent)" }}
         >
-          {savingPassword ? (lang === "ru" ? "Сохраняю…" : "Saving…") : lang === "ru" ? "Обновить пароль" : "Update password"}
+          {savingPassword ? tr("saving") : tr("updatePassword")}
         </button>
       </SettingsCard>
 
       {/* Finance */}
       <SettingsCard>
-        <SectionHeading icon={Target}>{lang === "ru" ? "Финансовые цели" : "Financial goals"}</SectionHeading>
+        <SectionHeading icon={Target}>{tr("financialGoalsTitle")}</SectionHeading>
         <div className="grid gap-3 sm:grid-cols-2">
           <div>
             <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-slate-500">
@@ -422,7 +422,7 @@ export default function SettingsPage() {
             ))}
           </div>
           <p className="mt-1.5 text-[11px] text-slate-500">
-            {lang === "ru" ? "Нажми «Сохранить», чтобы применить валюту и цели вместе" : "Hit Save to apply the currency and goals together"}
+            {tr("saveToApplyHint")}
           </p>
         </div>
         <button
